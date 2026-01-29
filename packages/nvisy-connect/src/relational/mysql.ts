@@ -1,10 +1,10 @@
 import type { RecordData } from "@nvisy/core";
-import type { Connector } from "../../interfaces/connector.js";
-import type { DataInput } from "../../interfaces/data-input.js";
-import type { DataOutput } from "../../interfaces/data-output.js";
-import type { Resumable } from "../../interfaces/resumable.js";
-import type { RelationalContext } from "../../params/context.js";
-import type { RelationalParams } from "../../params/relational.js";
+import type { Connector } from "../interfaces/connector.js";
+import type { DataInput } from "../interfaces/data-input.js";
+import type { DataOutput } from "../interfaces/data-output.js";
+import type { Resumable } from "../interfaces/resumable.js";
+import type { RelationalContext } from "../params/context.js";
+import type { RelationalParams } from "../params/relational.js";
 
 /** Credentials for connecting to MySQL. */
 export interface MySQLCredentials {

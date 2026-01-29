@@ -11,5 +11,5 @@ export default defineConfig({
 	treeshake: true,
 	skipNodeModulesBundle: true,
 	platform: "node",
-	target: "es2022",
+	target: "es2024",
 });

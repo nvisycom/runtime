@@ -1,13 +1,21 @@
-import type { JsonValue, Metadata } from "../types/json.js";
+import type { JsonValue, Metadata } from "./types.js";
 
 /** A structured document with content and metadata. */
-export interface DocumentData {
-	/** Unique document identifier. */
-	id: string;
-	/** Document content (parsed or raw). */
-	content: JsonValue;
-	/** MIME content type. */
-	contentType?: string;
-	/** Arbitrary metadata. */
-	metadata?: Metadata;
+export class DocumentData {
+	readonly id: string;
+	readonly content: JsonValue;
+	readonly contentType?: string | undefined;
+	readonly metadata?: Metadata | undefined;
+
+	constructor(fields: {
+		id: string;
+		content: JsonValue;
+		contentType?: string;
+		metadata?: Metadata;
+	}) {
+		this.id = fields.id;
+		this.content = fields.content;
+		this.contentType = fields.contentType;
+		this.metadata = fields.metadata;
+	}
 }

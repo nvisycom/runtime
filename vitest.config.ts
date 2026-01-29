@@ -20,5 +20,5 @@ export default defineConfig({
 		},
 		testTimeout: 15000,
 	},
-	esbuild: { target: "es2022" },
+	esbuild: { target: "es2024" },
 });

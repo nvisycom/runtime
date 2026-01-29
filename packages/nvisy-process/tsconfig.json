@@ -1,10 +1,39 @@
 {
-	"extends": "../../tsconfig.json",
 	"compilerOptions": {
+		/* Language & Environment */
+		"target": "ES2024",
+		"lib": ["ES2024"],
+
+		/* Modules */
+		"module": "NodeNext",
+		"moduleResolution": "nodenext",
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"verbatimModuleSyntax": true,
+
+		/* Type Checking */
+		"strict": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true,
+		"noUncheckedIndexedAccess": true,
+		"noImplicitOverride": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"exactOptionalPropertyTypes": true,
+
+		/* Emit */
 		"outDir": "./dist",
-		"rootDir": "./src"
+		"rootDir": "./src",
+		"declaration": true,
+		"declarationMap": true,
+		"sourceMap": true,
+
+		/* Interop */
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"skipLibCheck": true
 	},
 	"include": ["src/**/*"],
-	"exclude": ["node_modules", "dist"],
-	"references": [{ "path": "../nvisy-core" }, { "path": "../nvisy-langchain" }]
+	"exclude": ["node_modules", "dist"]
 }

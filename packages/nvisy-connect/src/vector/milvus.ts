@@ -1,7 +1,7 @@
 import type { EmbeddingData } from "@nvisy/core";
-import type { Connector } from "../../interfaces/connector.js";
-import type { DataOutput } from "../../interfaces/data-output.js";
-import type { VectorParams } from "../../params/vector.js";
+import type { Connector } from "../interfaces/connector.js";
+import type { DataOutput } from "../interfaces/data-output.js";
+import type { VectorParams } from "../params/vector.js";
 
 /** Credentials for connecting to a Milvus instance. */
 export interface MilvusCredentials {

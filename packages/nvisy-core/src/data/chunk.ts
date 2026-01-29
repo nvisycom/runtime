@@ -1,23 +1,42 @@
 /** A chunk of text extracted from a document. */
-export interface ChunkData {
-	/** Unique chunk identifier. */
-	id: string;
-	/** The chunk text content. */
-	text: string;
-	/** Start offset in the original document (character position). */
-	startOffset: number;
-	/** End offset in the original document (character position). */
-	endOffset: number;
-	/** Page number where this chunk begins (1-based). */
-	pageNumber?: number;
-	/** Token count for the configured tokenizer. */
-	tokenCount?: number;
-	/** Index of this chunk in the sequence (0-based). */
-	chunkIndex: number;
-	/** Total number of chunks in the sequence. */
-	totalChunks?: number;
-	/** LLM-generated context for semantic search. */
-	contextText?: string;
-	/** Source element or document IDs that contributed to this chunk. */
-	sourceIds?: string[];
+export class ChunkData {
+	readonly id: string;
+	readonly text: string;
+	readonly startOffset: number;
+	readonly endOffset: number;
+	readonly chunkIndex: number;
+	readonly pageNumber?: number | undefined;
+	readonly tokenCount?: number | undefined;
+	readonly totalChunks?: number | undefined;
+	readonly contextText?: string | undefined;
+	readonly sourceIds?: readonly string[] | undefined;
+
+	constructor(fields: {
+		id: string;
+		text: string;
+		startOffset: number;
+		endOffset: number;
+		chunkIndex: number;
+		pageNumber?: number;
+		tokenCount?: number;
+		totalChunks?: number;
+		contextText?: string;
+		sourceIds?: readonly string[];
+	}) {
+		this.id = fields.id;
+		this.text = fields.text;
+		this.startOffset = fields.startOffset;
+		this.endOffset = fields.endOffset;
+		this.chunkIndex = fields.chunkIndex;
+		this.pageNumber = fields.pageNumber;
+		this.tokenCount = fields.tokenCount;
+		this.totalChunks = fields.totalChunks;
+		this.contextText = fields.contextText;
+		this.sourceIds = fields.sourceIds;
+	}
+
+	/** Character length of the chunk text. */
+	get length(): number {
+		return this.text.length;
+	}
 }

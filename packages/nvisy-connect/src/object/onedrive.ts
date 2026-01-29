@@ -1,10 +1,10 @@
 import type { ObjectData } from "@nvisy/core";
-import type { Connector } from "../../interfaces/connector.js";
-import type { DataInput } from "../../interfaces/data-input.js";
-import type { DataOutput } from "../../interfaces/data-output.js";
-import type { Resumable } from "../../interfaces/resumable.js";
-import type { ObjectContext } from "../../params/context.js";
-import type { ObjectParams } from "../../params/object.js";
+import type { Connector } from "../interfaces/connector.js";
+import type { DataInput } from "../interfaces/data-input.js";
+import type { DataOutput } from "../interfaces/data-output.js";
+import type { Resumable } from "../interfaces/resumable.js";
+import type { ObjectContext } from "../params/context.js";
+import type { ObjectParams } from "../params/object.js";
 
 /** Credentials for connecting to OneDrive. */
 export interface OneDriveCredentials {
