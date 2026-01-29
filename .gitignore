@@ -137,3 +137,13 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Generated config output files (tsup, vitest)
+tsup.config.d.ts
+tsup.config.d.ts.map
+tsup.config.js
+tsup.config.js.map
+vitest.config.d.ts
+vitest.config.d.ts.map
+vitest.config.js
+vitest.config.js.map

@@ -1,0 +1,49 @@
+import type { ObjectData } from "@nvisy/core";
+import type { Connector } from "../../interfaces/connector.js";
+import type { DataInput } from "../../interfaces/data-input.js";
+import type { DataOutput } from "../../interfaces/data-output.js";
+import type { Resumable } from "../../interfaces/resumable.js";
+import type { ObjectContext } from "../../params/context.js";
+import type { ObjectParams } from "../../params/object.js";
+
+/** Credentials for connecting to Dropbox. */
+export interface DropboxCredentials {
+	/** OAuth2 access token. */
+	accessToken: string;
+}
+
+/** Dropbox-specific configuration. */
+export interface DropboxConfig extends ObjectParams {}
+
+/**
+ * Stub connector for Dropbox.
+ *
+ * Implements both DataInput and DataOutput for object data.
+ */
+export class DropboxConnector
+	implements
+		DataInput<ObjectData, ObjectContext>,
+		DataOutput<ObjectData>,
+		Connector<DropboxCredentials, DropboxConfig>
+{
+	async connect(
+		_creds: DropboxCredentials,
+		_params: DropboxConfig,
+	): Promise<void> {
+		throw new Error("Not yet implemented");
+	}
+
+	async disconnect(): Promise<void> {
+		throw new Error("Not yet implemented");
+	}
+
+	async *read(
+		_ctx: ObjectContext,
+	): AsyncIterable<Resumable<ObjectData, ObjectContext>> {
+		throw new Error("Not yet implemented");
+	}
+
+	async write(_items: ObjectData[]): Promise<void> {
+		throw new Error("Not yet implemented");
+	}
+}

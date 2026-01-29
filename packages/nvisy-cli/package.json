@@ -1,0 +1,33 @@
+{
+	"name": "@nvisy/cli",
+	"version": "0.1.0",
+	"type": "module",
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"bin": {
+		"nvisy": "./dist/index.js"
+	},
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsup",
+		"build:watch": "tsup --watch",
+		"clean": "rimraf dist",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@nvisy/core": "*",
+		"@nvisy/graph": "*"
+	},
+	"engines": {
+		"node": ">=20.0.0"
+	}
+}
