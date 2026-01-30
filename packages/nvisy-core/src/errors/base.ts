@@ -1,7 +1,18 @@
 /**
  * Error codes for all Nvisy errors.
- * Each code maps to a specific failure domain, enabling
- * programmatic error handling via `error.code`.
+ *
+ * Each code maps to a specific failure domain, enabling programmatic
+ * error handling via {@link NvisyError.code}:
+ *
+ * | Code                 | Meaning                                    |
+ * |----------------------|--------------------------------------------|
+ * | `CONNECTION_FAILED`  | Could not reach an external service         |
+ * | `VALIDATION_FAILED`  | Input did not pass schema / business rules  |
+ * | `PROCESS_FAILED`     | A pipeline step failed unexpectedly         |
+ * | `LLM_FAILED`         | An LLM call returned an error               |
+ * | `STORAGE_FAILED`     | Read/write to a storage backend failed      |
+ * | `TIMEOUT`            | An operation exceeded its deadline           |
+ * | `CANCELLED`          | The operation was explicitly cancelled       |
  */
 export type ErrorCode =
 	| "CONNECTION_FAILED"
@@ -12,24 +23,31 @@ export type ErrorCode =
 	| "TIMEOUT"
 	| "CANCELLED";
 
+/** Structured context attached to every {@link NvisyError}. */
 export interface ErrorContext {
-	/** Which component/subsystem produced the error. */
+	/** Which component or subsystem produced the error. */
 	readonly source?: string | undefined;
-	/** Machine-readable metadata about the failure (ids, paths, limits, etc.). */
+	/** Machine-readable details about the failure (IDs, paths, limits, etc.). */
 	readonly details?: Readonly<Record<string, unknown>> | undefined;
-	/** Whether this error is safe to retry. */
+	/** Whether the caller may safely retry the operation. */
 	readonly retryable?: boolean | undefined;
 }
 
 /**
- * Single error class for the entire runtime.
+ * Single error class for the entire Nvisy runtime.
  *
- * Instead of a deep class hierarchy, a flat `code` discriminant plus
- * a structured `context` bag covers every failure mode while staying
- * easy to match on:
+ * Uses a flat `code` discriminant plus a structured {@link context} bag
+ * instead of a deep class hierarchy, keeping error handling simple:
  *
+ * @example
  * ```ts
- * if (err.code === "LLM_FAILED" && err.retryable) { … }
+ * try {
+ *   await runPipeline(input);
+ * } catch (err) {
+ *   if (err instanceof NvisyError && err.code === "LLM_FAILED" && err.retryable) {
+ *     // safe to retry
+ *   }
+ * }
  * ```
  */
 export class NvisyError extends Error {
@@ -50,7 +68,7 @@ export class NvisyError extends Error {
 		this.cause = cause;
 	}
 
-	/** True when the caller may safely retry the operation. */
+	/** `true` when the caller may safely retry the operation. */
 	get retryable(): boolean {
 		return this.context.retryable === true;
 	}

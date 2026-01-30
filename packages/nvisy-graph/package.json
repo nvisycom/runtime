@@ -1,10 +1,8 @@
 {
 	"name": "@nvisy/graph",
 	"version": "0.1.0",
+	"description": "Workflow graph engine for defining and executing processing pipelines",
 	"type": "module",
-	"main": "./dist/index.js",
-	"module": "./dist/index.js",
-	"types": "./dist/index.d.ts",
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
@@ -21,8 +19,8 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@nvisy/core": "*",
 		"@nvisy/connect": "*",
+		"@nvisy/core": "*",
 		"@nvisy/process": "*"
 	},
 	"engines": {

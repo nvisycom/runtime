@@ -1,15 +1,18 @@
 {
 	"name": "@nvisy/core",
 	"version": "0.1.0",
+	"description": "Core data types, errors, and utilities for the Nvisy runtime",
 	"type": "module",
-	"main": "./dist/index.js",
-	"module": "./dist/index.js",
-	"types": "./dist/index.d.ts",
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js"
 		}
+	},
+	"imports": {
+		"#data/*.js": "./src/data/*.ts",
+		"#errors/*.js": "./src/errors/*.ts",
+		"#utils/*.js": "./src/utils/*.ts"
 	},
 	"files": [
 		"dist"

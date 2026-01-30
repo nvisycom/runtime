@@ -1,10 +1,8 @@
 {
 	"name": "@nvisy/process",
 	"version": "0.1.0",
+	"description": "Document processing pipeline: partition, chunk, embed, enrich, and extract",
 	"type": "module",
-	"main": "./dist/index.js",
-	"module": "./dist/index.js",
-	"types": "./dist/index.d.ts",
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
@@ -22,11 +20,11 @@
 	},
 	"dependencies": {
 		"@nvisy/core": "*",
-		"@langchain/core": "^0.3.0",
-		"@langchain/openai": "^0.4.0",
 		"@langchain/anthropic": "^0.3.0",
+		"@langchain/cohere": "^0.3.0",
+		"@langchain/core": "^0.3.0",
 		"@langchain/google-genai": "^0.2.0",
-		"@langchain/cohere": "^0.3.0"
+		"@langchain/openai": "^0.4.0"
 	},
 	"engines": {
 		"node": ">=22.0.0"
