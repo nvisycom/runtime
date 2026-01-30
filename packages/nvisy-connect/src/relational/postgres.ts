@@ -1,10 +1,7 @@
 import type { RecordData } from "@nvisy/core";
-import type { Connector } from "../interfaces/connector.js";
-import type { DataInput } from "../interfaces/data-input.js";
-import type { DataOutput } from "../interfaces/data-output.js";
-import type { Resumable } from "../interfaces/resumable.js";
-import type { RelationalContext } from "../params/context.js";
-import type { RelationalParams } from "../params/relational.js";
+import type { Resumable } from "#core/resumable.js";
+import { RelationalDatabase } from "#relational/base.js";
+import type { RelationalContext } from "#relational/base.js";
 
 /** Credentials for connecting to PostgreSQL. */
 export interface PostgresCredentials {
@@ -13,23 +10,29 @@ export interface PostgresCredentials {
 }
 
 /** PostgreSQL-specific configuration. */
-export interface PostgresConfig extends RelationalParams {}
+export interface PostgresConfig {
+	table: string;
+	schema?: string;
+	batchSize?: number;
+}
 
 /**
- * Stub connector for PostgreSQL.
+ * Connector for PostgreSQL relational databases.
  *
- * Implements both DataInput and DataOutput for relational data.
+ * @example
+ * ```ts
+ * const pg = new PostgresConnector(
+ *   { connectionString: "postgresql://..." },
+ *   { table: "documents", schema: "public" },
+ * );
+ * await pg.connect();
+ * ```
  */
-export class PostgresConnector
-	implements
-		DataInput<RecordData, RelationalContext>,
-		DataOutput<RecordData>,
-		Connector<PostgresCredentials, PostgresConfig>
-{
-	async connect(
-		_creds: PostgresCredentials,
-		_params: PostgresConfig,
-	): Promise<void> {
+export class PostgresConnector extends RelationalDatabase<
+	PostgresCredentials,
+	PostgresConfig
+> {
+	async connect(): Promise<void> {
 		throw new Error("Not yet implemented");
 	}
 

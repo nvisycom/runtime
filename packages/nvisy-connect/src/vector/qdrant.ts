@@ -1,7 +1,6 @@
 import type { EmbeddingData } from "@nvisy/core";
-import type { Connector } from "../interfaces/connector.js";
-import type { DataOutput } from "../interfaces/data-output.js";
-import type { VectorParams } from "../params/vector.js";
+import type { DistanceMetric } from "#core/params.js";
+import { VectorDatabase } from "#vector/base.js";
 
 /** Credentials for connecting to a Qdrant instance. */
 export interface QdrantCredentials {
@@ -12,22 +11,29 @@ export interface QdrantCredentials {
 }
 
 /** Qdrant-specific configuration. */
-export interface QdrantConfig extends VectorParams {}
+export interface QdrantConfig {
+	collection: string;
+	dimensions?: number;
+	distanceMetric?: DistanceMetric;
+}
 
 /**
- * Stub connector for Qdrant vector database.
+ * Connector for the Qdrant vector database.
  *
- * Implements DataOutput only -- vector DBs are output-only.
+ * @example
+ * ```ts
+ * const qdrant = new QdrantConnector(
+ *   { url: "http://localhost:6333" },
+ *   { collection: "embeddings" },
+ * );
+ * await qdrant.connect();
+ * ```
  */
-export class QdrantConnector
-	implements
-		DataOutput<EmbeddingData>,
-		Connector<QdrantCredentials, QdrantConfig>
-{
-	async connect(
-		_creds: QdrantCredentials,
-		_params: QdrantConfig,
-	): Promise<void> {
+export class QdrantConnector extends VectorDatabase<
+	QdrantCredentials,
+	QdrantConfig
+> {
+	async connect(): Promise<void> {
 		throw new Error("Not yet implemented");
 	}
 

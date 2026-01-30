@@ -1,33 +1,39 @@
 import type { EmbeddingData } from "@nvisy/core";
-import type { Connector } from "../interfaces/connector.js";
-import type { DataOutput } from "../interfaces/data-output.js";
-import type { VectorParams } from "../params/vector.js";
+import type { DistanceMetric } from "#core/params.js";
+import { VectorDatabase } from "#vector/base.js";
 
 /** Credentials for connecting to a Milvus instance. */
 export interface MilvusCredentials {
-	/** Milvus server address (host:port). */
+	/** Milvus server address (`host:port`). */
 	address: string;
 	/** Optional authentication token. */
 	token?: string;
 }
 
 /** Milvus-specific configuration. */
-export interface MilvusConfig extends VectorParams {}
+export interface MilvusConfig {
+	collection: string;
+	dimensions?: number;
+	distanceMetric?: DistanceMetric;
+}
 
 /**
- * Stub connector for Milvus vector database.
+ * Connector for the Milvus vector database.
  *
- * Implements DataOutput only -- vector DBs are output-only.
+ * @example
+ * ```ts
+ * const milvus = new MilvusConnector(
+ *   { address: "localhost:19530" },
+ *   { collection: "embeddings" },
+ * );
+ * await milvus.connect();
+ * ```
  */
-export class MilvusConnector
-	implements
-		DataOutput<EmbeddingData>,
-		Connector<MilvusCredentials, MilvusConfig>
-{
-	async connect(
-		_creds: MilvusCredentials,
-		_params: MilvusConfig,
-	): Promise<void> {
+export class MilvusConnector extends VectorDatabase<
+	MilvusCredentials,
+	MilvusConfig
+> {
+	async connect(): Promise<void> {
 		throw new Error("Not yet implemented");
 	}
 

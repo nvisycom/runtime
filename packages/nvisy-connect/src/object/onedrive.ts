@@ -1,10 +1,7 @@
 import type { ObjectData } from "@nvisy/core";
-import type { Connector } from "../interfaces/connector.js";
-import type { DataInput } from "../interfaces/data-input.js";
-import type { DataOutput } from "../interfaces/data-output.js";
-import type { Resumable } from "../interfaces/resumable.js";
-import type { ObjectContext } from "../params/context.js";
-import type { ObjectParams } from "../params/object.js";
+import type { Resumable } from "#core/resumable.js";
+import { ObjectStore } from "#object/base.js";
+import type { ObjectContext } from "#object/base.js";
 
 /** Credentials for connecting to OneDrive. */
 export interface OneDriveCredentials {
@@ -13,23 +10,29 @@ export interface OneDriveCredentials {
 }
 
 /** OneDrive-specific configuration. */
-export interface OneDriveConfig extends ObjectParams {}
+export interface OneDriveConfig {
+	bucket: string;
+	prefix?: string;
+	recursive?: boolean;
+}
 
 /**
- * Stub connector for Microsoft OneDrive.
+ * Connector for Microsoft OneDrive file storage.
  *
- * Implements both DataInput and DataOutput for object data.
+ * @example
+ * ```ts
+ * const onedrive = new OneDriveConnector(
+ *   { accessToken: "..." },
+ *   { bucket: "my-folder" },
+ * );
+ * await onedrive.connect();
+ * ```
  */
-export class OneDriveConnector
-	implements
-		DataInput<ObjectData, ObjectContext>,
-		DataOutput<ObjectData>,
-		Connector<OneDriveCredentials, OneDriveConfig>
-{
-	async connect(
-		_creds: OneDriveCredentials,
-		_params: OneDriveConfig,
-	): Promise<void> {
+export class OneDriveConnector extends ObjectStore<
+	OneDriveCredentials,
+	OneDriveConfig
+> {
+	async connect(): Promise<void> {
 		throw new Error("Not yet implemented");
 	}
 

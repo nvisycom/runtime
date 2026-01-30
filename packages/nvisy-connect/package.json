@@ -9,6 +9,12 @@
 			"import": "./dist/index.js"
 		}
 	},
+	"imports": {
+		"#core/*.js": "./src/core/*.ts",
+		"#object/*.js": "./src/object/*.ts",
+		"#relational/*.js": "./src/relational/*.ts",
+		"#vector/*.js": "./src/vector/*.ts"
+	},
 	"files": [
 		"dist"
 	],

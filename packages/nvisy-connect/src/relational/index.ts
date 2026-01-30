@@ -1,5 +1,13 @@
-export type { KeysetPage } from "./common.js";
-export type { MySQLConfig, MySQLCredentials } from "./mysql.js";
-export { MySQLConnector } from "./mysql.js";
-export type { PostgresConfig, PostgresCredentials } from "./postgres.js";
-export { PostgresConnector } from "./postgres.js";
+export { RelationalDatabase } from "#relational/base.js";
+export type {
+	KeysetPage,
+	RelationalParams,
+	RelationalContext,
+} from "#relational/base.js";
+export type { MySQLConfig, MySQLCredentials } from "#relational/mysql.js";
+export { MySQLConnector } from "#relational/mysql.js";
+export type {
+	PostgresConfig,
+	PostgresCredentials,
+} from "#relational/postgres.js";
+export { PostgresConnector } from "#relational/postgres.js";

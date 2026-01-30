@@ -1,5 +1,5 @@
 import type { Metadata } from "#utils/types.js";
-import { Data } from "./base.js";
+import { Data } from "#data/base.js";
 
 /**
  * A file or binary blob retrieved from object storage (S3, GCS, Dropbox, etc.).

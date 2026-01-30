@@ -1,10 +1,7 @@
 import type { ObjectData } from "@nvisy/core";
-import type { Connector } from "../interfaces/connector.js";
-import type { DataInput } from "../interfaces/data-input.js";
-import type { DataOutput } from "../interfaces/data-output.js";
-import type { Resumable } from "../interfaces/resumable.js";
-import type { ObjectContext } from "../params/context.js";
-import type { ObjectParams } from "../params/object.js";
+import type { Resumable } from "#core/resumable.js";
+import { ObjectStore } from "#object/base.js";
+import type { ObjectContext } from "#object/base.js";
 
 /** Credentials for connecting to Dropbox. */
 export interface DropboxCredentials {
@@ -13,23 +10,29 @@ export interface DropboxCredentials {
 }
 
 /** Dropbox-specific configuration. */
-export interface DropboxConfig extends ObjectParams {}
+export interface DropboxConfig {
+	bucket: string;
+	prefix?: string;
+	recursive?: boolean;
+}
 
 /**
- * Stub connector for Dropbox.
+ * Connector for Dropbox file storage.
  *
- * Implements both DataInput and DataOutput for object data.
+ * @example
+ * ```ts
+ * const dropbox = new DropboxConnector(
+ *   { accessToken: "..." },
+ *   { bucket: "my-folder" },
+ * );
+ * await dropbox.connect();
+ * ```
  */
-export class DropboxConnector
-	implements
-		DataInput<ObjectData, ObjectContext>,
-		DataOutput<ObjectData>,
-		Connector<DropboxCredentials, DropboxConfig>
-{
-	async connect(
-		_creds: DropboxCredentials,
-		_params: DropboxConfig,
-	): Promise<void> {
+export class DropboxConnector extends ObjectStore<
+	DropboxCredentials,
+	DropboxConfig
+> {
+	async connect(): Promise<void> {
 		throw new Error("Not yet implemented");
 	}
 

@@ -1,33 +1,39 @@
 import type { EmbeddingData } from "@nvisy/core";
-import type { Connector } from "../interfaces/connector.js";
-import type { DataOutput } from "../interfaces/data-output.js";
-import type { VectorParams } from "../params/vector.js";
+import type { DistanceMetric } from "#core/params.js";
+import { VectorDatabase } from "#vector/base.js";
 
 /** Credentials for connecting to Pinecone. */
 export interface PineconeCredentials {
 	/** Pinecone API key. */
 	apiKey: string;
-	/** Pinecone environment (e.g. "us-east-1-aws"). */
+	/** Pinecone environment (e.g. `"us-east-1-aws"`). */
 	environment: string;
 }
 
 /** Pinecone-specific configuration. */
-export interface PineconeConfig extends VectorParams {}
+export interface PineconeConfig {
+	collection: string;
+	dimensions?: number;
+	distanceMetric?: DistanceMetric;
+}
 
 /**
- * Stub connector for Pinecone vector database.
+ * Connector for the Pinecone vector database.
  *
- * Implements DataOutput only -- vector DBs are output-only.
+ * @example
+ * ```ts
+ * const pinecone = new PineconeConnector(
+ *   { apiKey: "...", environment: "us-east-1-aws" },
+ *   { collection: "embeddings" },
+ * );
+ * await pinecone.connect();
+ * ```
  */
-export class PineconeConnector
-	implements
-		DataOutput<EmbeddingData>,
-		Connector<PineconeCredentials, PineconeConfig>
-{
-	async connect(
-		_creds: PineconeCredentials,
-		_params: PineconeConfig,
-	): Promise<void> {
+export class PineconeConnector extends VectorDatabase<
+	PineconeCredentials,
+	PineconeConfig
+> {
+	async connect(): Promise<void> {
 		throw new Error("Not yet implemented");
 	}
 

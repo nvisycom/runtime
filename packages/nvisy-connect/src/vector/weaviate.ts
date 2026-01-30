@@ -1,7 +1,6 @@
 import type { EmbeddingData } from "@nvisy/core";
-import type { Connector } from "../interfaces/connector.js";
-import type { DataOutput } from "../interfaces/data-output.js";
-import type { VectorParams } from "../params/vector.js";
+import type { DistanceMetric } from "#core/params.js";
+import { VectorDatabase } from "#vector/base.js";
 
 /** Credentials for connecting to a Weaviate instance. */
 export interface WeaviateCredentials {
@@ -12,22 +11,29 @@ export interface WeaviateCredentials {
 }
 
 /** Weaviate-specific configuration. */
-export interface WeaviateConfig extends VectorParams {}
+export interface WeaviateConfig {
+	collection: string;
+	dimensions?: number;
+	distanceMetric?: DistanceMetric;
+}
 
 /**
- * Stub connector for Weaviate vector database.
+ * Connector for the Weaviate vector database.
  *
- * Implements DataOutput only -- vector DBs are output-only.
+ * @example
+ * ```ts
+ * const weaviate = new WeaviateConnector(
+ *   { url: "http://localhost:8080" },
+ *   { collection: "embeddings" },
+ * );
+ * await weaviate.connect();
+ * ```
  */
-export class WeaviateConnector
-	implements
-		DataOutput<EmbeddingData>,
-		Connector<WeaviateCredentials, WeaviateConfig>
-{
-	async connect(
-		_creds: WeaviateCredentials,
-		_params: WeaviateConfig,
-	): Promise<void> {
+export class WeaviateConnector extends VectorDatabase<
+	WeaviateCredentials,
+	WeaviateConfig
+> {
+	async connect(): Promise<void> {
 		throw new Error("Not yet implemented");
 	}
 

@@ -1,10 +1,7 @@
 import type { ObjectData } from "@nvisy/core";
-import type { Connector } from "../interfaces/connector.js";
-import type { DataInput } from "../interfaces/data-input.js";
-import type { DataOutput } from "../interfaces/data-output.js";
-import type { Resumable } from "../interfaces/resumable.js";
-import type { ObjectContext } from "../params/context.js";
-import type { ObjectParams } from "../params/object.js";
+import type { Resumable } from "#core/resumable.js";
+import { ObjectStore } from "#object/base.js";
+import type { ObjectContext } from "#object/base.js";
 
 /** Credentials for connecting to Google Drive. */
 export interface GoogleDriveCredentials {
@@ -13,23 +10,29 @@ export interface GoogleDriveCredentials {
 }
 
 /** Google Drive-specific configuration. */
-export interface GoogleDriveConfig extends ObjectParams {}
+export interface GoogleDriveConfig {
+	bucket: string;
+	prefix?: string;
+	recursive?: boolean;
+}
 
 /**
- * Stub connector for Google Drive.
+ * Connector for Google Drive file storage.
  *
- * Implements both DataInput and DataOutput for object data.
+ * @example
+ * ```ts
+ * const drive = new GoogleDriveConnector(
+ *   { accessToken: "..." },
+ *   { bucket: "my-drive-folder" },
+ * );
+ * await drive.connect();
+ * ```
  */
-export class GoogleDriveConnector
-	implements
-		DataInput<ObjectData, ObjectContext>,
-		DataOutput<ObjectData>,
-		Connector<GoogleDriveCredentials, GoogleDriveConfig>
-{
-	async connect(
-		_creds: GoogleDriveCredentials,
-		_params: GoogleDriveConfig,
-	): Promise<void> {
+export class GoogleDriveConnector extends ObjectStore<
+	GoogleDriveCredentials,
+	GoogleDriveConfig
+> {
+	async connect(): Promise<void> {
 		throw new Error("Not yet implemented");
 	}
 

@@ -1,11 +1,21 @@
-// Interfaces
+// Core
 export type {
-	Connector,
 	DataInput,
 	DataOutput,
 	Resumable,
-} from "./interfaces/index.js";
+} from "#core/index.js";
+export { Provider } from "#core/index.js";
+export { DistanceMetric } from "#core/index.js";
+
+// Object connectors
+export {
+	ObjectStore,
+	detectContentType,
+	normalizePath,
+} from "#object/index.js";
 export type {
+	ObjectParams,
+	ObjectContext,
 	DropboxConfig,
 	DropboxCredentials,
 	GoogleDriveConfig,
@@ -14,37 +24,32 @@ export type {
 	OneDriveCredentials,
 	S3Config,
 	S3Credentials,
-} from "./object/index.js";
-// Object connectors
+} from "#object/index.js";
 export {
 	DropboxConnector,
-	detectContentType,
 	GoogleDriveConnector,
-	normalizePath,
 	OneDriveConnector,
 	S3Connector,
-} from "./object/index.js";
-export type {
-	ObjectContext,
-	ObjectParams,
-	RelationalContext,
-	RelationalParams,
-	VectorContext,
-	VectorParams,
-} from "./params/index.js";
-// Params
-export { DistanceMetric } from "./params/index.js";
+} from "#object/index.js";
+
 // Relational connectors
+export { RelationalDatabase } from "#relational/index.js";
 export type {
+	RelationalParams,
+	RelationalContext,
 	KeysetPage,
 	MySQLConfig,
 	MySQLCredentials,
 	PostgresConfig,
 	PostgresCredentials,
-} from "./relational/index.js";
-export { MySQLConnector, PostgresConnector } from "./relational/index.js";
+} from "#relational/index.js";
+export { MySQLConnector, PostgresConnector } from "#relational/index.js";
+
 // Vector connectors
+export { VectorDatabase } from "#vector/index.js";
 export type {
+	VectorParams,
+	VectorContext,
 	MilvusConfig,
 	MilvusCredentials,
 	PgVectorConfig,
@@ -58,7 +63,7 @@ export type {
 	SearchResult,
 	WeaviateConfig,
 	WeaviateCredentials,
-} from "./vector/index.js";
+} from "#vector/index.js";
 export {
 	MilvusConnector,
 	PgVectorConnector,
@@ -67,4 +72,4 @@ export {
 	semanticSearch,
 	setupSchema,
 	WeaviateConnector,
-} from "./vector/index.js";
+} from "#vector/index.js";

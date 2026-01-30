@@ -1,10 +1,7 @@
 import type { RecordData } from "@nvisy/core";
-import type { Connector } from "../interfaces/connector.js";
-import type { DataInput } from "../interfaces/data-input.js";
-import type { DataOutput } from "../interfaces/data-output.js";
-import type { Resumable } from "../interfaces/resumable.js";
-import type { RelationalContext } from "../params/context.js";
-import type { RelationalParams } from "../params/relational.js";
+import type { Resumable } from "#core/resumable.js";
+import { RelationalDatabase } from "#relational/base.js";
+import type { RelationalContext } from "#relational/base.js";
 
 /** Credentials for connecting to MySQL. */
 export interface MySQLCredentials {
@@ -21,20 +18,29 @@ export interface MySQLCredentials {
 }
 
 /** MySQL-specific configuration. */
-export interface MySQLConfig extends RelationalParams {}
+export interface MySQLConfig {
+	table: string;
+	schema?: string;
+	batchSize?: number;
+}
 
 /**
- * Stub connector for MySQL.
+ * Connector for MySQL relational databases.
  *
- * Implements both DataInput and DataOutput for relational data.
+ * @example
+ * ```ts
+ * const mysql = new MySQLConnector(
+ *   { host: "localhost", port: 3306, user: "root", password: "...", database: "mydb" },
+ *   { table: "documents" },
+ * );
+ * await mysql.connect();
+ * ```
  */
-export class MySQLConnector
-	implements
-		DataInput<RecordData, RelationalContext>,
-		DataOutput<RecordData>,
-		Connector<MySQLCredentials, MySQLConfig>
-{
-	async connect(_creds: MySQLCredentials, _params: MySQLConfig): Promise<void> {
+export class MySQLConnector extends RelationalDatabase<
+	MySQLCredentials,
+	MySQLConfig
+> {
+	async connect(): Promise<void> {
 		throw new Error("Not yet implemented");
 	}
 
