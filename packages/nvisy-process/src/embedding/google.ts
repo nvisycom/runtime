@@ -1,22 +1,18 @@
-import type {
-	EmbeddingBatchResult,
-	EmbeddingProvider,
-	EmbeddingVector,
-} from "../base/embedding-provider.js";
-import type { EmbeddingModel } from "./models.js";
+import type { EmbeddingData } from "@nvisy/core";
+import { EmbeddingProvider } from "./base.js";
 
-export class GoogleEmbedding implements EmbeddingProvider {
-	readonly model: EmbeddingModel;
+export type GoogleEmbeddingModel = "text-embedding-004";
 
-	constructor(_apiKey: string, model: EmbeddingModel) {
-		this.model = model;
+export class GoogleEmbedding extends EmbeddingProvider<GoogleEmbeddingModel> {
+	constructor(apiKey: string, model: GoogleEmbeddingModel) {
+		super(apiKey, model);
 	}
 
-	async embed(_text: string): Promise<EmbeddingVector> {
+	async embed(_text: string): Promise<EmbeddingData> {
 		throw new Error("Not yet implemented");
 	}
 
-	async embedBatch(_texts: string[]): Promise<EmbeddingBatchResult> {
+	async embedBatch(_texts: string[]): Promise<EmbeddingData[]> {
 		throw new Error("Not yet implemented");
 	}
 }

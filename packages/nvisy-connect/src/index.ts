@@ -5,7 +5,6 @@ export type {
 	Resumable,
 } from "#core/index.js";
 export { Provider } from "#core/index.js";
-export { DistanceMetric } from "#core/index.js";
 
 // Object connectors
 export {
@@ -46,7 +45,7 @@ export type {
 export { MySQLConnector, PostgresConnector } from "#relational/index.js";
 
 // Vector connectors
-export { VectorDatabase } from "#vector/index.js";
+export { DistanceMetric, VectorDatabase } from "#vector/index.js";
 export type {
 	VectorParams,
 	VectorContext,

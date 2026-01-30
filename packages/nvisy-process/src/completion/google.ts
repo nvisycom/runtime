@@ -1,16 +1,11 @@
-import type { CompletionProvider } from "../base/completion-provider.js";
-import type {
-	CompletionOptions,
-	CompletionResult,
-	Message,
-} from "../base/message.js";
-import type { CompletionModel } from "./models.js";
+import { CompletionProvider } from "./base.js";
+import type { CompletionOptions, CompletionResult, Message } from "./base.js";
 
-export class GoogleCompletion implements CompletionProvider {
-	readonly model: CompletionModel;
+export type GoogleCompletionModel = "gemini-2.0-flash" | "gemini-1.5-pro";
 
-	constructor(_apiKey: string, model: CompletionModel) {
-		this.model = model;
+export class GoogleCompletion extends CompletionProvider<GoogleCompletionModel> {
+	constructor(apiKey: string, model: GoogleCompletionModel) {
+		super(apiKey, model);
 	}
 
 	async complete(

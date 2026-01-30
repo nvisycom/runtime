@@ -1,5 +1,5 @@
 import type { EmbeddingData } from "@nvisy/core";
-import type { DistanceMetric } from "#core/params.js";
+import type { DistanceMetric } from "#vector/base.js";
 import { VectorDatabase } from "#vector/base.js";
 
 /** Credentials for connecting to Pinecone. */

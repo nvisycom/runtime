@@ -1,10 +1,16 @@
-import type { CompletionProvider } from "../base/completion-provider.js";
-import type { ApiCredentials } from "../base/credentials.js";
-import type { CompletionModel } from "./models.js";
+import { CompletionProvider } from "./base.js";
+import type { AnthropicCompletionModel } from "./anthropic.js";
+import type { CohereCompletionModel } from "./cohere.js";
+import type { GoogleCompletionModel } from "./google.js";
+import type { OpenAICompletionModel } from "./openai.js";
 
 export function createCompletionProvider(
-	_model: CompletionModel,
-	_credentials: ApiCredentials,
+	_model:
+		| OpenAICompletionModel
+		| AnthropicCompletionModel
+		| GoogleCompletionModel
+		| CohereCompletionModel,
+	_apiKey: string,
 ): CompletionProvider {
 	throw new Error("Not yet implemented");
 }

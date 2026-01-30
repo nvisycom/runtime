@@ -1,18 +1,18 @@
-import type { Process } from "./process.js";
+import type { Processor } from "./processor.js";
 
-/** Maps processor kind strings to Process implementations. */
+/** Maps processor kind strings to Processor implementations. */
 export class ProcessorRegistry {
-	private readonly processors = new Map<string, Process>();
+	readonly #processors = new Map<string, Processor>();
 
-	register(kind: string, processor: Process): void {
-		this.processors.set(kind, processor);
+	register(kind: string, processor: Processor): void {
+		this.#processors.set(kind, processor);
 	}
 
-	get(kind: string): Process | undefined {
-		return this.processors.get(kind);
+	get(kind: string): Processor | undefined {
+		return this.#processors.get(kind);
 	}
 
 	has(kind: string): boolean {
-		return this.processors.has(kind);
+		return this.#processors.has(kind);
 	}
 }

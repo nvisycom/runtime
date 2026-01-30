@@ -1,16 +1,13 @@
-import type { CompletionProvider } from "../base/completion-provider.js";
-import type {
-	CompletionOptions,
-	CompletionResult,
-	Message,
-} from "../base/message.js";
-import type { CompletionModel } from "./models.js";
+import { CompletionProvider } from "./base.js";
+import type { CompletionOptions, CompletionResult, Message } from "./base.js";
 
-export class AnthropicCompletion implements CompletionProvider {
-	readonly model: CompletionModel;
+export type AnthropicCompletionModel =
+	| "claude-sonnet-4-20250514"
+	| "claude-3-5-haiku-20241022";
 
-	constructor(_apiKey: string, model: CompletionModel) {
-		this.model = model;
+export class AnthropicCompletion extends CompletionProvider<AnthropicCompletionModel> {
+	constructor(apiKey: string, model: AnthropicCompletionModel) {
+		super(apiKey, model);
 	}
 
 	async complete(

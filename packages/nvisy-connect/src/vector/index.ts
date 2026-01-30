@@ -1,4 +1,4 @@
-export { VectorDatabase } from "#vector/base.js";
+export { DistanceMetric, VectorDatabase } from "#vector/base.js";
 export type {
 	ScoredResult,
 	SearchOptions,

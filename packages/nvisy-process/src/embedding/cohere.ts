@@ -1,22 +1,20 @@
-import type {
-	EmbeddingBatchResult,
-	EmbeddingProvider,
-	EmbeddingVector,
-} from "../base/embedding-provider.js";
-import type { EmbeddingModel } from "./models.js";
+import type { EmbeddingData } from "@nvisy/core";
+import { EmbeddingProvider } from "./base.js";
 
-export class CohereEmbedding implements EmbeddingProvider {
-	readonly model: EmbeddingModel;
+export type CohereEmbeddingModel =
+	| "embed-english-v3.0"
+	| "embed-multilingual-v3.0";
 
-	constructor(_apiKey: string, model: EmbeddingModel) {
-		this.model = model;
+export class CohereEmbedding extends EmbeddingProvider<CohereEmbeddingModel> {
+	constructor(apiKey: string, model: CohereEmbeddingModel) {
+		super(apiKey, model);
 	}
 
-	async embed(_text: string): Promise<EmbeddingVector> {
+	async embed(_text: string): Promise<EmbeddingData> {
 		throw new Error("Not yet implemented");
 	}
 
-	async embedBatch(_texts: string[]): Promise<EmbeddingBatchResult> {
+	async embedBatch(_texts: string[]): Promise<EmbeddingData[]> {
 		throw new Error("Not yet implemented");
 	}
 }

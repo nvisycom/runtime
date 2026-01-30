@@ -1,10 +1,12 @@
 import type { AnyDataValue } from "@nvisy/core";
-import type { Process } from "../base/process.js";
+import { Processor } from "../../base/processor.js";
 import type { PartitionConfig } from "../config/partition.js";
 
 /** Partitions raw documents into structured elements. */
-export class PartitionProcessor implements Process {
-	constructor(_config: PartitionConfig) {}
+export class PartitionProcessor extends Processor {
+	constructor(_config: PartitionConfig) {
+		super();
+	}
 
 	async process(_input: AnyDataValue[]): Promise<AnyDataValue[]> {
 		throw new Error("Not yet implemented");

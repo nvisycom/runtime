@@ -1,10 +1,12 @@
 import type { AnyDataValue } from "@nvisy/core";
-import type { Process } from "../base/process.js";
+import { Processor } from "../../base/processor.js";
 import type { ChunkConfig } from "../config/chunk.js";
 
 /** Chunks data into smaller segments using the configured strategy. */
-export class ChunkProcessor implements Process {
-	constructor(_config: ChunkConfig) {}
+export class ChunkProcessor extends Processor {
+	constructor(_config: ChunkConfig) {
+		super();
+	}
 
 	async process(_input: AnyDataValue[]): Promise<AnyDataValue[]> {
 		throw new Error("Not yet implemented");

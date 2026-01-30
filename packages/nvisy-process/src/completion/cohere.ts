@@ -1,16 +1,11 @@
-import type { CompletionProvider } from "../base/completion-provider.js";
-import type {
-	CompletionOptions,
-	CompletionResult,
-	Message,
-} from "../base/message.js";
-import type { CompletionModel } from "./models.js";
+import { CompletionProvider } from "./base.js";
+import type { CompletionOptions, CompletionResult, Message } from "./base.js";
 
-export class CohereCompletion implements CompletionProvider {
-	readonly model: CompletionModel;
+export type CohereCompletionModel = "command-r-plus" | "command-r";
 
-	constructor(_apiKey: string, model: CompletionModel) {
-		this.model = model;
+export class CohereCompletion extends CompletionProvider<CohereCompletionModel> {
+	constructor(apiKey: string, model: CohereCompletionModel) {
+		super(apiKey, model);
 	}
 
 	async complete(

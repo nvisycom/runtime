@@ -1,5 +1,5 @@
 import type { RecordData } from "@nvisy/core";
-import type { Resumable } from "#core/resumable.js";
+import type { Resumable } from "#core/stream.js";
 import { RelationalDatabase } from "#relational/base.js";
 import type { RelationalContext } from "#relational/base.js";
 

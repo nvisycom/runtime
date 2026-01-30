@@ -1,5 +1,5 @@
 import type { ObjectData } from "@nvisy/core";
-import type { Resumable } from "#core/resumable.js";
+import type { Resumable } from "#core/stream.js";
 import { ObjectStore } from "#object/base.js";
 import type { ObjectContext } from "#object/base.js";
 

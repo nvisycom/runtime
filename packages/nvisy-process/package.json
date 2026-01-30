@@ -26,6 +26,21 @@
 		"@langchain/google-genai": "^0.2.0",
 		"@langchain/openai": "^0.4.0"
 	},
+	"imports": {
+		"#base/*.js": "./src/base/*.ts",
+		"#completion/*.js": "./src/completion/*.ts",
+		"#embedding/*.js": "./src/embedding/*.ts",
+		"#transform/*.js": "./src/transform/*.ts",
+		"#transform/config/*.js": "./src/transform/config/*.ts",
+		"#transform/chunk/*.js": "./src/transform/chunk/*.ts",
+		"#transform/convert/*.js": "./src/transform/convert/*.ts",
+		"#transform/derive/*.js": "./src/transform/derive/*.ts",
+		"#transform/enrich/*.js": "./src/transform/enrich/*.ts",
+		"#transform/extract/*.js": "./src/transform/extract/*.ts",
+		"#transform/metadata/*.js": "./src/transform/metadata/*.ts",
+		"#transform/partition/*.js": "./src/transform/partition/*.ts",
+		"#transform/route/*.js": "./src/transform/route/*.ts"
+	},
 	"engines": {
 		"node": ">=22.0.0"
 	}

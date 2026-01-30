@@ -1,22 +1,21 @@
-import type {
-	EmbeddingBatchResult,
-	EmbeddingProvider,
-	EmbeddingVector,
-} from "../base/embedding-provider.js";
-import type { EmbeddingModel } from "./models.js";
+import type { EmbeddingData } from "@nvisy/core";
+import { EmbeddingProvider } from "./base.js";
 
-export class OpenAIEmbedding implements EmbeddingProvider {
-	readonly model: EmbeddingModel;
+export type OpenAIEmbeddingModel =
+	| "text-embedding-3-small"
+	| "text-embedding-3-large"
+	| "text-embedding-ada-002";
 
-	constructor(_apiKey: string, model: EmbeddingModel) {
-		this.model = model;
+export class OpenAIEmbedding extends EmbeddingProvider<OpenAIEmbeddingModel> {
+	constructor(apiKey: string, model: OpenAIEmbeddingModel) {
+		super(apiKey, model);
 	}
 
-	async embed(_text: string): Promise<EmbeddingVector> {
+	async embed(_text: string): Promise<EmbeddingData> {
 		throw new Error("Not yet implemented");
 	}
 
-	async embedBatch(_texts: string[]): Promise<EmbeddingBatchResult> {
+	async embedBatch(_texts: string[]): Promise<EmbeddingData[]> {
 		throw new Error("Not yet implemented");
 	}
 }

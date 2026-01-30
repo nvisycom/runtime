@@ -1,7 +1,5 @@
 import type { ObjectData } from "@nvisy/core";
-import type { DataInput } from "#core/data-input.js";
-import type { DataOutput } from "#core/data-output.js";
-import type { Resumable } from "#core/resumable.js";
+import type { DataInput, DataOutput, Resumable } from "#core/stream.js";
 import { Provider } from "#core/provider.js";
 
 // ── Object store params ─────────────────────────────────────────────

@@ -1,10 +1,12 @@
 import type { AnyDataValue } from "@nvisy/core";
-import type { Process } from "../base/process.js";
+import { Processor } from "../../base/processor.js";
 import type { DeriveConfig } from "../config/derive.js";
 
 /** Derives new data from existing elements (summaries, titles, context). */
-export class DeriveProcessor implements Process {
-	constructor(_config: DeriveConfig) {}
+export class DeriveProcessor extends Processor {
+	constructor(_config: DeriveConfig) {
+		super();
+	}
 
 	async process(_input: AnyDataValue[]): Promise<AnyDataValue[]> {
 		throw new Error("Not yet implemented");

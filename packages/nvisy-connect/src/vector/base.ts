@@ -1,7 +1,23 @@
 import type { EmbeddingData, Metadata } from "@nvisy/core";
-import type { DataOutput } from "#core/data-output.js";
+import type { DataOutput } from "#core/stream.js";
 import { Provider } from "#core/provider.js";
-import type { DistanceMetric } from "#core/params.js";
+
+// ── Distance metric ─────────────────────────────────────────────────
+
+/**
+ * Distance metric used for vector similarity search.
+ *
+ * Use as a value (`DistanceMetric.Cosine`) or as a type
+ * (`DistanceMetric`) for the union of all metric strings.
+ */
+export const DistanceMetric = {
+	Cosine: "cosine",
+	Euclidean: "euclidean",
+	DotProduct: "dot_product",
+} as const;
+
+export type DistanceMetric =
+	(typeof DistanceMetric)[keyof typeof DistanceMetric];
 
 // ── Vector params ───────────────────────────────────────────────────
 

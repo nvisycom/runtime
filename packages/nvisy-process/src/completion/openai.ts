@@ -1,16 +1,15 @@
-import type { CompletionProvider } from "../base/completion-provider.js";
-import type {
-	CompletionOptions,
-	CompletionResult,
-	Message,
-} from "../base/message.js";
-import type { CompletionModel } from "./models.js";
+import { CompletionProvider } from "./base.js";
+import type { CompletionOptions, CompletionResult, Message } from "./base.js";
 
-export class OpenAICompletion implements CompletionProvider {
-	readonly model: CompletionModel;
+export type OpenAICompletionModel =
+	| "gpt-4o"
+	| "gpt-4o-mini"
+	| "gpt-4-turbo"
+	| "gpt-3.5-turbo";
 
-	constructor(_apiKey: string, model: CompletionModel) {
-		this.model = model;
+export class OpenAICompletion extends CompletionProvider<OpenAICompletionModel> {
+	constructor(apiKey: string, model: OpenAICompletionModel) {
+		super(apiKey, model);
 	}
 
 	async complete(
