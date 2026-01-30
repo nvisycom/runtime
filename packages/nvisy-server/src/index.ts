@@ -1,1 +1,1 @@
-// Server — placeholder
+export { createApp } from "./app.js";

@@ -224,7 +224,26 @@ The HTTP layer is built on **Hono**, a lightweight, edge-compatible web framewor
 
 ### 7.2 REST API
 
-The API surface covers graph lifecycle management (create, read, update, delete), run management (trigger, list, status, cancel), connector introspection and health checks, and lineage queries by primitive ID. All endpoints accept and return JSON. Since graphs are natively JSON-serializable, the API stores and retrieves them without transformation.
+The API surface covers graph lifecycle management, run execution and monitoring, connector introspection, and lineage queries. All endpoints accept and return JSON. Since graphs are natively JSON-serializable, the API stores and retrieves them without transformation.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/health` | Liveness probe |
+| `GET` | `/ready` | Readiness probe |
+| `POST` | `/api/graphs` | Create a new graph definition |
+| `GET` | `/api/graphs` | List all graphs |
+| `GET` | `/api/graphs/:id` | Get a graph by ID |
+| `PUT` | `/api/graphs/:id` | Replace a graph definition |
+| `DELETE` | `/api/graphs/:id` | Delete a graph |
+| `POST` | `/api/graphs/validate` | Validate a graph definition without persisting |
+| `POST` | `/api/graphs/:graphId/runs` | Trigger a new run for a graph |
+| `GET` | `/api/graphs/:graphId/runs` | List runs for a graph |
+| `GET` | `/api/runs/:id` | Get run status and details |
+| `POST` | `/api/runs/:id/cancel` | Cancel a running execution |
+| `GET` | `/api/connectors` | List all registered connectors |
+| `GET` | `/api/connectors/:name` | Get connector details and capabilities |
+| `GET` | `/api/connectors/:name/health` | Health check a specific connector |
+| `GET` | `/api/lineage/:primitiveId` | Trace the full lineage of a primitive |
 
 ### 7.3 Persistence
 
