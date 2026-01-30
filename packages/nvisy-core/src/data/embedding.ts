@@ -36,25 +36,4 @@ export class Embedding extends Data {
 		return this.#vector.length;
 	}
 
-	/**
-	 * Convert an array of embeddings into parallel arrays suitable for
-	 * langchain's `addVectors(vectors, documents, { ids })` signature.
-	 */
-	static toLangchainBatch(items: ReadonlyArray<Embedding>): {
-		vectors: number[][];
-		metadata: Record<string, unknown>[];
-		ids: string[];
-	} {
-		const vectors: number[][] = [];
-		const metadata: Record<string, unknown>[] = [];
-		const ids: string[] = [];
-
-		for (const item of items) {
-			vectors.push(Array.from(item.vector));
-			metadata.push(item.metadata ?? {});
-			ids.push(item.id);
-		}
-
-		return { vectors, metadata, ids };
-	}
 }

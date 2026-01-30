@@ -1,81 +1,95 @@
-import { Data } from "effect";
+// ── Error code ──────────────────────────────────────────────────────
+
+/** Discriminant for all Nvisy error types. */
+export type ErrorCode =
+	| "CONNECTION_ERROR"
+	| "VALIDATION_ERROR"
+	| "PROCESS_ERROR"
+	| "CANCELLED_ERROR";
 
 // ── Shared context ──────────────────────────────────────────────────
 
 /** Structured context attached to every Nvisy error. */
 export interface ErrorContext {
 	/** Which component or subsystem produced the error. */
-	readonly source?: string | undefined;
+	readonly source?: string;
 	/** Machine-readable details about the failure (IDs, paths, limits, etc.). */
-	readonly details?: Readonly<Record<string, unknown>> | undefined;
+	readonly details?: Readonly<Record<string, unknown>>;
 	/** Whether the caller may safely retry the operation. */
-	readonly retryable?: boolean | undefined;
+	readonly retryable?: boolean;
 }
 
-// ── Tagged errors ───────────────────────────────────────────────────
-
-/** Could not reach an external service. */
-export class ConnectionError extends Data.TaggedError("ConnectionError")<{
-	readonly message: string;
-	readonly context: ErrorContext;
-	readonly cause?: Error | undefined;
-}> {}
-
-/** Input did not pass schema / business rules. */
-export class ValidationError extends Data.TaggedError("ValidationError")<{
-	readonly message: string;
-	readonly context: ErrorContext;
-	readonly cause?: Error | undefined;
-}> {}
-
-/** A pipeline step failed unexpectedly. */
-export class ProcessError extends Data.TaggedError("ProcessError")<{
-	readonly message: string;
-	readonly context: ErrorContext;
-	readonly cause?: Error | undefined;
-}> {}
-
-/** An LLM call returned an error. */
-export class LlmError extends Data.TaggedError("LlmError")<{
-	readonly message: string;
-	readonly context: ErrorContext;
-	readonly cause?: Error | undefined;
-}> {}
-
-/** Read/write to a storage backend failed. */
-export class StorageError extends Data.TaggedError("StorageError")<{
-	readonly message: string;
-	readonly context: ErrorContext;
-	readonly cause?: Error | undefined;
-}> {}
-
-/** An operation exceeded its deadline. */
-export class TimeoutError extends Data.TaggedError("TimeoutError")<{
-	readonly message: string;
-	readonly context: ErrorContext;
-	readonly cause?: Error | undefined;
-}> {}
-
-/** The operation was explicitly cancelled. */
-export class CancelledError extends Data.TaggedError("CancelledError")<{
-	readonly message: string;
-	readonly context: ErrorContext;
-	readonly cause?: Error | undefined;
-}> {}
-
-// ── Union ───────────────────────────────────────────────────────────
+// ── Base class ──────────────────────────────────────────────────────
 
 /**
- * Union of all Nvisy error types.
+ * Abstract base class for all Nvisy errors.
  *
- * Each variant carries a `_tag` literal discriminant for use with
- * `Effect.catchTag` and exhaustive matching.
+ * Every error carries a {@link code} discriminant for `switch` matching
+ * and a structured {@link context} for logging / debugging.
+ *
+ * Extends the built-in `Error` so `instanceof NvisyError` works
+ * everywhere — no framework dependency required.
  */
-export type NvisyError =
-	| ConnectionError
-	| ValidationError
-	| ProcessError
-	| LlmError
-	| StorageError
-	| TimeoutError
-	| CancelledError;
+export abstract class NvisyError extends Error {
+	/** Discriminant code for switch-based matching. */
+	abstract readonly code: ErrorCode;
+
+	/** Structured context about the failure. */
+	readonly context: ErrorContext;
+
+	constructor(message: string, context?: ErrorContext, cause?: Error) {
+		super(message, cause ? { cause } : undefined);
+		this.name = this.constructor.name;
+		this.context = context ?? {};
+	}
+}
+
+// ── Concrete errors ─────────────────────────────────────────────────
+
+/**
+ * Could not reach an external service, storage backend, or database.
+ *
+ * Also covers missing/unregistered connections.
+ */
+export class ConnectionError extends NvisyError {
+	readonly code = "CONNECTION_ERROR" as const;
+
+	constructor(message: string, context?: ErrorContext, cause?: Error) {
+		super(message, context, cause);
+	}
+}
+
+/**
+ * Input did not pass schema or business rules.
+ *
+ * Also covers invalid workflow/pipeline definitions.
+ */
+export class ValidationError extends NvisyError {
+	readonly code = "VALIDATION_ERROR" as const;
+
+	constructor(message: string, context?: ErrorContext, cause?: Error) {
+		super(message, context, cause);
+	}
+}
+
+/**
+ * A pipeline step, LLM call, or operation failed unexpectedly.
+ *
+ * Also covers timeouts and other processing failures.
+ */
+export class ProcessError extends NvisyError {
+	readonly code = "PROCESS_ERROR" as const;
+
+	constructor(message: string, context?: ErrorContext, cause?: Error) {
+		super(message, context, cause);
+	}
+}
+
+/** The operation was explicitly cancelled. */
+export class CancelledError extends NvisyError {
+	readonly code = "CANCELLED_ERROR" as const;
+
+	constructor(message: string, context?: ErrorContext, cause?: Error) {
+		super(message, context, cause);
+	}
+}

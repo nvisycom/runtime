@@ -12,6 +12,7 @@
 	"imports": {
 		"#data/*.js": "./src/data/*.ts",
 		"#errors/*.js": "./src/errors/*.ts",
+		"#stream/*.js": "./src/stream/*.ts",
 		"#utils/*.js": "./src/utils/*.ts"
 	},
 	"files": [
@@ -23,9 +24,7 @@
 		"clean": "rimraf dist",
 		"typecheck": "tsc --noEmit"
 	},
-	"dependencies": {
-		"effect": "^3.19.14"
-	},
+	"dependencies": {},
 	"engines": {
 		"node": ">=22.0.0"
 	}

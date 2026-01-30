@@ -1,5 +1,5 @@
 {
-	"name": "@nvisy/runtime",
+	"name": "@nvisy/monorepo",
 	"private": true,
 	"type": "module",
 	"engines": {

@@ -1,7 +1,7 @@
 {
-	"name": "@nvisy/server",
+	"name": "@nvisy/runtime",
 	"version": "0.1.0",
-	"description": "HTTP server, REST API, and cron scheduler for the Nvisy runtime",
+	"description": "Graph definition, DAG compilation, execution engine, and scheduler for the Nvisy platform",
 	"type": "module",
 	"exports": {
 		".": {
@@ -20,9 +20,7 @@
 	},
 	"dependencies": {
 		"@nvisy/core": "*",
-		"@nvisy/runtime": "*",
-		"effect": "^3.16.0",
-		"hono": "^4.7.0"
+		"effect": "^3.16.0"
 	},
 	"engines": {
 		"node": ">=22.0.0"
