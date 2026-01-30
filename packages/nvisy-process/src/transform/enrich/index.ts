@@ -1,3 +1,5 @@
+export { ImageEnrichTask, TableEnrichTask } from "./config.js";
+export type { EnrichConfig, EnrichTask } from "./config.js";
 export {
 	describeImage,
 	describeImageDetailed,

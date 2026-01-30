@@ -13,6 +13,7 @@ export type {
 	AnthropicCompletionModel,
 	CohereCompletionModel,
 	CompletionOptions,
+	CompletionProviderName,
 	CompletionResult,
 	GoogleCompletionModel,
 	Message,
@@ -22,14 +23,13 @@ export type {
 // Embedding
 export {
 	EmbeddingProvider,
-	CohereEmbedding,
 	createEmbeddingProvider,
 	EmbeddingProcessor,
-	GoogleEmbedding,
-	OpenAIEmbedding,
 } from "./embedding/index.js";
 export type {
 	CohereEmbeddingModel,
+	EmbeddingConfig,
+	EmbeddingProviderName,
 	GoogleEmbeddingModel,
 	OpenAIEmbeddingModel,
 } from "./embedding/index.js";
@@ -96,7 +96,6 @@ export type {
 	ConvertConfig,
 	ConvertTask,
 	DeriveConfig,
-	EmbeddingConfig,
 	EnrichConfig,
 	EnrichTask,
 	ExtractConfig,

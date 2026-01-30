@@ -1,4 +1,6 @@
 export { AutoPartitioner } from "./auto.js";
+export { PartitionStrategy } from "./config.js";
+export type { PartitionConfig } from "./config.js";
 export { DocxParser } from "./docx.js";
 export { FastPartitioner } from "./fast.js";
 export { HtmlParser } from "./html.js";

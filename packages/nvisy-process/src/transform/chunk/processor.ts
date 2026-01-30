@@ -1,6 +1,6 @@
 import type { AnyDataValue } from "@nvisy/core";
 import { Processor } from "../../base/processor.js";
-import type { ChunkConfig } from "../config/chunk.js";
+import type { ChunkConfig } from "./config.js";
 
 /** Chunks data into smaller segments using the configured strategy. */
 export class ChunkProcessor extends Processor {

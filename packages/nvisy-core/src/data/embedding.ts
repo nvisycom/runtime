@@ -10,26 +10,20 @@ import { Data } from "#data/base.js";
  *
  * @example
  * ```ts
- * const emb = new EmbeddingData({
- *   id: "emb-001",
- *   vector: [0.12, -0.34, 0.56],
- * });
+ * const emb = new EmbeddingData([0.12, -0.34, 0.56]);
  * console.log(emb.dimensions); // 3
  * ```
  */
 export class EmbeddingData extends Data {
 	readonly #vector: Float32Array;
 
-	constructor(fields: {
-		id: string;
-		vector: Float32Array | number[];
-		metadata?: Metadata;
-	}) {
-		super(fields.id, fields.metadata);
+	constructor(
+		vector: Float32Array | number[],
+		options?: { id?: string; metadata?: Metadata },
+	) {
+		super(options?.id ?? crypto.randomUUID(), options?.metadata);
 		this.#vector =
-			fields.vector instanceof Float32Array
-				? fields.vector
-				: new Float32Array(fields.vector);
+			vector instanceof Float32Array ? vector : new Float32Array(vector);
 	}
 
 	/** The dense embedding vector. */

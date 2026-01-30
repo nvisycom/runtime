@@ -1,29 +1,5 @@
-// Config
-export type {
-	AnalyzeTask,
-	ChunkConfig,
-	ChunkStrategy,
-	ConvertConfig,
-	ConvertTask,
-	DeriveConfig,
-	EmbeddingConfig,
-	EnrichConfig,
-	EnrichTask,
-	ExtractConfig,
-	MetadataConfig,
-	PartitionConfig,
-	SwitchCondition,
-	TextConvertTask,
-} from "./config/index.js";
-export {
-	DeriveTask,
-	FileCategory,
-	ImageEnrichTask,
-	PartitionStrategy,
-	TableConvertTask,
-	TableEnrichTask,
-} from "./config/index.js";
 // Chunk
+export type { ChunkConfig, ChunkStrategy } from "./chunk/index.js";
 export {
 	CharacterChunker,
 	ChunkProcessor,
@@ -32,16 +8,22 @@ export {
 	SimilarityChunker,
 } from "./chunk/index.js";
 // Convert
+export type { ConvertConfig } from "./convert/index.js";
 export { ConvertProcessor } from "./convert/index.js";
 // Derive
+export type { DeriveConfig } from "./derive/index.js";
 export {
+	DeriveTask,
 	DeriveProcessor,
 	generateChunkContext,
 	generateTitle,
 	summarize,
 } from "./derive/index.js";
 // Enrich
+export type { EnrichConfig, EnrichTask } from "./enrich/index.js";
 export {
+	ImageEnrichTask,
+	TableEnrichTask,
 	describeImage,
 	describeImageDetailed,
 	describeTable,
@@ -57,7 +39,9 @@ export {
 	TABLE_DESCRIPTION_PROMPT,
 } from "./enrich/index.js";
 // Extract
+export type { AnalyzeTask, ConvertTask, ExtractConfig, TextConvertTask } from "./extract/index.js";
 export {
+	TableConvertTask,
 	analyzeSentiment,
 	classify,
 	ExtractProcessor,
@@ -67,9 +51,12 @@ export {
 	extractStructured,
 } from "./extract/index.js";
 // Metadata
+export type { MetadataConfig } from "./metadata/index.js";
 export { MetadataProcessor } from "./metadata/index.js";
 // Partition
+export type { PartitionConfig } from "./partition/index.js";
 export {
+	PartitionStrategy,
 	AutoPartitioner,
 	DocxParser,
 	FastPartitioner,
@@ -85,7 +72,9 @@ export {
 	XlsxParser,
 } from "./partition/index.js";
 // Route
+export type { SwitchCondition } from "./route/index.js";
 export {
+	FileCategory,
 	detectFileCategory,
 	detectLanguage,
 	SwitchEvaluator,

@@ -1,6 +1,6 @@
 import type { AnyDataValue } from "@nvisy/core";
 import { Processor } from "../../base/processor.js";
-import type { ConvertConfig } from "../config/convert.js";
+import type { ConvertConfig } from "./config.js";
 
 /** Converts data between formats. */
 export class ConvertProcessor extends Processor {

@@ -1,5 +1,5 @@
 import type { AnyDataValue } from "@nvisy/core";
-import type { SwitchCondition } from "../config/route.js";
+import type { SwitchCondition } from "./config.js";
 
 /** Evaluates switch conditions against input data for routing. */
 export class SwitchEvaluator {

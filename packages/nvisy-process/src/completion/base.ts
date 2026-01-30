@@ -1,3 +1,10 @@
+import {
+	HumanMessage,
+	SystemMessage,
+	AIMessage as LCAIMessage,
+} from "@langchain/core/messages";
+import type { BaseMessage } from "@langchain/core/messages";
+
 // ── Message types ───────────────────────────────────────────────────
 
 export type MessageRole = "system" | "user" | "assistant";
@@ -74,4 +81,20 @@ export abstract class CompletionProvider<TModel extends string = string> {
 		messages: Message[],
 		schema: Record<string, unknown>,
 	): Promise<T>;
+}
+
+// ── Internal helper ─────────────────────────────────────────────────
+
+/** Convert nvisy {@link Message}[] to langchain BaseMessage[]. */
+export function toLangchainMessages(messages: Message[]): BaseMessage[] {
+	return messages.map((m) => {
+		switch (m.role) {
+			case "system":
+				return new SystemMessage(m.content);
+			case "user":
+				return new HumanMessage(m.content);
+			case "assistant":
+				return new LCAIMessage(m.content);
+		}
+	});
 }

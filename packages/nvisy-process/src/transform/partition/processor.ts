@@ -1,6 +1,6 @@
 import type { AnyDataValue } from "@nvisy/core";
 import { Processor } from "../../base/processor.js";
-import type { PartitionConfig } from "../config/partition.js";
+import type { PartitionConfig } from "./config.js";
 
 /** Partitions raw documents into structured elements. */
 export class PartitionProcessor extends Processor {

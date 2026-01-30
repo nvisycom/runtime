@@ -1,4 +1,5 @@
-import type { EmbeddingData } from "@nvisy/core";
+import { EmbeddingData } from "@nvisy/core";
+import { OpenAIEmbeddings } from "@langchain/openai";
 import { EmbeddingProvider } from "./base.js";
 
 export type OpenAIEmbeddingModel =
@@ -7,15 +8,20 @@ export type OpenAIEmbeddingModel =
 	| "text-embedding-ada-002";
 
 export class OpenAIEmbedding extends EmbeddingProvider<OpenAIEmbeddingModel> {
+	readonly #client: OpenAIEmbeddings;
+
 	constructor(apiKey: string, model: OpenAIEmbeddingModel) {
 		super(apiKey, model);
+		this.#client = new OpenAIEmbeddings({ model, apiKey });
 	}
 
-	async embed(_text: string): Promise<EmbeddingData> {
-		throw new Error("Not yet implemented");
+	async embed(text: string): Promise<EmbeddingData> {
+		const vector = await this.#client.embedQuery(text);
+		return new EmbeddingData(vector);
 	}
 
-	async embedBatch(_texts: string[]): Promise<EmbeddingData[]> {
-		throw new Error("Not yet implemented");
+	async embedBatch(texts: string[]): Promise<EmbeddingData[]> {
+		const vectors = await this.#client.embedDocuments(texts);
+		return vectors.map((vector) => new EmbeddingData(vector));
 	}
 }

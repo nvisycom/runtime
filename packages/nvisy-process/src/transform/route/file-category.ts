@@ -1,4 +1,4 @@
-import type { FileCategory } from "../config/route.js";
+import type { FileCategory } from "./config.js";
 
 /** Detects the file category from a content type string. */
 export function detectFileCategory(_contentType: string): FileCategory {
