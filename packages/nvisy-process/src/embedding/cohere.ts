@@ -1,4 +1,4 @@
-import { EmbeddingData } from "@nvisy/core";
+import { Embedding } from "@nvisy/core";
 import { CohereEmbeddings } from "@langchain/cohere";
 import { EmbeddingProvider } from "./base.js";
 
@@ -14,13 +14,13 @@ export class CohereEmbedding extends EmbeddingProvider<CohereEmbeddingModel> {
 		this.#client = new CohereEmbeddings({ model, apiKey });
 	}
 
-	async embed(text: string): Promise<EmbeddingData> {
+	async embed(text: string): Promise<Embedding> {
 		const vector = await this.#client.embedQuery(text);
-		return new EmbeddingData(vector);
+		return new Embedding(vector);
 	}
 
-	async embedBatch(texts: string[]): Promise<EmbeddingData[]> {
+	async embedBatch(texts: string[]): Promise<Embedding[]> {
 		const vectors = await this.#client.embedDocuments(texts);
-		return vectors.map((vector) => new EmbeddingData(vector));
+		return vectors.map((vector) => new Embedding(vector));
 	}
 }

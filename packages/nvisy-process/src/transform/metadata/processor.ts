@@ -1,4 +1,4 @@
-import type { AnyDataValue } from "@nvisy/core";
+import type { AnyData } from "@nvisy/core";
 import { Processor } from "../../base/processor.js";
 import type { MetadataConfig } from "./config.js";
 
@@ -8,7 +8,7 @@ export class MetadataProcessor extends Processor {
 		super();
 	}
 
-	async process(_input: AnyDataValue[]): Promise<AnyDataValue[]> {
+	async process(_input: AnyData[]): Promise<AnyData[]> {
 		throw new Error("Not yet implemented");
 	}
 }

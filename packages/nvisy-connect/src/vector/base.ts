@@ -1,4 +1,4 @@
-import type { EmbeddingData, Metadata } from "@nvisy/core";
+import type { Embedding, Metadata } from "@nvisy/core";
 import type { DataOutput } from "#core/stream.js";
 import { Provider } from "#core/provider.js";
 
@@ -50,9 +50,9 @@ export abstract class VectorDatabase<
 	TCred,
 	TConfig extends VectorParams = VectorParams,
 > extends Provider<TCred, TConfig>
-	implements DataOutput<EmbeddingData>
+	implements DataOutput<Embedding>
 {
-	abstract write(items: EmbeddingData[]): Promise<void>;
+	abstract write(items: Embedding[]): Promise<void>;
 }
 
 // ── Search types ────────────────────────────────────────────────────

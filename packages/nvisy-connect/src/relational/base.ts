@@ -1,4 +1,4 @@
-import type { RecordData } from "@nvisy/core";
+import type { Row } from "@nvisy/core";
 import type { DataInput, DataOutput, Resumable } from "#core/stream.js";
 import { Provider } from "#core/provider.js";
 
@@ -35,13 +35,13 @@ export abstract class RelationalDatabase<
 	TConfig extends RelationalParams = RelationalParams,
 > extends Provider<TCred, TConfig>
 	implements
-		DataInput<RecordData, RelationalContext>,
-		DataOutput<RecordData>
+		DataInput<Row, RelationalContext>,
+		DataOutput<Row>
 {
 	abstract read(
 		ctx: RelationalContext,
-	): AsyncIterable<Resumable<RecordData, RelationalContext>>;
-	abstract write(items: RecordData[]): Promise<void>;
+	): AsyncIterable<Resumable<Row, RelationalContext>>;
+	abstract write(items: Row[]): Promise<void>;
 }
 
 // ── Utilities ───────────────────────────────────────────────────────

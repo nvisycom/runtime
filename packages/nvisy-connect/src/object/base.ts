@@ -1,4 +1,4 @@
-import type { ObjectData } from "@nvisy/core";
+import type { Blob } from "@nvisy/core";
 import type { DataInput, DataOutput, Resumable } from "#core/stream.js";
 import { Provider } from "#core/provider.js";
 
@@ -27,7 +27,7 @@ export interface ObjectContext {
  *
  * Extends {@link Provider} to store credentials and configuration, and
  * implements both {@link DataInput} and {@link DataOutput} for
- * {@link ObjectData}.
+ * {@link Blob}.
  *
  * Subclasses implement {@link connect}, {@link disconnect}, {@link read},
  * and {@link write} for their specific storage backend.
@@ -36,12 +36,12 @@ export abstract class ObjectStore<
 	TCred,
 	TConfig extends ObjectParams = ObjectParams,
 > extends Provider<TCred, TConfig>
-	implements DataInput<ObjectData, ObjectContext>, DataOutput<ObjectData>
+	implements DataInput<Blob, ObjectContext>, DataOutput<Blob>
 {
 	abstract read(
 		ctx: ObjectContext,
-	): AsyncIterable<Resumable<ObjectData, ObjectContext>>;
-	abstract write(items: ObjectData[]): Promise<void>;
+	): AsyncIterable<Resumable<Blob, ObjectContext>>;
+	abstract write(items: Blob[]): Promise<void>;
 }
 
 // ── Utilities ───────────────────────────────────────────────────────

@@ -9,31 +9,24 @@ import { Data } from "#data/base.js";
  *
  * @example
  * ```ts
- * const obj = new ObjectData({
- *   id: "doc-001",
- *   path: "uploads/report.pdf",
- *   data: Buffer.from(pdfBytes),
- *   contentType: "application/pdf",
- * });
+ * const obj = new Blob("uploads/report.pdf", Buffer.from(pdfBytes));
  * console.log(obj.size); // byte length
  * ```
  */
-export class ObjectData extends Data {
+export class Blob extends Data {
 	readonly #path: string;
 	readonly #data: Buffer;
 	readonly #contentType?: string | undefined;
 
-	constructor(fields: {
-		id: string;
-		path: string;
-		data: Buffer;
-		contentType?: string;
-		metadata?: Metadata;
-	}) {
-		super(fields.id, fields.metadata);
-		this.#path = fields.path;
-		this.#data = fields.data;
-		this.#contentType = fields.contentType;
+	constructor(
+		path: string,
+		data: Buffer,
+		options?: { id?: string; contentType?: string; metadata?: Metadata },
+	) {
+		super(options?.id, options?.metadata);
+		this.#path = path;
+		this.#data = data;
+		this.#contentType = options?.contentType;
 	}
 
 	/** Storage path or key (e.g. `"s3://bucket/file.pdf"`). */

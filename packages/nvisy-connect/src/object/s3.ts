@@ -1,4 +1,4 @@
-import type { ObjectData } from "@nvisy/core";
+import type { Blob } from "@nvisy/core";
 import type { Resumable } from "#core/stream.js";
 import { ObjectStore } from "#object/base.js";
 import type { ObjectContext } from "#object/base.js";
@@ -45,11 +45,11 @@ export class S3Connector extends ObjectStore<S3Credentials, S3Config> {
 
 	async *read(
 		_ctx: ObjectContext,
-	): AsyncIterable<Resumable<ObjectData, ObjectContext>> {
+	): AsyncIterable<Resumable<Blob, ObjectContext>> {
 		throw new Error("Not yet implemented");
 	}
 
-	async write(_items: ObjectData[]): Promise<void> {
+	async write(_items: Blob[]): Promise<void> {
 		throw new Error("Not yet implemented");
 	}
 }

@@ -14,8 +14,8 @@ export abstract class Data {
 	readonly #id: string;
 	readonly #metadata?: Metadata | undefined;
 
-	constructor(id: string, metadata?: Metadata) {
-		this.#id = id;
+	constructor(id?: string, metadata?: Metadata) {
+		this.#id = id ?? crypto.randomUUID();
 		this.#metadata = metadata;
 	}
 

@@ -10,26 +10,20 @@ import { Data } from "#data/base.js";
  *
  * @example
  * ```ts
- * const doc = new DocumentData({
- *   id: "doc-001",
- *   content: { title: "Quarterly Report", pages: [...] },
- *   contentType: "application/json",
- * });
+ * const doc = new Document({ title: "Quarterly Report", pages: [...] });
  * ```
  */
-export class DocumentData extends Data {
+export class Document extends Data {
 	readonly #content: JsonValue;
 	readonly #contentType?: string | undefined;
 
-	constructor(fields: {
-		id: string;
-		content: JsonValue;
-		contentType?: string;
-		metadata?: Metadata;
-	}) {
-		super(fields.id, fields.metadata);
-		this.#content = fields.content;
-		this.#contentType = fields.contentType;
+	constructor(
+		content: JsonValue,
+		options?: { id?: string; contentType?: string; metadata?: Metadata },
+	) {
+		super(options?.id, options?.metadata);
+		this.#content = content;
+		this.#contentType = options?.contentType;
 	}
 
 	/** Structured content of the document. */

@@ -1,4 +1,4 @@
-import type { RecordData } from "@nvisy/core";
+import type { Row } from "@nvisy/core";
 import type { Resumable } from "#core/stream.js";
 import { RelationalDatabase } from "#relational/base.js";
 import type { RelationalContext } from "#relational/base.js";
@@ -42,11 +42,11 @@ export class PostgresConnector extends RelationalDatabase<
 
 	async *read(
 		_ctx: RelationalContext,
-	): AsyncIterable<Resumable<RecordData, RelationalContext>> {
+	): AsyncIterable<Resumable<Row, RelationalContext>> {
 		throw new Error("Not yet implemented");
 	}
 
-	async write(_items: RecordData[]): Promise<void> {
+	async write(_items: Row[]): Promise<void> {
 		throw new Error("Not yet implemented");
 	}
 }

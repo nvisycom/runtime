@@ -1,4 +1,4 @@
-import type { EmbeddingData } from "@nvisy/core";
+import type { Embedding } from "@nvisy/core";
 
 // ── Abstract provider ───────────────────────────────────────────────
 
@@ -39,8 +39,8 @@ export abstract class EmbeddingProvider<TModel extends string = string> {
 	}
 
 	/** Generate an embedding for a single text. */
-	abstract embed(text: string): Promise<EmbeddingData>;
+	abstract embed(text: string): Promise<Embedding>;
 
 	/** Generate embeddings for a batch of texts. */
-	abstract embedBatch(texts: string[]): Promise<EmbeddingData[]>;
+	abstract embedBatch(texts: string[]): Promise<Embedding[]>;
 }

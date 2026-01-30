@@ -1,4 +1,4 @@
-import type { EmbeddingData } from "@nvisy/core";
+import type { Embedding } from "@nvisy/core";
 import type { DistanceMetric } from "#vector/base.js";
 import { VectorDatabase } from "#vector/base.js";
 
@@ -41,7 +41,7 @@ export class MilvusConnector extends VectorDatabase<
 		throw new Error("Not yet implemented");
 	}
 
-	async write(_items: EmbeddingData[]): Promise<void> {
+	async write(_items: Embedding[]): Promise<void> {
 		throw new Error("Not yet implemented");
 	}
 }

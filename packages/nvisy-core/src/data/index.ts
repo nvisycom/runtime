@@ -1,17 +1,13 @@
-import type { DocumentData } from "#data/document.js";
-import type { EmbeddingData } from "#data/embedding.js";
-import type { ObjectData } from "#data/object.js";
-import type { RecordData } from "#data/record.js";
+import type { Document } from "#data/document.js";
+import type { Embedding } from "#data/embedding.js";
+import type { Blob } from "#data/object.js";
+import type { Row } from "#data/record.js";
 
 export { Data } from "#data/base.js";
-export { DocumentData } from "#data/document.js";
-export { EmbeddingData } from "#data/embedding.js";
-export { ObjectData } from "#data/object.js";
-export { RecordData } from "#data/record.js";
+export { Document } from "#data/document.js";
+export { Embedding } from "#data/embedding.js";
+export { Blob } from "#data/object.js";
+export { Row } from "#data/record.js";
 
 /** Union of all concrete data types that can flow through the pipeline. */
-export type AnyDataValue =
-	| DocumentData
-	| EmbeddingData
-	| ObjectData
-	| RecordData;
+export type AnyData = Document | Embedding | Blob | Row;

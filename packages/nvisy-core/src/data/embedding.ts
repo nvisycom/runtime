@@ -10,18 +10,18 @@ import { Data } from "#data/base.js";
  *
  * @example
  * ```ts
- * const emb = new EmbeddingData([0.12, -0.34, 0.56]);
- * console.log(emb.dimensions); // 3
+ * const e = new Embedding([0.12, -0.34, 0.56]);
+ * console.log(e.dimensions); // 3
  * ```
  */
-export class EmbeddingData extends Data {
+export class Embedding extends Data {
 	readonly #vector: Float32Array;
 
 	constructor(
 		vector: Float32Array | number[],
 		options?: { id?: string; metadata?: Metadata },
 	) {
-		super(options?.id ?? crypto.randomUUID(), options?.metadata);
+		super(options?.id, options?.metadata);
 		this.#vector =
 			vector instanceof Float32Array ? vector : new Float32Array(vector);
 	}

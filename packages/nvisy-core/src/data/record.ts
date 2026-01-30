@@ -10,24 +10,20 @@ import { Data } from "#data/base.js";
  *
  * @example
  * ```ts
- * const row = new RecordData({
- *   id: "row-42",
- *   columns: { name: "Alice", age: 30, active: true },
- * });
+ * const row = new Row({ name: "Alice", age: 30, active: true });
  * row.get("name"); // "Alice"
  * row.get("missing"); // undefined
  * ```
  */
-export class RecordData extends Data {
+export class Row extends Data {
 	readonly #columns: Readonly<Record<string, JsonValue>>;
 
-	constructor(fields: {
-		id: string;
-		columns: Record<string, JsonValue>;
-		metadata?: Metadata;
-	}) {
-		super(fields.id, fields.metadata);
-		this.#columns = fields.columns;
+	constructor(
+		columns: Record<string, JsonValue>,
+		options?: { id?: string; metadata?: Metadata },
+	) {
+		super(options?.id, options?.metadata);
+		this.#columns = columns;
 	}
 
 	/** Column name → value mapping. */

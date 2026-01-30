@@ -1,6 +1,6 @@
-import type { AnyDataValue } from "@nvisy/core";
+import type { AnyData } from "@nvisy/core";
 
 /** Classifies the input into one of the provided labels. */
-export function classify(_input: AnyDataValue, _labels: string[]): never {
+export function classify(_input: AnyData, _labels: string[]): never {
 	throw new Error("Not yet implemented");
 }

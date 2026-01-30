@@ -1,10 +1,10 @@
-import type { AnyDataValue } from "@nvisy/core";
+import type { AnyData } from "@nvisy/core";
 
 export class ExecutionContext {
-	private _current: AnyDataValue[] = [];
+	private _current: AnyData[] = [];
 	private _itemsProcessed = 0;
 
-	get current(): AnyDataValue[] {
+	get current(): AnyData[] {
 		return this._current;
 	}
 
@@ -12,11 +12,11 @@ export class ExecutionContext {
 		return this._itemsProcessed;
 	}
 
-	setCurrent(data: AnyDataValue[]): void {
+	setCurrent(data: AnyData[]): void {
 		this._current = data;
 	}
 
-	takeCurrent(): AnyDataValue[] {
+	takeCurrent(): AnyData[] {
 		const d = this._current;
 		this._current = [];
 		return d;

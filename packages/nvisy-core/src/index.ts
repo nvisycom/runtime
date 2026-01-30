@@ -1,12 +1,12 @@
 // Data
 export {
 	Data,
-	DocumentData,
-	EmbeddingData,
-	ObjectData,
-	RecordData,
+	Document,
+	Embedding,
+	Blob,
+	Row,
 } from "#data/index.js";
-export type { AnyDataValue } from "#data/index.js";
+export type { AnyData } from "#data/index.js";
 
 // Errors
 export { NvisyError } from "#errors/index.js";
