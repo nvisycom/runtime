@@ -1,13 +1,51 @@
 // Base
+export type {
+	CompletionProvider,
+} from "./base/index.js";
+export type { ApiCredentials } from "./base/index.js";
+export type {
+	EmbeddingBatchResult,
+	EmbeddingProvider,
+	EmbeddingVector,
+} from "./base/index.js";
+export type {
+	CompletionOptions,
+	CompletionResult,
+	Message,
+	MessageRole,
+} from "./base/index.js";
+export { normalizeL2, ProcessorRegistry, RateLimiter, countTokens } from "./base/index.js";
 export type { Process } from "./base/index.js";
-export { ProcessorRegistry } from "./base/index.js";
+// Completion
 export {
-	CharacterChunker,
-	ChunkProcessor,
-	PageChunker,
-	SectionChunker,
-	SimilarityChunker,
-} from "./chunk/index.js";
+	AnthropicCompletion,
+	CohereCompletion,
+	createCompletionProvider,
+	GoogleCompletion,
+	OpenAICompletion,
+} from "./completion/index.js";
+export type {
+	AnthropicCompletionModel,
+	CohereCompletionModel,
+	CompletionModel,
+	GoogleCompletionModel,
+	OpenAICompletionModel,
+} from "./completion/index.js";
+// Embedding
+export {
+	CohereEmbedding,
+	createEmbeddingProvider,
+	EmbeddingProcessor,
+	GoogleEmbedding,
+	OpenAIEmbedding,
+} from "./embedding/index.js";
+export type {
+	CohereEmbeddingModel,
+	EmbeddingModel,
+	GoogleEmbeddingModel,
+	OpenAIEmbeddingModel,
+} from "./embedding/index.js";
+// Config
 export type {
 	AnalyzeTask,
 	ChunkConfig,
@@ -24,7 +62,6 @@ export type {
 	SwitchCondition,
 	TextConvertTask,
 } from "./config/index.js";
-// Config
 export {
 	DeriveTask,
 	FileCategory,
@@ -33,14 +70,24 @@ export {
 	TableConvertTask,
 	TableEnrichTask,
 } from "./config/index.js";
+// Chunk
+export {
+	CharacterChunker,
+	ChunkProcessor,
+	PageChunker,
+	SectionChunker,
+	SimilarityChunker,
+} from "./chunk/index.js";
+// Convert
 export { ConvertProcessor } from "./convert/index.js";
+// Derive
 export {
 	DeriveProcessor,
 	generateChunkContext,
 	generateTitle,
 	summarize,
 } from "./derive/index.js";
-export { EmbeddingProcessor } from "./embedding/index.js";
+// Enrich
 export {
 	describeImage,
 	describeImageDetailed,
@@ -56,6 +103,7 @@ export {
 	TABLE_COLUMN_DESCRIPTIONS_PROMPT,
 	TABLE_DESCRIPTION_PROMPT,
 } from "./enrich/index.js";
+// Extract
 export {
 	analyzeSentiment,
 	classify,
@@ -65,8 +113,9 @@ export {
 	extractRelationships,
 	extractStructured,
 } from "./extract/index.js";
+// Metadata
 export { MetadataProcessor } from "./metadata/index.js";
-// Processors
+// Partition
 export {
 	AutoPartitioner,
 	DocxParser,

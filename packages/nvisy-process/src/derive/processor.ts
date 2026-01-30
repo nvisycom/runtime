@@ -4,11 +4,7 @@ import type { DeriveConfig } from "../config/derive.js";
 
 /** Derives new data from existing elements (summaries, titles, context). */
 export class DeriveProcessor implements Process {
-	private readonly config: DeriveConfig;
-
-	constructor(config: DeriveConfig) {
-		this.config = config;
-	}
+	constructor(_config: DeriveConfig) {}
 
 	async process(_input: AnyDataValue[]): Promise<AnyDataValue[]> {
 		throw new Error("Not yet implemented");

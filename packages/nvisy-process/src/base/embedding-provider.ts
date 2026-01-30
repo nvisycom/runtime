@@ -1,4 +1,4 @@
-import type { EmbeddingModel } from "../models/embedding.js";
+import type { EmbeddingModel } from "../embedding/models.js";
 
 export interface EmbeddingVector {
 	vector: number[];

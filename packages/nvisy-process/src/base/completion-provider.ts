@@ -1,4 +1,4 @@
-import type { CompletionModel } from "../models/completion.js";
+import type { CompletionModel } from "../completion/models.js";
 import type {
 	CompletionOptions,
 	CompletionResult,

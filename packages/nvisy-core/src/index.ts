@@ -6,7 +6,7 @@ export {
 	ObjectData,
 	RecordData,
 } from "./data/index.js";
-export type { JsonValue, Metadata } from "./data/index.js";
+export type { AnyDataValue, JsonValue, Metadata } from "./data/index.js";
 
 // Errors
 export { NvisyError } from "./errors/index.js";

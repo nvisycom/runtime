@@ -2,15 +2,13 @@ import type {
 	EmbeddingBatchResult,
 	EmbeddingProvider,
 	EmbeddingVector,
-} from "../interfaces/embedding.js";
-import type { EmbeddingModel } from "../models/embedding.js";
+} from "../base/embedding-provider.js";
+import type { EmbeddingModel } from "./models.js";
 
-export class GoogleEmbedding implements EmbeddingProvider {
+export class OpenAIEmbedding implements EmbeddingProvider {
 	readonly model: EmbeddingModel;
-	private readonly apiKey: string;
 
-	constructor(apiKey: string, model: EmbeddingModel) {
-		this.apiKey = apiKey;
+	constructor(_apiKey: string, model: EmbeddingModel) {
 		this.model = model;
 	}
 

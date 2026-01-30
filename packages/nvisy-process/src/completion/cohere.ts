@@ -1,17 +1,15 @@
-import type { CompletionProvider } from "../interfaces/completion.js";
+import type { CompletionProvider } from "../base/completion-provider.js";
 import type {
 	CompletionOptions,
 	CompletionResult,
 	Message,
-} from "../interfaces/message.js";
-import type { CompletionModel } from "../models/completion.js";
+} from "../base/message.js";
+import type { CompletionModel } from "./models.js";
 
-export class GoogleCompletion implements CompletionProvider {
+export class CohereCompletion implements CompletionProvider {
 	readonly model: CompletionModel;
-	private readonly apiKey: string;
 
-	constructor(apiKey: string, model: CompletionModel) {
-		this.apiKey = apiKey;
+	constructor(_apiKey: string, model: CompletionModel) {
 		this.model = model;
 	}
 

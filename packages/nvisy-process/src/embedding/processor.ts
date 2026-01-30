@@ -4,11 +4,7 @@ import type { EmbeddingConfig } from "../config/embedding.js";
 
 /** Generates embeddings for input data, delegating to EmbeddingProvider. */
 export class EmbeddingProcessor implements Process {
-	private readonly config: EmbeddingConfig;
-
-	constructor(config: EmbeddingConfig) {
-		this.config = config;
-	}
+	constructor(_config: EmbeddingConfig) {}
 
 	async process(_input: AnyDataValue[]): Promise<AnyDataValue[]> {
 		throw new Error("Not yet implemented");

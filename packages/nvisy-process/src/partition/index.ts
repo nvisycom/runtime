@@ -1,3 +1,13 @@
-export * from "./parsers/index.js";
+export { AutoPartitioner } from "./auto.js";
+export { DocxParser } from "./docx.js";
+export { FastPartitioner } from "./fast.js";
+export { HtmlParser } from "./html.js";
+export { ImageParser } from "./image.js";
+export { MarkdownParser } from "./markdown.js";
+export { PdfParser } from "./pdf.js";
+export { PlaintextParser } from "./plaintext.js";
+export { PptxParser } from "./pptx.js";
 export { PartitionProcessor } from "./processor.js";
-export * from "./strategies/index.js";
+export { SlowPartitioner } from "./slow.js";
+export { VlmPartitioner } from "./vlm.js";
+export { XlsxParser } from "./xlsx.js";

@@ -1,4 +1,4 @@
-import type { EmbeddingModel } from "@nvisy/langchain";
+import type { EmbeddingModel } from "../embedding/models.js";
 
 export interface EmbeddingConfig {
 	model: EmbeddingModel;

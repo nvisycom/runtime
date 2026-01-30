@@ -4,11 +4,7 @@ import type { ChunkConfig } from "../config/chunk.js";
 
 /** Chunks data into smaller segments using the configured strategy. */
 export class ChunkProcessor implements Process {
-	private readonly config: ChunkConfig;
-
-	constructor(config: ChunkConfig) {
-		this.config = config;
-	}
+	constructor(_config: ChunkConfig) {}
 
 	async process(_input: AnyDataValue[]): Promise<AnyDataValue[]> {
 		throw new Error("Not yet implemented");
