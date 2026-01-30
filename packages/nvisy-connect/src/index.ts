@@ -1,20 +1,19 @@
 // Core
-export type {
-	DataInput,
-	DataOutput,
-	Resumable,
-} from "#core/index.js";
-export { Provider } from "#core/index.js";
+export type { DataInput, DataOutput, ProviderConfig } from "#core/index.js";
+export { Resumable } from "#core/index.js";
 
 // Object connectors
 export {
-	ObjectStore,
+	ObjectStorage,
 	detectContentType,
+	makeObjectLayer,
 	normalizePath,
 } from "#object/index.js";
 export type {
-	ObjectParams,
 	ObjectContext,
+	ObjectError,
+	ObjectParams,
+	ObjectStore,
 	DropboxConfig,
 	DropboxCredentials,
 	GoogleDriveConfig,
@@ -25,15 +24,17 @@ export type {
 	S3Credentials,
 } from "#object/index.js";
 export {
-	DropboxConnector,
-	GoogleDriveConnector,
-	OneDriveConnector,
-	S3Connector,
+	DropboxLayer,
+	GoogleDriveLayer,
+	OneDriveLayer,
+	S3Layer,
 } from "#object/index.js";
 
 // Relational connectors
-export { RelationalDatabase } from "#relational/index.js";
+export { RelationalDb, makeRelationalLayer } from "#relational/index.js";
 export type {
+	RelationalDatabase,
+	RelationalError,
 	RelationalParams,
 	RelationalContext,
 	KeysetPage,
@@ -42,13 +43,14 @@ export type {
 	PostgresConfig,
 	PostgresCredentials,
 } from "#relational/index.js";
-export { MySQLConnector, PostgresConnector } from "#relational/index.js";
+export { MySQLLayer, PostgresLayer } from "#relational/index.js";
 
 // Vector connectors
-export { DistanceMetric, VectorDatabase } from "#vector/index.js";
+export { DistanceMetric, VectorDb, makeVectorLayer } from "#vector/index.js";
 export type {
+	VectorDatabase,
+	VectorError,
 	VectorParams,
-	VectorContext,
 	MilvusConfig,
 	MilvusCredentials,
 	PgVectorConfig,
@@ -57,18 +59,14 @@ export type {
 	PineconeCredentials,
 	QdrantConfig,
 	QdrantCredentials,
-	ScoredResult,
-	SearchOptions,
-	SearchResult,
 	WeaviateConfig,
 	WeaviateCredentials,
 } from "#vector/index.js";
 export {
-	MilvusConnector,
-	PgVectorConnector,
-	PineconeConnector,
-	QdrantConnector,
-	semanticSearch,
+	MilvusLayer,
+	PgVectorLayer,
+	PineconeLayer,
+	QdrantLayer,
+	WeaviateLayer,
 	setupSchema,
-	WeaviateConnector,
 } from "#vector/index.js";

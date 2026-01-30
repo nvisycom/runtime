@@ -1,7 +1,7 @@
-import type { Blob } from "@nvisy/core";
-import type { Resumable } from "#core/stream.js";
-import { ObjectStore } from "#object/base.js";
-import type { ObjectContext } from "#object/base.js";
+import { Effect, Layer, Stream } from "effect";
+import { ConnectionError, StorageError } from "@nvisy/core";
+import { ObjectStorage } from "#object/base.js";
+import type { ObjectStore } from "#object/base.js";
 
 /** Credentials for connecting to Amazon S3 (or S3-compatible stores). */
 export interface S3Credentials {
@@ -23,33 +23,43 @@ export interface S3Config {
 }
 
 /**
- * Connector for Amazon S3 and S3-compatible object stores.
+ * Layer providing an {@link ObjectStore} backed by Amazon S3.
  *
  * @example
  * ```ts
- * const s3 = new S3Connector(
+ * const layer = S3Layer(
  *   { accessKeyId: "...", secretAccessKey: "...", region: "us-east-1" },
  *   { bucket: "my-bucket" },
  * );
- * await s3.connect();
  * ```
  */
-export class S3Connector extends ObjectStore<S3Credentials, S3Config> {
-	async connect(): Promise<void> {
-		throw new Error("Not yet implemented");
-	}
-
-	async disconnect(): Promise<void> {
-		throw new Error("Not yet implemented");
-	}
-
-	async *read(
-		_ctx: ObjectContext,
-	): AsyncIterable<Resumable<Blob, ObjectContext>> {
-		throw new Error("Not yet implemented");
-	}
-
-	async write(_items: Blob[]): Promise<void> {
-		throw new Error("Not yet implemented");
-	}
-}
+export const S3Layer = (
+	_creds: S3Credentials,
+	_params: S3Config,
+): Layer.Layer<ObjectStorage, ConnectionError> =>
+	Layer.scoped(
+		ObjectStorage,
+		Effect.acquireRelease(
+			Effect.gen(function* () {
+				// TODO: create S3 client
+				const service: ObjectStore = {
+					read: (_ctx) =>
+						Stream.fail(
+							new StorageError({
+								message: "Not yet implemented",
+								context: { source: "s3" },
+							}),
+						),
+					write: (_items) =>
+						Effect.fail(
+							new StorageError({
+								message: "Not yet implemented",
+								context: { source: "s3" },
+							}),
+						),
+				};
+				return service;
+			}),
+			(_service) => Effect.void,
+		),
+	);

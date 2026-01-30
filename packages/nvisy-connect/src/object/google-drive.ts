@@ -1,7 +1,7 @@
-import type { Blob } from "@nvisy/core";
-import type { Resumable } from "#core/stream.js";
-import { ObjectStore } from "#object/base.js";
-import type { ObjectContext } from "#object/base.js";
+import { Effect, Layer, Stream } from "effect";
+import { ConnectionError, StorageError } from "@nvisy/core";
+import { ObjectStorage } from "#object/base.js";
+import type { ObjectStore } from "#object/base.js";
 
 /** Credentials for connecting to Google Drive. */
 export interface GoogleDriveCredentials {
@@ -17,36 +17,43 @@ export interface GoogleDriveConfig {
 }
 
 /**
- * Connector for Google Drive file storage.
+ * Layer providing an {@link ObjectStore} backed by Google Drive.
  *
  * @example
  * ```ts
- * const drive = new GoogleDriveConnector(
+ * const layer = GoogleDriveLayer(
  *   { accessToken: "..." },
  *   { bucket: "my-drive-folder" },
  * );
- * await drive.connect();
  * ```
  */
-export class GoogleDriveConnector extends ObjectStore<
-	GoogleDriveCredentials,
-	GoogleDriveConfig
-> {
-	async connect(): Promise<void> {
-		throw new Error("Not yet implemented");
-	}
-
-	async disconnect(): Promise<void> {
-		throw new Error("Not yet implemented");
-	}
-
-	async *read(
-		_ctx: ObjectContext,
-	): AsyncIterable<Resumable<Blob, ObjectContext>> {
-		throw new Error("Not yet implemented");
-	}
-
-	async write(_items: Blob[]): Promise<void> {
-		throw new Error("Not yet implemented");
-	}
-}
+export const GoogleDriveLayer = (
+	_creds: GoogleDriveCredentials,
+	_params: GoogleDriveConfig,
+): Layer.Layer<ObjectStorage, ConnectionError> =>
+	Layer.scoped(
+		ObjectStorage,
+		Effect.acquireRelease(
+			Effect.gen(function* () {
+				// TODO: create Google Drive client
+				const service: ObjectStore = {
+					read: (_ctx) =>
+						Stream.fail(
+							new StorageError({
+								message: "Not yet implemented",
+								context: { source: "google-drive" },
+							}),
+						),
+					write: (_items) =>
+						Effect.fail(
+							new StorageError({
+								message: "Not yet implemented",
+								context: { source: "google-drive" },
+							}),
+						),
+				};
+				return service;
+			}),
+			(_service) => Effect.void,
+		),
+	);

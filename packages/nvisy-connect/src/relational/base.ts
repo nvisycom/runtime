@@ -1,6 +1,8 @@
+import { Context, Effect, Layer } from "effect";
+import type { Scope } from "effect";
 import type { Row } from "@nvisy/core";
-import type { DataInput, DataOutput, Resumable } from "#core/stream.js";
-import { Provider } from "#core/provider.js";
+import type { ConnectionError, StorageError } from "@nvisy/core";
+import type { DataInput, DataOutput } from "#core/stream.js";
 
 // ── Relational params ───────────────────────────────────────────────
 
@@ -20,29 +22,49 @@ export interface RelationalContext {
 	cursor?: string;
 }
 
-// ── Base class ──────────────────────────────────────────────────────
+// ── Error type ──────────────────────────────────────────────────────
+
+/** Errors that may occur during relational operations. */
+export type RelationalError = ConnectionError | StorageError;
+
+// ── Service interface ───────────────────────────────────────────────
 
 /**
- * Abstract base class for relational database connectors.
+ * Service interface for relational database connectors.
  *
- * Extends {@link Provider} to store credentials and configuration.
- * Subclasses implement read/write operations for a specific database
- * engine (PostgreSQL, MySQL, etc.). Reads use keyset pagination via
- * {@link RelationalContext}.
+ * Relational databases support both reading (via keyset pagination) and
+ * writing. The connect/disconnect lifecycle is managed by the Layer.
  */
-export abstract class RelationalDatabase<
-	TCred,
-	TConfig extends RelationalParams = RelationalParams,
-> extends Provider<TCred, TConfig>
-	implements
-		DataInput<Row, RelationalContext>,
-		DataOutput<Row>
-{
-	abstract read(
-		ctx: RelationalContext,
-	): AsyncIterable<Resumable<Row, RelationalContext>>;
-	abstract write(items: Row[]): Promise<void>;
-}
+export interface RelationalDatabase
+	extends
+		DataInput<Row, RelationalContext, RelationalError>,
+		DataOutput<Row, RelationalError> {}
+
+// ── Context.Tag ─────────────────────────────────────────────────────
+
+/** Effect service tag for relational database access. */
+export class RelationalDb extends Context.Tag("@nvisy/connect/RelationalDb")<
+	RelationalDb,
+	RelationalDatabase
+>() {}
+
+// ── Layer factory ───────────────────────────────────────────────────
+
+/**
+ * Create a Layer that provides a {@link RelationalDatabase} service.
+ *
+ * The `connect` function should use `Effect.acquireRelease` to pair
+ * connection establishment with teardown.
+ */
+export const makeRelationalLayer = <TCred>(config: {
+	readonly creds: TCred;
+	readonly params: RelationalParams;
+	readonly connect: (
+		creds: TCred,
+		params: RelationalParams,
+	) => Effect.Effect<RelationalDatabase, ConnectionError, Scope.Scope>;
+}): Layer.Layer<RelationalDb, ConnectionError> =>
+	Layer.scoped(RelationalDb, config.connect(config.creds, config.params));
 
 // ── Utilities ───────────────────────────────────────────────────────
 

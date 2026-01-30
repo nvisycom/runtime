@@ -1,6 +1,10 @@
+import { Effect, Layer } from "effect";
+import { Milvus } from "@langchain/community/vectorstores/milvus";
+import { ConnectionError, StorageError } from "@nvisy/core";
 import type { Embedding } from "@nvisy/core";
-import type { DistanceMetric } from "#vector/base.js";
-import { VectorDatabase } from "#vector/base.js";
+import { VectorDb } from "#vector/base.js";
+import type { VectorDatabase } from "#vector/base.js";
+import { NoopEmbeddings, toVectorsAndDocs } from "#vector/langchain.js";
 
 /** Credentials for connecting to a Milvus instance. */
 export interface MilvusCredentials {
@@ -13,35 +17,73 @@ export interface MilvusCredentials {
 /** Milvus-specific configuration. */
 export interface MilvusConfig {
 	collection: string;
-	dimensions?: number;
-	distanceMetric?: DistanceMetric;
 }
 
 /**
- * Connector for the Milvus vector database.
+ * Layer providing a {@link VectorDatabase} backed by Milvus.
  *
  * @example
  * ```ts
- * const milvus = new MilvusConnector(
+ * const layer = MilvusLayer(
  *   { address: "localhost:19530" },
  *   { collection: "embeddings" },
  * );
- * await milvus.connect();
  * ```
  */
-export class MilvusConnector extends VectorDatabase<
-	MilvusCredentials,
-	MilvusConfig
-> {
-	async connect(): Promise<void> {
-		throw new Error("Not yet implemented");
-	}
+export const MilvusLayer = (
+	creds: MilvusCredentials,
+	params: MilvusConfig,
+): Layer.Layer<VectorDb, ConnectionError> =>
+	Layer.scoped(
+		VectorDb,
+		Effect.gen(function* () {
+			const store = yield* Effect.acquireRelease(
+				Effect.tryPromise({
+					try: () =>
+						Milvus.fromExistingCollection(new NoopEmbeddings(), {
+							url: creds.address,
+							collectionName: params.collection,
+							...(creds.token !== undefined && {
+								password: creds.token,
+							}),
+						}),
+					catch: (error) =>
+						new ConnectionError({
+							message:
+								error instanceof Error
+									? error.message
+									: String(error),
+							context: { source: "milvus" },
+							cause:
+								error instanceof Error ? error : undefined,
+						}),
+				}),
+				() => Effect.void,
+			);
 
-	async disconnect(): Promise<void> {
-		throw new Error("Not yet implemented");
-	}
+			const service: VectorDatabase = {
+				write: (items: ReadonlyArray<Embedding>) =>
+					Effect.tryPromise({
+						try: async () => {
+							const { vectors, documents, ids } =
+								toVectorsAndDocs(items);
+							await store.addVectors(vectors, documents, { ids });
+						},
+						catch: (error) =>
+							new StorageError({
+								message:
+									error instanceof Error
+										? error.message
+										: String(error),
+								context: { source: "milvus" },
+								cause:
+									error instanceof Error
+										? error
+										: undefined,
+							}),
+					}),
+			};
 
-	async write(_items: Embedding[]): Promise<void> {
-		throw new Error("Not yet implemented");
-	}
-}
+			return service;
+		}),
+	);

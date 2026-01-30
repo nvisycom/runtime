@@ -25,7 +25,13 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@nvisy/core": "*"
+		"@langchain/community": "^1.1.9",
+		"@langchain/core": "^1.1.17",
+		"@langchain/pinecone": "^1.0.1",
+		"@langchain/qdrant": "^1.0.1",
+		"@langchain/weaviate": "^1.0.1",
+		"@nvisy/core": "*",
+		"effect": "^3.19.14"
 	},
 	"engines": {
 		"node": ">=22.0.0"

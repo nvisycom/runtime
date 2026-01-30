@@ -1,7 +1,7 @@
-import type { Blob } from "@nvisy/core";
-import type { Resumable } from "#core/stream.js";
-import { ObjectStore } from "#object/base.js";
-import type { ObjectContext } from "#object/base.js";
+import { Effect, Layer, Stream } from "effect";
+import { ConnectionError, StorageError } from "@nvisy/core";
+import { ObjectStorage } from "#object/base.js";
+import type { ObjectStore } from "#object/base.js";
 
 /** Credentials for connecting to Dropbox. */
 export interface DropboxCredentials {
@@ -17,36 +17,43 @@ export interface DropboxConfig {
 }
 
 /**
- * Connector for Dropbox file storage.
+ * Layer providing an {@link ObjectStore} backed by Dropbox.
  *
  * @example
  * ```ts
- * const dropbox = new DropboxConnector(
+ * const layer = DropboxLayer(
  *   { accessToken: "..." },
  *   { bucket: "my-folder" },
  * );
- * await dropbox.connect();
  * ```
  */
-export class DropboxConnector extends ObjectStore<
-	DropboxCredentials,
-	DropboxConfig
-> {
-	async connect(): Promise<void> {
-		throw new Error("Not yet implemented");
-	}
-
-	async disconnect(): Promise<void> {
-		throw new Error("Not yet implemented");
-	}
-
-	async *read(
-		_ctx: ObjectContext,
-	): AsyncIterable<Resumable<Blob, ObjectContext>> {
-		throw new Error("Not yet implemented");
-	}
-
-	async write(_items: Blob[]): Promise<void> {
-		throw new Error("Not yet implemented");
-	}
-}
+export const DropboxLayer = (
+	_creds: DropboxCredentials,
+	_params: DropboxConfig,
+): Layer.Layer<ObjectStorage, ConnectionError> =>
+	Layer.scoped(
+		ObjectStorage,
+		Effect.acquireRelease(
+			Effect.gen(function* () {
+				// TODO: create Dropbox client
+				const service: ObjectStore = {
+					read: (_ctx) =>
+						Stream.fail(
+							new StorageError({
+								message: "Not yet implemented",
+								context: { source: "dropbox" },
+							}),
+						),
+					write: (_items) =>
+						Effect.fail(
+							new StorageError({
+								message: "Not yet implemented",
+								context: { source: "dropbox" },
+							}),
+						),
+				};
+				return service;
+			}),
+			(_service) => Effect.void,
+		),
+	);

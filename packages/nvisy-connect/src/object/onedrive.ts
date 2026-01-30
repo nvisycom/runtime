@@ -1,7 +1,7 @@
-import type { Blob } from "@nvisy/core";
-import type { Resumable } from "#core/stream.js";
-import { ObjectStore } from "#object/base.js";
-import type { ObjectContext } from "#object/base.js";
+import { Effect, Layer, Stream } from "effect";
+import { ConnectionError, StorageError } from "@nvisy/core";
+import { ObjectStorage } from "#object/base.js";
+import type { ObjectStore } from "#object/base.js";
 
 /** Credentials for connecting to OneDrive. */
 export interface OneDriveCredentials {
@@ -17,36 +17,43 @@ export interface OneDriveConfig {
 }
 
 /**
- * Connector for Microsoft OneDrive file storage.
+ * Layer providing an {@link ObjectStore} backed by Microsoft OneDrive.
  *
  * @example
  * ```ts
- * const onedrive = new OneDriveConnector(
+ * const layer = OneDriveLayer(
  *   { accessToken: "..." },
  *   { bucket: "my-folder" },
  * );
- * await onedrive.connect();
  * ```
  */
-export class OneDriveConnector extends ObjectStore<
-	OneDriveCredentials,
-	OneDriveConfig
-> {
-	async connect(): Promise<void> {
-		throw new Error("Not yet implemented");
-	}
-
-	async disconnect(): Promise<void> {
-		throw new Error("Not yet implemented");
-	}
-
-	async *read(
-		_ctx: ObjectContext,
-	): AsyncIterable<Resumable<Blob, ObjectContext>> {
-		throw new Error("Not yet implemented");
-	}
-
-	async write(_items: Blob[]): Promise<void> {
-		throw new Error("Not yet implemented");
-	}
-}
+export const OneDriveLayer = (
+	_creds: OneDriveCredentials,
+	_params: OneDriveConfig,
+): Layer.Layer<ObjectStorage, ConnectionError> =>
+	Layer.scoped(
+		ObjectStorage,
+		Effect.acquireRelease(
+			Effect.gen(function* () {
+				// TODO: create OneDrive client
+				const service: ObjectStore = {
+					read: (_ctx) =>
+						Stream.fail(
+							new StorageError({
+								message: "Not yet implemented",
+								context: { source: "onedrive" },
+							}),
+						),
+					write: (_items) =>
+						Effect.fail(
+							new StorageError({
+								message: "Not yet implemented",
+								context: { source: "onedrive" },
+							}),
+						),
+				};
+				return service;
+			}),
+			(_service) => Effect.void,
+		),
+	);

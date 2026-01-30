@@ -1,6 +1,8 @@
+import { Context, Effect, Layer } from "effect";
+import type { Scope } from "effect";
 import type { Blob } from "@nvisy/core";
-import type { DataInput, DataOutput, Resumable } from "#core/stream.js";
-import { Provider } from "#core/provider.js";
+import type { ConnectionError, StorageError } from "@nvisy/core";
+import type { DataInput, DataOutput } from "#core/stream.js";
 
 // ── Object store params ─────────────────────────────────────────────
 
@@ -20,29 +22,49 @@ export interface ObjectContext {
 	cursor?: string;
 }
 
-// ── Base class ──────────────────────────────────────────────────────
+// ── Error type ──────────────────────────────────────────────────────
+
+/** Errors that may occur during object storage operations. */
+export type ObjectError = ConnectionError | StorageError;
+
+// ── Service interface ───────────────────────────────────────────────
 
 /**
- * Abstract base class for object storage connectors (S3, GCS, Dropbox, etc.).
+ * Service interface for object storage connectors (S3, GCS, Dropbox, etc.).
  *
- * Extends {@link Provider} to store credentials and configuration, and
- * implements both {@link DataInput} and {@link DataOutput} for
- * {@link Blob}.
- *
- * Subclasses implement {@link connect}, {@link disconnect}, {@link read},
- * and {@link write} for their specific storage backend.
+ * Object stores support both reading and writing blobs. The connect/disconnect
+ * lifecycle is managed by the Layer.
  */
-export abstract class ObjectStore<
-	TCred,
-	TConfig extends ObjectParams = ObjectParams,
-> extends Provider<TCred, TConfig>
-	implements DataInput<Blob, ObjectContext>, DataOutput<Blob>
-{
-	abstract read(
-		ctx: ObjectContext,
-	): AsyncIterable<Resumable<Blob, ObjectContext>>;
-	abstract write(items: Blob[]): Promise<void>;
-}
+export interface ObjectStore
+	extends
+		DataInput<Blob, ObjectContext, ObjectError>,
+		DataOutput<Blob, ObjectError> {}
+
+// ── Context.Tag ─────────────────────────────────────────────────────
+
+/** Effect service tag for object storage access. */
+export class ObjectStorage extends Context.Tag("@nvisy/connect/ObjectStorage")<
+	ObjectStorage,
+	ObjectStore
+>() {}
+
+// ── Layer factory ───────────────────────────────────────────────────
+
+/**
+ * Create a Layer that provides an {@link ObjectStore} service.
+ *
+ * The `connect` function should use `Effect.acquireRelease` to pair
+ * connection establishment with teardown.
+ */
+export const makeObjectLayer = <TCred>(config: {
+	readonly creds: TCred;
+	readonly params: ObjectParams;
+	readonly connect: (
+		creds: TCred,
+		params: ObjectParams,
+	) => Effect.Effect<ObjectStore, ConnectionError, Scope.Scope>;
+}): Layer.Layer<ObjectStorage, ConnectionError> =>
+	Layer.scoped(ObjectStorage, config.connect(config.creds, config.params));
 
 // ── Utilities ───────────────────────────────────────────────────────
 
@@ -51,13 +73,6 @@ export abstract class ObjectStore<
  *
  * @param path - File path or object key.
  * @returns Best-guess MIME type, defaults to `"application/octet-stream"`.
- *
- * @example
- * ```ts
- * detectContentType("report.pdf"); // "application/pdf"
- * detectContentType("data.csv");   // "text/csv"
- * detectContentType("unknown");    // "application/octet-stream"
- * ```
  */
 export function detectContentType(path: string): string {
 	const ext = path.split(".").pop()?.toLowerCase();
@@ -86,11 +101,6 @@ export function detectContentType(path: string): string {
  *
  * @param path - Raw path string.
  * @returns Cleaned path.
- *
- * @example
- * ```ts
- * normalizePath("//uploads///file.pdf/"); // "uploads/file.pdf"
- * ```
  */
 export function normalizePath(path: string): string {
 	return path.replace(/\/+/g, "/").replace(/^\//, "").replace(/\/$/, "");

@@ -1,7 +1,7 @@
-import type { Row } from "@nvisy/core";
-import type { Resumable } from "#core/stream.js";
-import { RelationalDatabase } from "#relational/base.js";
-import type { RelationalContext } from "#relational/base.js";
+import { Effect, Layer, Stream } from "effect";
+import { ConnectionError, StorageError } from "@nvisy/core";
+import { RelationalDb } from "#relational/base.js";
+import type { RelationalDatabase } from "#relational/base.js";
 
 /** Credentials for connecting to PostgreSQL. */
 export interface PostgresCredentials {
@@ -17,36 +17,43 @@ export interface PostgresConfig {
 }
 
 /**
- * Connector for PostgreSQL relational databases.
+ * Layer providing a {@link RelationalDatabase} backed by PostgreSQL.
  *
  * @example
  * ```ts
- * const pg = new PostgresConnector(
+ * const layer = PostgresLayer(
  *   { connectionString: "postgresql://..." },
  *   { table: "documents", schema: "public" },
  * );
- * await pg.connect();
  * ```
  */
-export class PostgresConnector extends RelationalDatabase<
-	PostgresCredentials,
-	PostgresConfig
-> {
-	async connect(): Promise<void> {
-		throw new Error("Not yet implemented");
-	}
-
-	async disconnect(): Promise<void> {
-		throw new Error("Not yet implemented");
-	}
-
-	async *read(
-		_ctx: RelationalContext,
-	): AsyncIterable<Resumable<Row, RelationalContext>> {
-		throw new Error("Not yet implemented");
-	}
-
-	async write(_items: Row[]): Promise<void> {
-		throw new Error("Not yet implemented");
-	}
-}
+export const PostgresLayer = (
+	_creds: PostgresCredentials,
+	_params: PostgresConfig,
+): Layer.Layer<RelationalDb, ConnectionError> =>
+	Layer.scoped(
+		RelationalDb,
+		Effect.acquireRelease(
+			Effect.gen(function* () {
+				// TODO: establish pg connection pool
+				const service: RelationalDatabase = {
+					read: (_ctx) =>
+						Stream.fail(
+							new StorageError({
+								message: "Not yet implemented",
+								context: { source: "postgres" },
+							}),
+						),
+					write: (_items) =>
+						Effect.fail(
+							new StorageError({
+								message: "Not yet implemented",
+								context: { source: "postgres" },
+							}),
+						),
+				};
+				return service;
+			}),
+			(_service) => Effect.void,
+		),
+	);

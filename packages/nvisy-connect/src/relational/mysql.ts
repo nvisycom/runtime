@@ -1,7 +1,7 @@
-import type { Row } from "@nvisy/core";
-import type { Resumable } from "#core/stream.js";
-import { RelationalDatabase } from "#relational/base.js";
-import type { RelationalContext } from "#relational/base.js";
+import { Effect, Layer, Stream } from "effect";
+import { ConnectionError, StorageError } from "@nvisy/core";
+import { RelationalDb } from "#relational/base.js";
+import type { RelationalDatabase } from "#relational/base.js";
 
 /** Credentials for connecting to MySQL. */
 export interface MySQLCredentials {
@@ -25,36 +25,43 @@ export interface MySQLConfig {
 }
 
 /**
- * Connector for MySQL relational databases.
+ * Layer providing a {@link RelationalDatabase} backed by MySQL.
  *
  * @example
  * ```ts
- * const mysql = new MySQLConnector(
+ * const layer = MySQLLayer(
  *   { host: "localhost", port: 3306, user: "root", password: "...", database: "mydb" },
  *   { table: "documents" },
  * );
- * await mysql.connect();
  * ```
  */
-export class MySQLConnector extends RelationalDatabase<
-	MySQLCredentials,
-	MySQLConfig
-> {
-	async connect(): Promise<void> {
-		throw new Error("Not yet implemented");
-	}
-
-	async disconnect(): Promise<void> {
-		throw new Error("Not yet implemented");
-	}
-
-	async *read(
-		_ctx: RelationalContext,
-	): AsyncIterable<Resumable<Row, RelationalContext>> {
-		throw new Error("Not yet implemented");
-	}
-
-	async write(_items: Row[]): Promise<void> {
-		throw new Error("Not yet implemented");
-	}
-}
+export const MySQLLayer = (
+	_creds: MySQLCredentials,
+	_params: MySQLConfig,
+): Layer.Layer<RelationalDb, ConnectionError> =>
+	Layer.scoped(
+		RelationalDb,
+		Effect.acquireRelease(
+			Effect.gen(function* () {
+				// TODO: establish MySQL connection pool
+				const service: RelationalDatabase = {
+					read: (_ctx) =>
+						Stream.fail(
+							new StorageError({
+								message: "Not yet implemented",
+								context: { source: "mysql" },
+							}),
+						),
+					write: (_items) =>
+						Effect.fail(
+							new StorageError({
+								message: "Not yet implemented",
+								context: { source: "mysql" },
+							}),
+						),
+				};
+				return service;
+			}),
+			(_service) => Effect.void,
+		),
+	);

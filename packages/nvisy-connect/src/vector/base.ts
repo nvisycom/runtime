@@ -1,6 +1,8 @@
-import type { Embedding, Metadata } from "@nvisy/core";
+import { Context, Effect, Layer } from "effect";
+import type { Scope } from "effect";
+import type { Embedding } from "@nvisy/core";
+import type { ConnectionError, StorageError } from "@nvisy/core";
 import type { DataOutput } from "#core/stream.js";
-import { Provider } from "#core/provider.js";
 
 // ── Distance metric ─────────────────────────────────────────────────
 
@@ -31,58 +33,44 @@ export interface VectorParams {
 	distanceMetric?: DistanceMetric;
 }
 
-/** Resumption context for vector store reads. */
-export interface VectorContext {}
+// ── Error type ──────────────────────────────────────────────────────
 
-// ── Base class ──────────────────────────────────────────────────────
+/** Errors that may occur during vector operations. */
+export type VectorError = ConnectionError | StorageError;
+
+// ── Service interface ───────────────────────────────────────────────
 
 /**
- * Abstract base class for vector database connectors.
+ * Service interface for vector database connectors.
  *
  * Vector databases are write-only sinks — they receive embeddings from the
- * pipeline and store them for later similarity search.
- *
- * Extends {@link Provider} to store credentials and configuration.
- * Subclasses implement the storage and connection logic for a specific
- * backend (pgvector, Pinecone, Qdrant, etc.).
+ * pipeline and store them. The connect/disconnect lifecycle is managed by
+ * the Layer.
  */
-export abstract class VectorDatabase<
-	TCred,
-	TConfig extends VectorParams = VectorParams,
-> extends Provider<TCred, TConfig>
-	implements DataOutput<Embedding>
-{
-	abstract write(items: Embedding[]): Promise<void>;
-}
+export interface VectorDatabase extends DataOutput<Embedding, VectorError> {}
 
-// ── Search types ────────────────────────────────────────────────────
+// ── Context.Tag ─────────────────────────────────────────────────────
 
-/** Options for a vector similarity search. */
-export interface SearchOptions {
-	/** Query vector. */
-	query: number[];
-	/** Maximum number of results to return. */
-	topK: number;
-	/** Minimum similarity score threshold. */
-	minScore?: number;
-	/** Optional metadata filter. */
-	filter?: Record<string, unknown>;
-}
+/** Effect service tag for vector database access. */
+export class VectorDb extends Context.Tag("@nvisy/connect/VectorDb")<
+	VectorDb,
+	VectorDatabase
+>() {}
 
-/** A single scored result from a similarity search. */
-export interface ScoredResult {
-	/** Unique identifier of the matched vector. */
-	id: string;
-	/** Similarity score. */
-	score: number;
-	/** Optional metadata attached to the vector. */
-	metadata?: Metadata;
-}
+// ── Layer factory ───────────────────────────────────────────────────
 
-/** Wrapper for a list of scored search results. */
-export interface SearchResult {
-	/** Ordered list of scored results (highest score first). */
-	results: ScoredResult[];
-	/** Total number of matches (may exceed `results.length`). */
-	total: number;
-}
+/**
+ * Create a Layer that provides a {@link VectorDatabase} service.
+ *
+ * The `connect` function should use `Effect.acquireRelease` to pair
+ * connection establishment with teardown.
+ */
+export const makeVectorLayer = <TCred>(config: {
+	readonly creds: TCred;
+	readonly params: VectorParams;
+	readonly connect: (
+		creds: TCred,
+		params: VectorParams,
+	) => Effect.Effect<VectorDatabase, ConnectionError, Scope.Scope>;
+}): Layer.Layer<VectorDb, ConnectionError> =>
+	Layer.scoped(VectorDb, config.connect(config.creds, config.params));

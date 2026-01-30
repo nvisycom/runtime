@@ -1,47 +1,94 @@
+import { Effect, Layer } from "effect";
+import { Pinecone } from "@pinecone-database/pinecone";
+import { PineconeStore } from "@langchain/pinecone";
+import { ConnectionError, StorageError } from "@nvisy/core";
 import type { Embedding } from "@nvisy/core";
-import type { DistanceMetric } from "#vector/base.js";
-import { VectorDatabase } from "#vector/base.js";
+import { VectorDb } from "#vector/base.js";
+import type { VectorDatabase } from "#vector/base.js";
+import { NoopEmbeddings, toVectorsAndDocs } from "#vector/langchain.js";
 
 /** Credentials for connecting to Pinecone. */
 export interface PineconeCredentials {
 	/** Pinecone API key. */
 	apiKey: string;
-	/** Pinecone environment (e.g. `"us-east-1-aws"`). */
-	environment: string;
 }
 
 /** Pinecone-specific configuration. */
 export interface PineconeConfig {
 	collection: string;
-	dimensions?: number;
-	distanceMetric?: DistanceMetric;
+	namespace?: string;
 }
 
 /**
- * Connector for the Pinecone vector database.
+ * Layer providing a {@link VectorDatabase} backed by Pinecone.
  *
  * @example
  * ```ts
- * const pinecone = new PineconeConnector(
- *   { apiKey: "...", environment: "us-east-1-aws" },
+ * const layer = PineconeLayer(
+ *   { apiKey: "..." },
  *   { collection: "embeddings" },
  * );
- * await pinecone.connect();
  * ```
  */
-export class PineconeConnector extends VectorDatabase<
-	PineconeCredentials,
-	PineconeConfig
-> {
-	async connect(): Promise<void> {
-		throw new Error("Not yet implemented");
-	}
+export const PineconeLayer = (
+	creds: PineconeCredentials,
+	params: PineconeConfig,
+): Layer.Layer<VectorDb, ConnectionError> =>
+	Layer.scoped(
+		VectorDb,
+		Effect.gen(function* () {
+			const store = yield* Effect.acquireRelease(
+				Effect.tryPromise({
+					try: async () => {
+						const client = new Pinecone({ apiKey: creds.apiKey });
+						const index = client.index(params.collection);
+						return PineconeStore.fromExistingIndex(
+							new NoopEmbeddings(),
+							{
+								pineconeIndex: index,
+								...(params.namespace !== undefined && {
+									namespace: params.namespace,
+								}),
+							},
+						);
+					},
+					catch: (error) =>
+						new ConnectionError({
+							message:
+								error instanceof Error
+									? error.message
+									: String(error),
+							context: { source: "pinecone" },
+							cause:
+								error instanceof Error ? error : undefined,
+						}),
+				}),
+				() => Effect.void,
+			);
 
-	async disconnect(): Promise<void> {
-		throw new Error("Not yet implemented");
-	}
+			const service: VectorDatabase = {
+				write: (items: ReadonlyArray<Embedding>) =>
+					Effect.tryPromise({
+						try: async () => {
+							const { vectors, documents, ids } =
+								toVectorsAndDocs(items);
+							await store.addVectors(vectors, documents, { ids });
+						},
+						catch: (error) =>
+							new StorageError({
+								message:
+									error instanceof Error
+										? error.message
+										: String(error),
+								context: { source: "pinecone" },
+								cause:
+									error instanceof Error
+										? error
+										: undefined,
+							}),
+					}),
+			};
 
-	async write(_items: Embedding[]): Promise<void> {
-		throw new Error("Not yet implemented");
-	}
-}
+			return service;
+		}),
+	);
