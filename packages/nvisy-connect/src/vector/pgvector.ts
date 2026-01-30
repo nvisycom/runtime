@@ -1,10 +1,10 @@
 import { Effect, Layer } from "effect";
+import { Document } from "@langchain/core/documents";
 import { PGVectorStore } from "@langchain/community/vectorstores/pgvector";
-import { ConnectionError, StorageError } from "@nvisy/core";
-import type { Embedding } from "@nvisy/core";
+import { ConnectionError, StorageError, Embedding } from "@nvisy/core";
 import { VectorDb } from "#vector/base.js";
 import type { VectorDatabase } from "#vector/base.js";
-import { NoopEmbeddings, toVectorsAndDocs } from "#vector/langchain.js";
+import { NoopEmbeddings } from "#vector/langchain.js";
 
 /** Credentials for connecting to PostgreSQL with pgvector. */
 export interface PgVectorCredentials {
@@ -63,12 +63,20 @@ export const PgVectorLayer = (
 			);
 
 			const service: VectorDatabase = {
-				write: (items: ReadonlyArray<Embedding>) =>
+				write: (items) =>
 					Effect.tryPromise({
-						try: async () => {
-							const { vectors, documents, ids } =
-								toVectorsAndDocs(items);
-							await store.addVectors(vectors, documents, { ids });
+						try: () => {
+							const { vectors, metadata, ids } =
+								Embedding.toLangchainBatch(items);
+							const docs = metadata.map(
+								(m, i) =>
+									new Document({
+										pageContent: "",
+										metadata: m,
+										id: ids[i]!,
+									}),
+							);
+							return store.addVectors(vectors, docs, { ids });
 						},
 						catch: (error) =>
 							new StorageError({
@@ -100,11 +108,14 @@ export const setupSchema = (
 ): Effect.Effect<void, ConnectionError> =>
 	Effect.tryPromise({
 		try: async () => {
-			const store = await PGVectorStore.initialize(new NoopEmbeddings(), {
-				postgresConnectionOptions: { connectionString },
-				tableName: table,
-				dimensions: dimension,
-			});
+			const store = await PGVectorStore.initialize(
+				new NoopEmbeddings(),
+				{
+					postgresConnectionOptions: { connectionString },
+					tableName: table,
+					dimensions: dimension,
+				},
+			);
 			await store.end();
 		},
 		catch: (error) =>
