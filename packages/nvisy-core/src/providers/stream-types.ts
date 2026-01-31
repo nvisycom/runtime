@@ -1,30 +1,17 @@
+import type { DataType } from "#datatypes/index.js";
+
 /**
  * A value paired with a resumption context for interruptible reads.
  *
  * When a source is interrupted mid-stream, the {@link context} from the
  * last yielded `Resumable` can be passed back to resume iteration.
  *
- * @typeParam TData - The data item type.
+ * @typeParam TData - One of the concrete pipeline data types.
  * @typeParam TCtx  - The context type used for resumption.
  */
-export class Resumable<TData, TCtx> {
-	readonly #data: TData;
-	readonly #context: TCtx;
-
-	constructor(data: TData, context: TCtx) {
-		this.#data = data;
-		this.#context = context;
-	}
-
-	/** The data item. */
-	get data(): TData {
-		return this.#data;
-	}
-
-	/** Context that can be passed back to resume iteration. */
-	get context(): TCtx {
-		return this.#context;
-	}
+export interface Resumable<TData extends DataType = DataType, TCtx = void> {
+	readonly data: TData;
+	readonly context: TCtx;
 }
 
 /**
@@ -33,10 +20,10 @@ export class Resumable<TData, TCtx> {
  * Supports resumption via context — pass the {@link Resumable.context}
  * from the last yielded item to continue where a previous read left off.
  *
- * @typeParam TData - The data type yielded by the source.
+ * @typeParam TData - One of the concrete pipeline data types.
  * @typeParam TCtx  - Resumption context carried alongside each item.
  */
-export interface DataSource<TData, TCtx = void> {
+export interface DataSource<TData extends DataType = DataType, TCtx = void> {
 	/** Stream items, optionally resuming from a previous context. */
 	read(ctx: TCtx): AsyncIterable<Resumable<TData, TCtx>>;
 }
@@ -44,9 +31,9 @@ export interface DataSource<TData, TCtx = void> {
 /**
  * A sink that accepts batches of data items.
  *
- * @typeParam TData - The data type accepted by the sink.
+ * @typeParam TData - One of the concrete pipeline data types.
  */
-export interface DataSink<TData> {
+export interface DataSink<TData extends DataType = DataType> {
 	/** Write a batch of items to the destination. */
 	write(items: ReadonlyArray<TData>): Promise<void>;
 }

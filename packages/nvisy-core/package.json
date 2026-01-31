@@ -24,7 +24,9 @@
 		"clean": "rimraf dist",
 		"typecheck": "tsc --noEmit"
 	},
-	"dependencies": {},
+	"dependencies": {
+		"effect": "^3.19.15"
+	},
 	"engines": {
 		"node": ">=22.0.0"
 	}

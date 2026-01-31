@@ -1,40 +1,33 @@
-import type { Data } from "#datatypes/base-datatype.js";
+import type { Schema } from "effect";
+import type { DataType } from "#datatypes/index.js";
 
 /**
- * An action that transforms data items.
+ * A named, parameterised data transformation.
  *
  * @typeParam TIn    - Input data type.
  * @typeParam TOut   - Output data type.
- * @typeParam TParam - Action-specific parameter type passed at execution time.
+ * @typeParam TParam - Parameter type validated by {@link schema}.
  */
-export interface Action<
-	TIn extends Data = Data,
-	TOut extends Data = Data,
+export interface ActionInstance<
+	TIn extends DataType = DataType,
+	TOut extends DataType = DataType,
 	TParam = unknown,
 > {
-	execute(
-		items: ReadonlyArray<TIn>,
-		params: TParam,
-	): Promise<ReadonlyArray<TOut>>;
+	readonly id: string;
+	readonly inputClass: abstract new (...args: never[]) => TIn;
+	readonly outputClass: abstract new (...args: never[]) => TOut;
+	readonly schema: Schema.Schema<TParam>;
+	execute(items: ReadonlyArray<TIn>, params: TParam): Promise<ReadonlyArray<TOut>>;
 }
 
-/**
- * Abstract helper that implements {@link Action} with a no-op default.
- *
- * Subclasses override {@link execute} to provide transformation logic.
- *
- * @typeParam TIn    - Input data type.
- * @typeParam TOut   - Output data type.
- * @typeParam TParam - Action-specific parameter type passed at execution time.
- */
-export abstract class BaseAction<
-	TIn extends Data = Data,
-	TOut extends Data = Data,
-	TParam = unknown,
-> implements Action<TIn, TOut, TParam>
-{
-	abstract execute(
-		items: ReadonlyArray<TIn>,
-		params: TParam,
-	): Promise<ReadonlyArray<TOut>>;
-}
+export const Action = {
+	Define<TIn extends DataType, TOut extends DataType, TParam>(config: {
+		id: string;
+		inputClass: abstract new (...args: never[]) => TIn;
+		outputClass: abstract new (...args: never[]) => TOut;
+		schema: Schema.Schema<TParam>;
+		execute: (items: ReadonlyArray<TIn>, params: TParam) => Promise<ReadonlyArray<TOut>>;
+	}): ActionInstance<TIn, TOut, TParam> {
+		return config;
+	},
+} as const;

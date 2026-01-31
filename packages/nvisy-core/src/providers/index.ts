@@ -1,5 +1,11 @@
-export { Resumable } from "#providers/streams.js";
-export type { DataSource, DataSink } from "#providers/streams.js";
+export type { Resumable, DataSource, DataSink } from "#providers/stream-types.js";
 
-export type { Provider } from "#providers/base-provider.js";
-export { BaseProvider } from "#providers/base-provider.js";
+export type {
+	ProviderInstance,
+	ProviderFactory,
+	SourceProvider,
+	SinkProvider,
+} from "#providers/provider-types.js";
+
+export type { SourceDescriptor, SinkDescriptor } from "#providers/base-provider.js";
+export { Provider } from "#providers/base-provider.js";
