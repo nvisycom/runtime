@@ -1,5 +1,5 @@
-import type { Metadata } from "#utils/types.js";
-import { Data } from "#data/base.js";
+import { Data } from "#datatypes/base-datatype.js";
+import type { Metadata } from "#datatypes/base-datatype.js";
 
 /**
  * A dense vector embedding produced by an embedding model.
@@ -35,5 +35,4 @@ export class Embedding extends Data {
 	get dimensions(): number {
 		return this.#vector.length;
 	}
-
 }

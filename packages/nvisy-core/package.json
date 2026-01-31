@@ -10,10 +10,10 @@
 		}
 	},
 	"imports": {
-		"#data/*.js": "./src/data/*.ts",
+		"#actions/*.js": "./src/actions/*.ts",
+		"#datatypes/*.js": "./src/datatypes/*.ts",
 		"#errors/*.js": "./src/errors/*.ts",
-		"#stream/*.js": "./src/stream/*.ts",
-		"#utils/*.js": "./src/utils/*.ts"
+		"#providers/*.js": "./src/providers/*.ts"
 	},
 	"files": [
 		"dist"

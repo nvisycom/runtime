@@ -1,8 +1,8 @@
 import { Effect, Queue } from "effect";
-import type { AnyData } from "@nvisy/core";
+import type { Data } from "@nvisy/core";
 
 export interface Edge {
-	readonly queue: Queue.Queue<AnyData>;
+	readonly queue: Queue.Queue<Data>;
 	readonly from: string;
 	readonly to: string;
 }
@@ -12,7 +12,7 @@ export const createEdge = (
 	to: string,
 	capacity = 256,
 ): Effect.Effect<Edge> =>
-	Effect.map(Queue.bounded<AnyData>(capacity), (queue) => ({
+	Effect.map(Queue.bounded<Data>(capacity), (queue) => ({
 		queue,
 		from,
 		to,

@@ -1,5 +1,4 @@
 import { Effect } from "effect";
-import type { AnyData } from "@nvisy/core";
 import type { ActionFn } from "../registry/action.js";
 
 export const map: ActionFn = (items, config) =>

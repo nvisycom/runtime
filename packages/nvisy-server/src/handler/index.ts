@@ -1,0 +1,18 @@
+import type { Hono } from "hono";
+import type { ServerConfig } from "../config.js";
+import { registerHealthHandler } from "./health.js";
+import { registerGraphHandler } from "./graphs.js";
+import { registerOpenApiHandler } from "./openapi.js";
+
+/**
+ * Register all route handlers on the given Hono app.
+ *
+ * Registration order matters: health and graph handlers are registered
+ * first so that `registerOpenApiHandler` can introspect the already-
+ * registered routes when building the OpenAPI spec.
+ */
+export function registerHandlers(app: Hono, config: ServerConfig): void {
+	registerHealthHandler(app);
+	registerGraphHandler(app);
+	registerOpenApiHandler(app, config);
+}

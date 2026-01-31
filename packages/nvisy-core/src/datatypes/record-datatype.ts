@@ -1,5 +1,5 @@
-import type { JsonValue, Metadata } from "#utils/types.js";
-import { Data } from "#data/base.js";
+import { Data } from "#datatypes/base-datatype.js";
+import type { JsonValue, Metadata } from "#datatypes/base-datatype.js";
 
 /**
  * A row from a relational database.

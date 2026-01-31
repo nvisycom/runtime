@@ -11,12 +11,10 @@
 import { serve } from "@hono/node-server";
 import { createNodeWebSocket } from "@hono/node-ws";
 import { Hono } from "hono";
-import { Effect, Runtime } from "effect";
+import { Effect, type Runtime } from "effect";
 import type { ServerConfig } from "./config.js";
 import { registerMiddleware } from "./middleware/index.js";
-import { graphRoutes } from "./routes/graphs.js";
-import { healthRoutes } from "./routes/health.js";
-import { openApiRoutes } from "./routes/openapi.js";
+import { registerHandlers } from "./handler/index.js";
 
 /** Build a fully configured Hono application with middleware and routes. */
 export function createApp(config: ServerConfig, runtime: Runtime.Runtime<never>) {
@@ -24,10 +22,7 @@ export function createApp(config: ServerConfig, runtime: Runtime.Runtime<never>)
 	const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
 
 	registerMiddleware(app, config, runtime);
-
-	app.route("/", healthRoutes());
-	app.route("/api/v1", graphRoutes());
-	app.route("/", openApiRoutes(app));
+	registerHandlers(app, config);
 
 	return { app, injectWebSocket, upgradeWebSocket };
 }

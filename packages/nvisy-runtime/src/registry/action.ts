@@ -1,10 +1,17 @@
 import { Context, Effect, Layer } from "effect";
-import type { AnyData } from "@nvisy/core";
+import type { Action, Data } from "@nvisy/core";
 
 export type ActionFn = (
-	items: ReadonlyArray<AnyData>,
-	config: Record<string, unknown>,
-) => Effect.Effect<ReadonlyArray<AnyData>>;
+	items: ReadonlyArray<Data>,
+	config: Readonly<Record<string, unknown>>,
+) => Effect.Effect<ReadonlyArray<Data>>;
+
+/** Wrap a plain {@link Action} into an Effect-based {@link ActionFn}. */
+export const fromAction = (action: Action): ActionFn =>
+	(items, config) =>
+		Effect.tryPromise(() => action.execute(items, config)).pipe(
+			Effect.catchAll((e) => Effect.die(e)),
+		);
 
 export class ActionRegistry extends Context.Tag("@nvisy/ActionRegistry")<
 	ActionRegistry,
