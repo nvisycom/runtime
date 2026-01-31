@@ -1,9 +1,17 @@
-import { Effect } from "effect";
-import type { ActionFn } from "../registry/action.js";
+import { Schema } from "effect";
+import { Action, Data } from "@nvisy/core";
 
-export const convert: ActionFn = (items, config) =>
-	Effect.sync(() => {
-		// TODO: cast between primitive types (Row → Document, etc.)
-		const _targetType = config["to"];
-		return items;
-	});
+const ConvertParams = Schema.Struct({
+	to: Schema.Literal("document", "embedding", "blob", "row"),
+});
+
+export const convert = Action.Define({
+	id: "convert",
+	inputClass: Data,
+	outputClass: Data,
+	schema: ConvertParams,
+	execute: async (items, _params) => {
+		// TODO: cast between data types (Row → Document, etc.)
+		return [...items];
+	},
+});

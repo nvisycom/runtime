@@ -1,4 +1,4 @@
-import type { ActionFn } from "../registry/action.js";
+import { Module } from "@nvisy/core";
 import { filter } from "./filter.js";
 import { map } from "./map.js";
 import { batch } from "./batch.js";
@@ -13,11 +13,7 @@ export { deduplicate } from "./deduplicate.js";
 export { validate } from "./validate.js";
 export { convert } from "./convert.js";
 
-export const builtinActions: ReadonlyArray<[string, ActionFn]> = [
-	["filter", filter],
-	["map", map],
-	["batch", batch],
-	["deduplicate", deduplicate],
-	["validate", validate],
-	["convert", convert],
-];
+export const builtinModule = Module.Define({
+	id: "builtin",
+	actions: { filter, map, batch, deduplicate, validate, convert },
+});

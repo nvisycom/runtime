@@ -1,9 +1,17 @@
-import { Effect } from "effect";
-import type { ActionFn } from "../registry/action.js";
+import { Schema } from "effect";
+import { Action, Data } from "@nvisy/core";
 
-export const map: ActionFn = (items, config) =>
-	Effect.sync(() => {
-		// TODO: apply field transformations from config
-		const _mapping = config["mapping"];
-		return items;
-	});
+const MapParams = Schema.Struct({
+	mapping: Schema.Record({ key: Schema.String, value: Schema.String }),
+});
+
+export const map = Action.Define({
+	id: "map",
+	inputClass: Data,
+	outputClass: Data,
+	schema: MapParams,
+	execute: async (items, _params) => {
+		// TODO: apply field transformations from params
+		return [...items];
+	},
+});

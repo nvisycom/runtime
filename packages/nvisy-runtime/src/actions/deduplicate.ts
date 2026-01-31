@@ -1,9 +1,17 @@
-import { Effect } from "effect";
-import type { ActionFn } from "../registry/action.js";
+import { Schema } from "effect";
+import { Action, Data } from "@nvisy/core";
 
-export const deduplicate: ActionFn = (items, config) =>
-	Effect.sync(() => {
-		// TODO: drop duplicates by content hash or user-defined key
-		const _key = config["key"] ?? "id";
-		return items;
-	});
+const DeduplicateParams = Schema.Struct({
+	key: Schema.optional(Schema.String),
+});
+
+export const deduplicate = Action.Define({
+	id: "deduplicate",
+	inputClass: Data,
+	outputClass: Data,
+	schema: DeduplicateParams,
+	execute: async (items, _params) => {
+		// TODO: drop duplicates by _params.key ?? "id"
+		return [...items];
+	},
+});

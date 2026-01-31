@@ -1,9 +1,17 @@
-import { Effect } from "effect";
-import type { ActionFn } from "../registry/action.js";
+import { Schema } from "effect";
+import { Action, Data } from "@nvisy/core";
 
-export const batch: ActionFn = (items, config) =>
-	Effect.sync(() => {
-		// TODO: group items into batches of size N
-		const _size = config["size"] ?? 100;
-		return items;
-	});
+const BatchParams = Schema.Struct({
+	size: Schema.optional(Schema.Number),
+});
+
+export const batch = Action.Define({
+	id: "batch",
+	inputClass: Data,
+	outputClass: Data,
+	schema: BatchParams,
+	execute: async (items, _params) => {
+		// TODO: group items into batches of _params.size ?? 100
+		return [...items];
+	},
+});

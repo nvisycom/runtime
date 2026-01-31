@@ -31,3 +31,6 @@ export { Provider } from "#providers/index.js";
 
 export type { ActionInstance } from "#actions/index.js";
 export { Action } from "#actions/index.js";
+
+export type { ModuleInstance, AnyProviderFactory, AnyActionInstance } from "#module.js";
+export { Module } from "#module.js";

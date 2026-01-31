@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { Row } from "#datatypes/record-datatype.js";
-import { ExampleFilter, ExampleMap, FilterParams, MapParams } from "./example-action.js";
+import { ExampleFilter, ExampleMap, FilterParams, MapParams } from "./action.js";
 
 const rows = [
 	new Row({ id: "1", name: "Alice" }),

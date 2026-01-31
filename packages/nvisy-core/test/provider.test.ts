@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { Row } from "#datatypes/record-datatype.js";
-import { ExampleProvider, Credentials, Params, Cursor } from "./example-provider.js";
+import { ExampleProvider, Credentials, Params, Cursor } from "./provider.js";
 
 describe("ExampleProvider", () => {
 	it("exposes credential and param schemas on the factory", () => {

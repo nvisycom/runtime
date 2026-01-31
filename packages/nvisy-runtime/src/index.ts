@@ -1,31 +1,28 @@
 export {
 	GraphDefinition,
 	GraphNode,
+	GraphEdge,
 	SourceNode,
 	ActionNode,
 	SinkNode,
 	BranchNode,
-	FanOutNode,
-	FanInNode,
 	RetryPolicy,
 	TimeoutPolicy,
 	ConcurrencyPolicy,
 	BackoffStrategy,
 } from "./schema/index.js";
 
-export { compile, parseGraph, validateGraph, buildPlan } from "./compiler/index.js";
-export type { ExecutionPlan } from "./compiler/index.js";
+export { compile, parseGraph, validateGraph, buildPlan, buildRuntimeGraph } from "./compiler/index.js";
+export type { ExecutionPlan, ResolvedNode, ParsedGraph, RuntimeGraph, RuntimeNodeAttrs, RuntimeEdgeAttrs } from "./compiler/index.js";
 
 export { run } from "./engine/index.js";
 export type { RunResult, NodeResult, Edge, FiberPool } from "./engine/index.js";
 
-export { SourceRegistry } from "./registry/index.js";
-export type { SourceFactory } from "./registry/index.js";
+export { Registry } from "./registry/index.js";
+export type {
+	ActionDescriptor,
+	ProviderDescriptor,
+	RegistrySchema,
+} from "./registry/index.js";
 
-export { SinkRegistry } from "./registry/index.js";
-export type { SinkFactory } from "./registry/index.js";
-
-export { ActionRegistry } from "./registry/index.js";
-export type { ActionFn } from "./registry/index.js";
-
-export { builtinActions } from "./actions/index.js";
+export { builtinModule } from "./actions/index.js";

@@ -1,17 +1,18 @@
-import { Schema as S } from "effect";
-import { GraphNode } from "./node.js";
+import { Schema } from "effect";
+import { GraphEdge, GraphNode } from "./node.js";
 import { ConcurrencyPolicy, TimeoutPolicy } from "./policy.js";
 
-export const GraphDefinition = S.Struct({
-	id: S.String,
-	name: S.optional(S.String),
-	description: S.optional(S.String),
-	nodes: S.Array(GraphNode),
-	concurrency: S.optional(ConcurrencyPolicy),
-	timeout: S.optional(TimeoutPolicy),
-	metadata: S.optionalWith(S.Record({ key: S.String, value: S.Unknown }), {
+export const GraphDefinition = Schema.Struct({
+	id: Schema.UUID,
+	name: Schema.optional(Schema.String),
+	description: Schema.optional(Schema.String),
+	nodes: Schema.Array(GraphNode),
+	edges: Schema.optionalWith(Schema.Array(GraphEdge), { default: () => [] }),
+	concurrency: Schema.optional(ConcurrencyPolicy),
+	timeout: Schema.optional(TimeoutPolicy),
+	metadata: Schema.optionalWith(Schema.Record({ key: Schema.String, value: Schema.Unknown }), {
 		default: () => ({}),
 	}),
 });
 
-export type GraphDefinition = S.Schema.Type<typeof GraphDefinition>;
+export type GraphDefinition = Schema.Schema.Type<typeof GraphDefinition>;

@@ -1,9 +1,17 @@
-import { Effect } from "effect";
-import type { ActionFn } from "../registry/action.js";
+import { Schema } from "effect";
+import { Action, Data } from "@nvisy/core";
 
-export const filter: ActionFn = (items, config) =>
-	Effect.sync(() => {
-		// TODO: evaluate predicate expression from config
-		const _predicate = config["predicate"];
-		return items;
-	});
+const FilterParams = Schema.Struct({
+	predicate: Schema.String,
+});
+
+export const filter = Action.Define({
+	id: "filter",
+	inputClass: Data,
+	outputClass: Data,
+	schema: FilterParams,
+	execute: async (items, _params) => {
+		// TODO: evaluate predicate expression from params
+		return [...items];
+	},
+});

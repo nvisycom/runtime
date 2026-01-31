@@ -13,6 +13,7 @@
 		"#actions/*.js": "./src/actions/*.ts",
 		"#datatypes/*.js": "./src/datatypes/*.ts",
 		"#errors/*.js": "./src/errors/*.ts",
+		"#module.js": "./src/module.ts",
 		"#providers/*.js": "./src/providers/*.ts"
 	},
 	"files": [

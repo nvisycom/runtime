@@ -20,7 +20,10 @@
 	},
 	"dependencies": {
 		"@nvisy/core": "*",
-		"effect": "^3.19.15"
+		"effect": "^3.19.15",
+		"graphology": "^0.25.4",
+		"graphology-dag": "^0.4.1",
+		"graphology-types": "^0.24.7"
 	},
 	"engines": {
 		"node": ">=22.0.0"

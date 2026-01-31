@@ -1,10 +1,18 @@
-import { Effect } from "effect";
-import type { ActionFn } from "../registry/action.js";
+import { Schema } from "effect";
+import { Action, Data } from "@nvisy/core";
 
-export const validate: ActionFn = (items, config) =>
-	Effect.sync(() => {
-		// TODO: assert primitives match a schema
+const ValidateParams = Schema.Struct({
+	schema: Schema.String,
+});
+
+export const validate = Action.Define({
+	id: "validate",
+	inputClass: Data,
+	outputClass: Data,
+	schema: ValidateParams,
+	execute: async (items, _params) => {
+		// TODO: assert items match params.schema
 		// TODO: route failures to DLQ
-		const _schema = config["schema"];
-		return items;
-	});
+		return [...items];
+	},
+});

@@ -3,9 +3,8 @@ export {
 	ActionNode,
 	SinkNode,
 	BranchNode,
-	FanOutNode,
-	FanInNode,
 	GraphNode,
+	GraphEdge,
 } from "./node.js";
 
 export { GraphDefinition } from "./graph.js";

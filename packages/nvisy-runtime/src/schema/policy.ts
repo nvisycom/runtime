@@ -1,25 +1,24 @@
-import { Schema as S } from "effect";
+import { Schema } from "effect";
 
-export const BackoffStrategy = S.Literal("fixed", "exponential", "jitter");
+export const BackoffStrategy = Schema.Literal("fixed", "exponential", "jitter");
 
-export const RetryPolicy = S.Struct({
-	maxRetries: S.optionalWith(S.Number, { default: () => 3 }),
-	backoff: S.optionalWith(BackoffStrategy, { default: () => "exponential" as const }),
-	initialDelayMs: S.optionalWith(S.Number, { default: () => 1000 }),
-	maxDelayMs: S.optionalWith(S.Number, { default: () => 30_000 }),
-	retryableErrors: S.optionalWith(S.Array(S.String), { default: () => [] }),
+export const RetryPolicy = Schema.Struct({
+	maxRetries: Schema.optionalWith(Schema.Number, { default: () => 3 }),
+	backoff: Schema.optionalWith(BackoffStrategy, { default: () => "exponential" as const }),
+	initialDelayMs: Schema.optionalWith(Schema.Number, { default: () => 1000 }),
+	maxDelayMs: Schema.optionalWith(Schema.Number, { default: () => 30_000 }),
 });
 
-export const TimeoutPolicy = S.Struct({
-	nodeTimeoutMs: S.optional(S.Number),
-	graphTimeoutMs: S.optional(S.Number),
+export const TimeoutPolicy = Schema.Struct({
+	nodeTimeoutMs: Schema.optional(Schema.Number),
+	graphTimeoutMs: Schema.optional(Schema.Number),
 });
 
-export const ConcurrencyPolicy = S.Struct({
-	maxGlobal: S.optionalWith(S.Number, { default: () => 10 }),
-	maxPerNode: S.optional(S.Number),
+export const ConcurrencyPolicy = Schema.Struct({
+	maxGlobal: Schema.optionalWith(Schema.Number, { default: () => 10 }),
+	maxPerNode: Schema.optional(Schema.Number),
 });
 
-export type RetryPolicy = S.Schema.Type<typeof RetryPolicy>;
-export type TimeoutPolicy = S.Schema.Type<typeof TimeoutPolicy>;
-export type ConcurrencyPolicy = S.Schema.Type<typeof ConcurrencyPolicy>;
+export type RetryPolicy = Schema.Schema.Type<typeof RetryPolicy>;
+export type TimeoutPolicy = Schema.Schema.Type<typeof TimeoutPolicy>;
+export type ConcurrencyPolicy = Schema.Schema.Type<typeof ConcurrencyPolicy>;

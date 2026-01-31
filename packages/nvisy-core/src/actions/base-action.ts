@@ -1,5 +1,5 @@
 import type { Schema } from "effect";
-import type { DataType } from "#datatypes/index.js";
+import type { Data } from "#datatypes/base-datatype.js";
 
 /**
  * A named, parameterised data transformation.
@@ -9,8 +9,8 @@ import type { DataType } from "#datatypes/index.js";
  * @typeParam TParam - Parameter type validated by {@link schema}.
  */
 export interface ActionInstance<
-	TIn extends DataType = DataType,
-	TOut extends DataType = DataType,
+	TIn extends Data = Data,
+	TOut extends Data = Data,
 	TParam = unknown,
 > {
 	readonly id: string;
@@ -21,7 +21,7 @@ export interface ActionInstance<
 }
 
 export const Action = {
-	Define<TIn extends DataType, TOut extends DataType, TParam>(config: {
+	Define<TIn extends Data, TOut extends Data, TParam>(config: {
 		id: string;
 		inputClass: abstract new (...args: never[]) => TIn;
 		outputClass: abstract new (...args: never[]) => TOut;

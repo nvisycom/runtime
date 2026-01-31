@@ -1,87 +1,71 @@
-import { Schema as S } from "effect";
-import { RetryPolicy } from "./policy.js";
+import { Schema } from "effect";
+import { ConcurrencyPolicy, RetryPolicy, TimeoutPolicy } from "./policy.js";
 
-const NodeBase = S.Struct({
-	id: S.String,
-	dependsOn: S.optionalWith(S.Array(S.String), { default: () => [] }),
-	retry: S.optional(RetryPolicy),
-	timeoutMs: S.optional(S.Number),
-	concurrency: S.optional(S.Number),
+const NodeBase = Schema.Struct({
+	id: Schema.UUID,
+	retry: Schema.optional(RetryPolicy),
+	timeout: Schema.optional(TimeoutPolicy),
+	concurrency: Schema.optional(ConcurrencyPolicy),
 });
 
-export const SourceNode = S.extend(
+export const SourceNode = Schema.extend(
 	NodeBase,
-	S.Struct({
-		type: S.Literal("source"),
-		connector: S.String,
-		config: S.Record({ key: S.String, value: S.Unknown }),
+	Schema.Struct({
+		type: Schema.Literal("source"),
+		connector: Schema.String,
+		config: Schema.Record({ key: Schema.String, value: Schema.Unknown }),
 	}),
 );
 
-export const ActionNode = S.extend(
+export const ActionNode = Schema.extend(
 	NodeBase,
-	S.Struct({
-		type: S.Literal("action"),
-		action: S.String,
-		config: S.optionalWith(S.Record({ key: S.String, value: S.Unknown }), {
+	Schema.Struct({
+		type: Schema.Literal("action"),
+		action: Schema.String,
+		config: Schema.optionalWith(Schema.Record({ key: Schema.String, value: Schema.Unknown }), {
 			default: () => ({}),
 		}),
 	}),
 );
 
-export const SinkNode = S.extend(
+export const SinkNode = Schema.extend(
 	NodeBase,
-	S.Struct({
-		type: S.Literal("sink"),
-		connector: S.String,
-		config: S.Record({ key: S.String, value: S.Unknown }),
+	Schema.Struct({
+		type: Schema.Literal("sink"),
+		connector: Schema.String,
+		config: Schema.Record({ key: Schema.String, value: Schema.Unknown }),
 	}),
 );
 
-export const BranchRoute = S.Struct({
-	predicate: S.String,
-	target: S.String,
+export const BranchRoute = Schema.Struct({
+	predicate: Schema.String,
+	target: Schema.String,
 });
 
-export const BranchNode = S.extend(
+export const BranchNode = Schema.extend(
 	NodeBase,
-	S.Struct({
-		type: S.Literal("branch"),
-		routes: S.Array(BranchRoute),
-		default: S.optional(S.String),
+	Schema.Struct({
+		type: Schema.Literal("branch"),
+		routes: Schema.Array(BranchRoute),
+		default: Schema.optional(Schema.String),
 	}),
 );
 
-export const FanOutNode = S.extend(
-	NodeBase,
-	S.Struct({
-		type: S.Literal("fanout"),
-		targets: S.Array(S.String),
-	}),
-);
-
-export const FanInNode = S.extend(
-	NodeBase,
-	S.Struct({
-		type: S.Literal("fanin"),
-		sources: S.Array(S.String),
-		materialize: S.optionalWith(S.Boolean, { default: () => false }),
-	}),
-);
-
-export const GraphNode = S.Union(
+export const GraphNode = Schema.Union(
 	SourceNode,
 	ActionNode,
 	SinkNode,
 	BranchNode,
-	FanOutNode,
-	FanInNode,
 );
 
-export type SourceNode = S.Schema.Type<typeof SourceNode>;
-export type ActionNode = S.Schema.Type<typeof ActionNode>;
-export type SinkNode = S.Schema.Type<typeof SinkNode>;
-export type BranchNode = S.Schema.Type<typeof BranchNode>;
-export type FanOutNode = S.Schema.Type<typeof FanOutNode>;
-export type FanInNode = S.Schema.Type<typeof FanInNode>;
-export type GraphNode = S.Schema.Type<typeof GraphNode>;
+export const GraphEdge = Schema.Struct({
+	from: Schema.UUID,
+	to: Schema.UUID,
+});
+
+export type SourceNode = Schema.Schema.Type<typeof SourceNode>;
+export type ActionNode = Schema.Schema.Type<typeof ActionNode>;
+export type SinkNode = Schema.Schema.Type<typeof SinkNode>;
+export type BranchNode = Schema.Schema.Type<typeof BranchNode>;
+export type GraphNode = Schema.Schema.Type<typeof GraphNode>;
+export type GraphEdge = Schema.Schema.Type<typeof GraphEdge>;
