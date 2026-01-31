@@ -1,27 +1,68 @@
+/**
+ * Application building blocks for the Nvisy HTTP server.
+ *
+ * Exports the Hono app factory ({@link createApp}) and an
+ * Effect-managed server lifecycle ({@link startServer}). These
+ * are composed into a running service by `main.ts`.
+ *
+ * @module
+ */
+
+import { serve } from "@hono/node-server";
+import { createNodeWebSocket } from "@hono/node-ws";
 import { Hono } from "hono";
+import { Effect, Runtime } from "effect";
+import type { ServerConfig } from "./config.js";
+import { registerMiddleware } from "./middleware/index.js";
 import { graphRoutes } from "./routes/graphs.js";
-import { runRoutes } from "./routes/runs.js";
-import { connectorRoutes } from "./routes/connectors.js";
-import { lineageRoutes } from "./routes/lineage.js";
 import { healthRoutes } from "./routes/health.js";
-import { requestId } from "./middleware/request-id.js";
-import { requestLogger } from "./middleware/logger.js";
+import { openApiRoutes } from "./routes/openapi.js";
 
-export function createApp(): Hono {
+/** Build a fully configured Hono application with middleware and routes. */
+export function createApp(config: ServerConfig, runtime: Runtime.Runtime<never>) {
 	const app = new Hono();
+	const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
 
-	// ── Middleware ──────────────────────────────────────────────────
-	app.use("*", requestId());
-	app.use("*", requestLogger());
+	registerMiddleware(app, config, runtime);
 
-	// ── Health ─────────────────────────────────────────────────────
 	app.route("/", healthRoutes());
+	app.route("/api/v1", graphRoutes());
+	app.route("/", openApiRoutes(app));
 
-	// ── API ────────────────────────────────────────────────────────
-	app.route("/api", graphRoutes());
-	app.route("/api", runRoutes());
-	app.route("/api", connectorRoutes());
-	app.route("/api", lineageRoutes());
+	return { app, injectWebSocket, upgradeWebSocket };
+}
 
-	return app;
+export interface StartServerOptions {
+	app: Hono;
+	host: string;
+	port: number;
+	injectWebSocket: (server: ReturnType<typeof serve>) => void;
+}
+
+/**
+ * Start the Node.js HTTP server with Effect-managed lifecycle.
+ *
+ * Uses `Effect.acquireRelease` to guarantee the server is closed on
+ * fiber interruption or program shutdown. Injects WebSocket support
+ * into the running server after binding.
+ */
+export function startServer(opts: StartServerOptions) {
+	return Effect.gen(function* () {
+		const server = yield* Effect.acquireRelease(
+			Effect.sync(() => {
+				const s = serve({
+					fetch: opts.app.fetch,
+					hostname: opts.host,
+					port: opts.port,
+				});
+				opts.injectWebSocket(s);
+				return s;
+			}),
+			(server) => Effect.sync(() => server.close()),
+		);
+
+		yield* Effect.logInfo(`Server started on ${opts.host}:${opts.port}`);
+
+		return server;
+	});
 }

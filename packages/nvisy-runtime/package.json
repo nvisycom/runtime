@@ -1,7 +1,7 @@
 {
 	"name": "@nvisy/runtime",
 	"version": "0.1.0",
-	"description": "Graph definition, DAG compilation, execution engine, and scheduler for the Nvisy platform",
+	"description": "Graph definition, DAG compilation, and execution engine for the Nvisy platform",
 	"type": "module",
 	"exports": {
 		".": {
@@ -20,7 +20,7 @@
 	},
 	"dependencies": {
 		"@nvisy/core": "*",
-		"effect": "^3.16.0"
+		"effect": "^3.19.15"
 	},
 	"engines": {
 		"node": ">=22.0.0"

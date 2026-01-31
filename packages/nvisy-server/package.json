@@ -1,28 +1,31 @@
 {
 	"name": "@nvisy/server",
 	"version": "0.1.0",
-	"description": "HTTP server, REST API, and cron scheduler for the Nvisy runtime",
+	"private": true,
+	"description": "HTTP execution worker for the Nvisy runtime",
 	"type": "module",
-	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js"
-		}
-	},
-	"files": [
-		"dist"
-	],
 	"scripts": {
 		"build": "tsup",
 		"build:watch": "tsup --watch",
 		"clean": "rimraf dist",
+		"dev": "node --watch dist/main.js",
+		"start": "node dist/main.js",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
+		"@effect/platform": "^0.94.2",
+		"@effect/platform-node": "^0.104.1",
+		"@hono/effect-validator": "^1.2.0",
+		"@hono/node-server": "^1.19.9",
+		"@hono/node-ws": "^1.3.0",
+		"@hono/otel": "^1.1.0",
+		"@hono/standard-validator": "^0.2.2",
 		"@nvisy/core": "*",
 		"@nvisy/runtime": "*",
-		"effect": "^3.16.0",
-		"hono": "^4.7.0"
+		"@scalar/hono-api-reference": "^0.9.39",
+		"effect": "^3.19.15",
+		"hono": "^4.11.7",
+		"hono-openapi": "^1.2.0"
 	},
 	"engines": {
 		"node": ">=22.0.0"

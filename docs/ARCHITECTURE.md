@@ -154,21 +154,64 @@ Connectors are registered by name in a global registry. The graph compiler resol
 
 ## 6. Runtime (`nvisy-runtime`)
 
-The runtime package owns the full lifecycle of a graph: definition, compilation, and execution.
+The runtime package owns the full lifecycle of a graph: definition, compilation, and execution. It is the central package — everything upstream (connector packages, action providers) registers into it, and everything downstream (server, CLI) invokes it.
 
-### 6.1 Graph definition and JSON serializability
+### 6.1 Package structure
+
+```
+src/
+  schema/          Effect Schema definitions for graph JSON
+    node.ts          Node schemas (Source, Action, Sink, Branch, FanOut, FanIn)
+    graph.ts         Top-level Graph schema (nodes, edges, exec config)
+    policy.ts        RetryPolicy, TimeoutPolicy, ConcurrencyPolicy schemas
+    index.ts
+
+  compiler/        JSON → ExecutionPlan
+    parse.ts         Decode raw JSON via Effect Schema
+    validate.ts      DAG validation (cycles, dangling refs, type compatibility)
+    plan.ts          Build ExecutionPlan from validated graph
+    index.ts
+
+  engine/          DAG execution
+    runner.ts        Top-level run(): ExecutionPlan → Effect<RunResult>
+    pool.ts          Fiber pool, semaphore-based concurrency control
+    edge.ts          Queue-based edge wiring between nodes
+    node.ts          Single node executor (wrap source/action/sink in fiber)
+    index.ts
+
+  registry/        Effect Services for name → implementation resolution
+    source.ts        SourceRegistry service
+    sink.ts          SinkRegistry service
+    action.ts        ActionRegistry service (pre-loaded with built-in actions)
+    index.ts
+
+  actions/         Built-in generic actions (data-plane, no external deps)
+    filter.ts
+    map.ts
+    batch.ts
+    deduplicate.ts
+    validate.ts
+    convert.ts
+    index.ts
+
+  index.ts         Public API
+```
+
+### 6.2 Graph definition and JSON serializability
 
 The central design constraint is that every graph must be representable as a plain JSON document. This means graphs can be stored in a database, versioned in source control, transmitted over an API, diffed, and reconstructed without loss. The programmatic TypeScript API is a convenience layer that produces the same JSON structure.
 
 A graph is a directed acyclic graph of **nodes**. Each node declares its type (source, action, sink, branch, fanout, fanin), its configuration, its upstream dependencies, and optional execution policies (retry, timeout, concurrency). Nodes are connected by edges derived from the dependency declarations.
 
-### 6.2 Node types
+The graph JSON schema is defined using **Effect Schema**. This provides runtime validation, TypeScript type derivation, and encode/decode in a single definition. Effect Schema integrates with `@hono/effect-validator` for request validation in the server package.
 
-**Source** — References a registered connector by name and provides connection and extraction configuration.
+### 6.3 Node types
 
-**Action** — Applies a transformation to primitives. Two sub-modes are supported. Declarative actions reference a built-in operation by name (chunk, embed, filter, map, deduplicate, validate, convert) with configuration parameters. Code actions reference a TypeScript module and export name, resolved at runtime.
+**Source** — References a registered source connector by name and provides connection and extraction configuration.
 
-**Sink** — References a registered connector by name and provides connection and load configuration.
+**Action** — Applies a transformation to primitives. Actions are resolved by name from the ActionRegistry. The runtime provides built-in generic actions (filter, map, batch, deduplicate, validate, convert). Domain-specific actions (embed, chunk, complete) are provided by external packages (`nvisy-ai`, etc.) and registered into the ActionRegistry via Layer composition.
+
+**Sink** — References a registered sink connector by name and provides connection and load configuration.
 
 **Branch** — Routes each primitive to one of several downstream nodes based on a predicate. A default route handles unmatched primitives.
 
@@ -176,35 +219,66 @@ A graph is a directed acyclic graph of **nodes**. Each node declares its type (s
 
 **FanIn** — Collects primitives from multiple upstream nodes and merges them into a single stream.
 
-### 6.3 Graph compilation
+### 6.4 Registries
 
-JSON graph definitions are parsed and validated against a JSON Schema. The parser resolves node references (string IDs to node definitions), connector references (string names to registered connectors), operation references (string names to built-in actions), and the dependency graph (topological sort, cycle detection). If validation fails, structured errors with JSON paths are returned.
+The runtime uses three separate Effect Services for resolving node references to implementations:
 
-The graph compiler transforms a validated graph definition into an executable `ExecutionPlan`. The compilation pipeline resolves all connector and action references, builds the DAG, computes parallelism constraints, aggregates rate limits, and estimates resource requirements. The `ExecutionPlan` is an immutable data structure. Compilation itself is an Effect, producing typed errors on failure.
+- **SourceRegistry** — Maps source names to `DataSource` factories. Populated by connector packages (`nvisy-sql`, `nvisy-vector`, etc.) via Layer composition.
+- **SinkRegistry** — Maps sink names to `DataSink` factories. Same population model.
+- **ActionRegistry** — Maps action names to `Action` factories. Pre-loaded with the runtime's built-in generic actions. Extended by domain packages (`nvisy-ai`, etc.).
 
-### 6.4 Execution model
+Separation ensures type safety (each registry returns the correct interface without narrowing), independent testability (mock only what you need), and clear error messages ("unknown source: xyz" vs "unknown action: xyz"). Connector packages register their capabilities into the appropriate registries via Effect Layers. At the app boundary, all layers compose into a single program.
 
-The runtime executes an `ExecutionPlan` as a composed Effect program. It walks the DAG in topological order, maintaining four internal structures: a **ready queue** (nodes whose dependencies are all satisfied), a **running pool** (nodes currently executing, bounded by max concurrency via Effect semaphores), a **retry queue** (nodes awaiting retry via Effect's built-in retry policies), and a **done store** (completed results, both successes and terminal failures).
+### 6.5 Built-in actions
 
-### 6.5 Data flow between nodes
+The runtime owns a set of generic, data-plane actions that operate on primitives without external dependencies:
 
-Data flows between nodes through Effect streams. When a node completes a batch of primitives, they are immediately available to downstream nodes. This enables pipeline parallelism — downstream nodes can begin processing before upstream nodes finish.
+- **filter** — Drop primitives that don't match a predicate.
+- **map** — Transform primitive fields (rename, reshape, project).
+- **batch** — Group N primitives into batches before forwarding downstream.
+- **deduplicate** — Drop duplicates by content hash or user-defined key.
+- **validate** — Assert primitives match a schema; route failures to DLQ.
+- **convert** — Cast between primitive types (Row → Document, etc.).
 
-For nodes that require all upstream data before starting (e.g., deduplication across the full dataset), a **materialization barrier** can be configured, causing the runtime to buffer all upstream output before invoking the node.
+These are pre-registered in the ActionRegistry. Domain-specific actions (embed, chunk, complete, extract) live in their respective packages.
 
-### 6.6 Retry policy
+### 6.6 Graph compilation
+
+The compiler pipeline transforms raw JSON into an executable plan in three stages:
+
+1. **Parse** (`compiler/parse.ts`) — Decode the raw JSON against the Effect Schema graph definition. This produces a typed, validated graph structure or structured errors with JSON paths.
+
+2. **Validate** (`compiler/validate.ts`) — Structural DAG validation: cycle detection via topological sort, dangling node references, type compatibility between connected nodes (source output types match downstream action input types), and connector/action name resolution against the registries.
+
+3. **Plan** (`compiler/plan.ts`) — Build the `ExecutionPlan`: resolve all names to concrete implementations via the registries, compute the topological execution order, aggregate concurrency constraints, and wire rate limit policies. The `ExecutionPlan` is an immutable data structure. Compilation itself is an Effect, producing typed errors on failure.
+
+### 6.7 Execution model
+
+The engine executes an `ExecutionPlan` as a composed Effect program. It walks the DAG in topological order, maintaining four internal structures: a **ready queue** (nodes whose dependencies are all satisfied), a **running pool** (nodes currently executing, bounded by max concurrency via Effect semaphores), a **retry queue** (nodes awaiting retry via Effect's built-in retry policies), and a **done store** (completed results, both successes and terminal failures).
+
+### 6.8 Data flow between nodes
+
+Each edge in the DAG is backed by an **Effect Queue**. Producer nodes push primitives into the queue; consumer nodes pull from it. Backpressure is automatic — when a downstream node processes slower than its upstream, the queue suspends the upstream fiber until the downstream is ready. This prevents memory exhaustion in unbalanced graphs without manual flow control.
+
+Internally, the runtime uses **Effect Stream** for node-level data processing. Core's `AsyncIterable`-based `DataSource` and `DataSink` interfaces are adapted to Effect Streams at the source/sink boundaries. This gives the execution engine full access to the Effect ecosystem: interruption, resource safety, typed errors, and structured concurrency.
+
+For nodes that require all upstream data before starting (e.g., deduplication across the full dataset), a **materialization barrier** can be configured. The barrier drains the upstream queue into an array before forwarding to the node.
+
+Fan-out nodes push each primitive to multiple downstream queues. Fan-in nodes pull from multiple upstream queues and merge into a single stream.
+
+### 6.9 Retry policy
 
 Each node can define a retry policy specifying maximum retries, backoff strategy (fixed, exponential, or jitter), initial and maximum delay, and an optional allowlist of retryable error codes. Effect's `Schedule` module provides the implementation. The runtime distinguishes between retryable errors (network timeouts, rate limits, transient API failures) and terminal errors (authentication failures, schema violations, invalid configuration). Terminal errors fail the node immediately.
 
-### 6.7 Rate limiting
+### 6.10 Rate limiting
 
 Rate limits are enforced per-connector using Effect's `RateLimiter`. When a node issues a request that would exceed the rate limit, the fiber is suspended until tokens are available. Rate limits are declared in connector capabilities and can be overridden in graph configuration.
 
-### 6.8 Concurrency control
+### 6.11 Concurrency control
 
-Global concurrency is bounded by a configurable Effect semaphore (default: 10 permits). Per-node concurrency can be set individually. The runtime respects both limits simultaneously.
+Global concurrency is bounded by a configurable Effect semaphore (default: 10 permits). Per-node concurrency can be set individually. The runtime respects both limits simultaneously. The fiber pool (`engine/pool.ts`) manages this.
 
-### 6.9 Runtime observability
+### 6.12 Runtime observability
 
 The runtime emits structured metrics and trace spans for every graph run. Each run is an OpenTelemetry trace; each node execution is a span within that trace. Metrics include run duration, run status (success, partial failure, failure), per-node execution time, primitives processed and failed, connector calls issued, and rate limit wait time.
 
@@ -212,50 +286,38 @@ The runtime emits structured metrics and trace spans for every graph run. Each r
 
 ## 7. Server (`nvisy-server`)
 
-### 7.1 Components
+### 7.1 Role
 
-The server mode adds three components on top of the runtime:
+The Node.js server is a **stateless execution worker**. It accepts graph JSON, compiles and executes it via the runtime, and reports status of in-flight runs. It does not persist graph definitions, run history, or lineage — that responsibility belongs to a separate persistent server (written in Rust). This package is a thin HTTP interface over the runtime engine.
 
-1. **REST API** — Graph CRUD, run management, connector health checks
-2. **Cron Scheduler** — Periodic graph execution on cron expressions with timezone support
-3. **Event Triggers** — Webhook-driven graph execution with configurable authentication
+### 7.2 HTTP layer
 
-The HTTP layer is built on **Hono**, a lightweight, edge-compatible web framework. Hono provides routing, middleware composition, and request validation with minimal overhead.
+The HTTP layer is built on **Hono**, a lightweight, edge-compatible web framework. Hono provides routing, middleware composition, and request validation with minimal overhead. The server entry point is `main.ts`, which starts a Node.js HTTP server via `@hono/node-server`.
 
-### 7.2 REST API
+### 7.3 Middleware
 
-The API surface covers graph lifecycle management, run execution and monitoring, connector introspection, and lineage queries. All endpoints accept and return JSON. Since graphs are natively JSON-serializable, the API stores and retrieves them without transformation.
+All requests pass through two middleware layers:
+
+- **Request ID** — Assigns a unique `X-Request-Id` header to every request for correlation.
+- **Request logger** — Emits structured JSON logs (method, path, status, latency, request ID) for every request.
+
+### 7.4 REST API
+
+The API surface covers health checks, graph execution, validation, and in-flight run management. All endpoints accept and return JSON. Connectors are defined within the graph JSON schema, not managed separately.
 
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/health` | Liveness probe |
 | `GET` | `/ready` | Readiness probe |
-| `POST` | `/api/graphs` | Create a new graph definition |
-| `GET` | `/api/graphs` | List all graphs |
-| `GET` | `/api/graphs/:id` | Get a graph by ID |
-| `PUT` | `/api/graphs/:id` | Replace a graph definition |
-| `DELETE` | `/api/graphs/:id` | Delete a graph |
-| `POST` | `/api/graphs/validate` | Validate a graph definition without persisting |
-| `POST` | `/api/graphs/:graphId/runs` | Trigger a new run for a graph |
-| `GET` | `/api/graphs/:graphId/runs` | List runs for a graph |
-| `GET` | `/api/runs/:id` | Get run status and details |
-| `POST` | `/api/runs/:id/cancel` | Cancel a running execution |
-| `GET` | `/api/connectors` | List all registered connectors |
-| `GET` | `/api/connectors/:name` | Get connector details and capabilities |
-| `GET` | `/api/connectors/:name/health` | Health check a specific connector |
-| `GET` | `/api/lineage/:primitiveId` | Trace the full lineage of a primitive |
-
-### 7.3 Persistence
-
-The server stores graph definitions, run history, and execution state in a pluggable storage backend. The default backend is SQLite for single-node deployments. PostgreSQL is supported for production use.
-
-### 7.4 Scheduling and triggers
-
-Graphs can be scheduled with cron expressions (timezone-aware, with configurable catch-up behavior) or triggered by inbound webhooks (with configurable path, method, and authentication).
+| `POST` | `/api/v1/graphs/execute` | Submit a graph for execution; returns `{ runId }` immediately |
+| `POST` | `/api/v1/graphs/validate` | Compile and validate a graph without executing |
+| `GET` | `/api/v1/graphs` | List in-flight runs |
+| `GET` | `/api/v1/graphs/:runId` | Get detailed status of a single in-flight run |
+| `DELETE` | `/api/v1/graphs/:runId` | Cancel a running execution |
 
 ### 7.5 Server observability
 
-The server layer emits HTTP request logs (structured JSON with method, path, status, latency), exposes health check and readiness endpoints, and provides metric export endpoints for Prometheus and OpenTelemetry collectors.
+The server layer emits HTTP request logs (structured JSON with method, path, status, latency, request ID) and exposes health check and readiness endpoints.
 
 ---
 
