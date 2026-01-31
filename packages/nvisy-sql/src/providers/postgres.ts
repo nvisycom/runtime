@@ -3,7 +3,7 @@ import { Redacted } from "effect";
 import { makeSqlProvider } from "../shared/sql-provider.js";
 
 export const postgres = makeSqlProvider({
-	id: "postgres",
+	id: "sql/postgres",
 	makeLayer: (creds) =>
 		PgClient.layer({
 			host: creds.host,

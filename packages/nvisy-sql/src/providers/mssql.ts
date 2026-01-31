@@ -3,7 +3,7 @@ import { Redacted } from "effect";
 import { makeSqlProvider } from "../shared/sql-provider.js";
 
 export const mssql = makeSqlProvider({
-	id: "mssql",
+	id: "sql/mssql",
 	makeLayer: (creds) =>
 		MssqlClient.layer({
 			server: creds.host,
