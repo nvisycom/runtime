@@ -4,40 +4,44 @@ import { Provider, Row, ConnectionError } from "@nvisy/core";
 import type { Resumable, JsonValue } from "@nvisy/core";
 import { SqlCredentials, SqlParams, SqlCursor } from "./schemas.js";
 
+/** Effect Layer that provides a {@link SqlClient.SqlClient}. */
 type SqlLayer = Layer.Layer<SqlClient.SqlClient, unknown>;
-type Runtime = ManagedRuntime.ManagedRuntime<SqlClient.SqlClient, unknown>;
+
+/** A managed Effect runtime scoped to a single SQL connection pool. */
+type SqlRuntime = ManagedRuntime.ManagedRuntime<SqlClient.SqlClient, unknown>;
 
 /**
- * Create a SQL provider factory parameterised by a database-specific layer
- * constructor. This avoids duplicating read/write logic across pg/mysql/mssql.
+ * Configuration for {@link makeSqlProvider}.
+ *
+ * Each database adapter (pg, mysql, mssql) supplies its own `id` and
+ * `makeLayer` implementation; everything else (read, write, lifecycle)
+ * is handled by the shared factory.
  */
-export const makeSqlProvider = (config: {
-	id: string;
-	makeLayer: (creds: SqlCredentials) => SqlLayer;
-}) =>
+export interface SqlProviderConfig {
+	/** Unique provider identifier (e.g. `"sql/postgres"`). */
+	readonly id: string;
+	/** Builds the database-specific {@link SqlClient.SqlClient} layer from credentials. */
+	readonly makeLayer: (creds: SqlCredentials) => SqlLayer;
+}
+
+/**
+ * Create a SQL provider factory parameterised by a database-specific
+ * {@link SqlClient.SqlClient} layer constructor.
+ *
+ * All three adapters (Postgres, MySQL, MSSQL) share the same connection
+ * lifecycle, keyset-paginated source, and batch-insert sink — only the
+ * layer constructor differs.
+ *
+ * @param config - Database-specific configuration.
+ * @returns A {@link Provider.Factory} that produces connected provider instances.
+ */
+export const makeSqlProvider = (config: SqlProviderConfig) =>
 	Provider.Factory({
 		credentialSchema: SqlCredentials,
 		paramSchema: SqlParams,
 
 		connect: async (credentials, _params) => {
-			const layer = config.makeLayer(credentials);
-			const runtime = ManagedRuntime.make(layer);
-
-			// Verify the connection is usable by acquiring the client once.
-			try {
-				await runtime.runPromise(
-					Effect.gen(function* () {
-						yield* SqlClient.SqlClient;
-					}),
-				);
-			} catch (error) {
-				await runtime.dispose();
-				throw new ConnectionError(
-					`Failed to connect to ${config.id}: ${error instanceof Error ? error.message : String(error)}`,
-					{ source: config.id, retryable: true },
-					error instanceof Error ? error : undefined,
-				);
-			}
+			const runtime = await connectRuntime(config, credentials);
 
 			const builder = Provider.Instance({
 				id: config.id,
@@ -52,7 +56,6 @@ export const makeSqlProvider = (config: {
 				)
 				.withSink(Provider.Sink({ write: writeRows }));
 
-			// Return a custom buildable that attaches disconnect to the result.
 			return {
 				build(params: SqlParams) {
 					const instance = builder.build(params);
@@ -64,8 +67,47 @@ export const makeSqlProvider = (config: {
 		},
 	});
 
+/**
+ * Bootstrap a {@link ManagedRuntime} from credentials and verify the
+ * connection is usable by acquiring the {@link SqlClient.SqlClient} once.
+ *
+ * If the initial connection fails the runtime is disposed before the
+ * error propagates, preventing leaked resources.
+ */
+async function connectRuntime(
+	config: SqlProviderConfig,
+	credentials: SqlCredentials,
+): Promise<SqlRuntime> {
+	const layer = config.makeLayer(credentials);
+	const runtime = ManagedRuntime.make(layer);
+
+	try {
+		await runtime.runPromise(
+			Effect.gen(function* () {
+				yield* SqlClient.SqlClient;
+			}),
+		);
+	} catch (error) {
+		await runtime.dispose();
+		throw new ConnectionError(
+			`Failed to connect to ${config.id}: ${error instanceof Error ? error.message : String(error)}`,
+			{ source: config.id, retryable: true },
+			error instanceof Error ? error : undefined,
+		);
+	}
+
+	return runtime;
+}
+
+/**
+ * Keyset-paginated source that yields one {@link Row} at a time.
+ *
+ * Pages are fetched using a composite `(idColumn, tiebreaker)` cursor
+ * for stable ordering across batches. The generator terminates when a
+ * batch returns fewer rows than `batchSize`.
+ */
 async function* readRows(
-	runtime: Runtime,
+	runtime: SqlRuntime,
 	cursor: SqlCursor,
 	params: SqlParams,
 ): AsyncGenerator<Resumable<Row, SqlCursor>> {
@@ -116,14 +158,19 @@ async function* readRows(
 			};
 		}
 
-		if (rows.length < batchSize) {
-			break;
-		}
+		if (rows.length < batchSize) break;
 	}
 }
 
+/**
+ * Batch-insert sink.
+ *
+ * Extracts the column map from each {@link Row} and writes them in a
+ * single `INSERT INTO … VALUES` statement via `sql.insert()`.
+ * Empty batches are silently skipped.
+ */
 async function writeRows(
-	runtime: Runtime,
+	runtime: SqlRuntime,
 	items: ReadonlyArray<Row>,
 	params: SqlParams,
 ): Promise<void> {

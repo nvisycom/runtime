@@ -2,21 +2,41 @@ import { Schema } from "effect";
 import { Action, Row } from "@nvisy/core";
 import type { JsonValue } from "@nvisy/core";
 
-const Operator = Schema.Literal("eq", "neq", "gt", "gte", "lt", "lte", "in", "notIn", "isNull", "isNotNull");
+/** Supported comparison operators for a single filter condition. */
+const Operator = Schema.Literal(
+	"eq",
+	"neq",
+	"gt",
+	"gte",
+	"lt",
+	"lte",
+	"in",
+	"notIn",
+	"isNull",
+	"isNotNull",
+);
 type Operator = typeof Operator.Type;
 
+/** A single predicate: `column <op> value`. */
 const FilterCondition = Schema.Struct({
 	column: Schema.String,
 	op: Operator,
 	value: Schema.optional(Schema.Unknown),
 });
 
+/**
+ * Parameters for the `sql/filter` action.
+ *
+ * - `conditions` — array of predicates applied to each row.
+ * - `mode` — combine with `"and"` (default) or `"or"`.
+ */
 const FilterParams = Schema.Struct({
 	conditions: Schema.Array(FilterCondition),
 	mode: Schema.optional(Schema.Literal("and", "or")),
 });
 type FilterParams = typeof FilterParams.Type;
 
+/** Evaluate a single {@link FilterCondition} against a row. */
 function matchCondition(
 	row: Row,
 	condition: { column: string; op: Operator; value?: unknown },
@@ -29,17 +49,39 @@ function matchCondition(
 		case "neq":
 			return val !== condition.value;
 		case "gt":
-			return typeof val === "number" && typeof condition.value === "number" && val > condition.value;
+			return (
+				typeof val === "number" &&
+				typeof condition.value === "number" &&
+				val > condition.value
+			);
 		case "gte":
-			return typeof val === "number" && typeof condition.value === "number" && val >= condition.value;
+			return (
+				typeof val === "number" &&
+				typeof condition.value === "number" &&
+				val >= condition.value
+			);
 		case "lt":
-			return typeof val === "number" && typeof condition.value === "number" && val < condition.value;
+			return (
+				typeof val === "number" &&
+				typeof condition.value === "number" &&
+				val < condition.value
+			);
 		case "lte":
-			return typeof val === "number" && typeof condition.value === "number" && val <= condition.value;
+			return (
+				typeof val === "number" &&
+				typeof condition.value === "number" &&
+				val <= condition.value
+			);
 		case "in":
-			return Array.isArray(condition.value) && (condition.value as JsonValue[]).includes(val as JsonValue);
+			return (
+				Array.isArray(condition.value) &&
+				(condition.value as JsonValue[]).includes(val as JsonValue)
+			);
 		case "notIn":
-			return Array.isArray(condition.value) && !(condition.value as JsonValue[]).includes(val as JsonValue);
+			return (
+				Array.isArray(condition.value) &&
+				!(condition.value as JsonValue[]).includes(val as JsonValue)
+			);
 		case "isNull":
 			return val === null || val === undefined;
 		case "isNotNull":
@@ -47,8 +89,14 @@ function matchCondition(
 	}
 }
 
+/**
+ * Filter rows by a set of column-level predicates.
+ *
+ * Conditions are combined with AND (default) or OR. Supports equality,
+ * comparison, set membership, and null checks.
+ */
 export const filter = Action.Define({
-	id: "filter",
+	id: "sql/filter",
 	inputClass: Row,
 	outputClass: Row,
 	schema: FilterParams,

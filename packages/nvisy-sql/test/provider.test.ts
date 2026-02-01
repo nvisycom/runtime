@@ -1,31 +1,44 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { Row } from "@nvisy/core";
+import type {
+	ProviderInstance,
+	SourceProvider,
+	SinkProvider,
+} from "@nvisy/core";
 import type { SqlCursor } from "../src/shared/schemas.js";
-import {
-	mockProvider,
-	testCreds,
-	testParams,
-	executedQueries,
-	resetQueries,
-} from "./helpers.js";
+import type { QueryRecord } from "./helpers.js";
+import { createMockProvider, testCreds } from "./helpers.js";
+
+type ConnectedProvider = ProviderInstance<Row> &
+	SourceProvider<Row, SqlCursor> &
+	SinkProvider<Row>;
 
 describe("makeSqlProvider with mock client", () => {
-	beforeEach(() => {
-		resetQueries();
+	let instance: ConnectedProvider;
+	let queries: QueryRecord[];
+
+	beforeEach(async () => {
+		const mock = createMockProvider();
+		queries = mock.queries;
+		instance = (await mock.provider.connect(
+			testCreds,
+			mock.params,
+		)) as ConnectedProvider;
 	});
 
-	it("connect returns a provider instance", async () => {
-		const provider = await mockProvider.connect(testCreds, testParams);
-		expect(provider).toBeDefined();
-		expect(provider.id).toBe("mock-sql");
-		expect(provider.dataClass).toBe(Row);
-		await provider.disconnect?.();
+	afterEach(async () => {
+		await instance.disconnect?.();
+	});
+
+	it("connect returns a provider instance", () => {
+		expect(instance).toBeDefined();
+		expect(instance.id).toBe("sql/mock");
+		expect(instance.dataClass).toBe(Row);
 	});
 
 	describe("source (read)", () => {
-		it("reads rows with null cursor (first page)", async () => {
-			const provider = await mockProvider.connect(testCreds, testParams);
-			const source = provider.createSource();
+		it("reads all rows with null cursor (first page)", async () => {
+			const source = instance.createSource();
 			const collected: Row[] = [];
 
 			for await (const resumable of source.read({
@@ -41,12 +54,10 @@ describe("makeSqlProvider with mock client", () => {
 				id: 3,
 				name: "Charlie",
 			});
-			await provider.disconnect?.();
 		});
 
 		it("yields correct cursor progression", async () => {
-			const provider = await mockProvider.connect(testCreds, testParams);
-			const source = provider.createSource();
+			const source = instance.createSource();
 			const cursors: SqlCursor[] = [];
 
 			for await (const resumable of source.read({
@@ -61,12 +72,10 @@ describe("makeSqlProvider with mock client", () => {
 				{ lastId: 2, lastTiebreaker: 200 },
 				{ lastId: 3, lastTiebreaker: 300 },
 			]);
-			await provider.disconnect?.();
 		});
 
 		it("resumes from a given cursor", async () => {
-			const provider = await mockProvider.connect(testCreds, testParams);
-			const source = provider.createSource();
+			const source = instance.createSource();
 			const collected: Row[] = [];
 
 			for await (const resumable of source.read({
@@ -82,44 +91,92 @@ describe("makeSqlProvider with mock client", () => {
 				id: 3,
 				name: "Charlie",
 			});
-			await provider.disconnect?.();
 		});
 	});
 
 	describe("sink (write)", () => {
-		it("accepts a batch of rows without throwing", async () => {
-			const provider = await mockProvider.connect(testCreds, testParams);
-			const sink = provider.createSink();
+		it("issues INSERT for a batch of rows", async () => {
+			const sink = instance.createSink();
 
 			const rows = [
 				new Row({ id: 4, name: "Diana", created_at: 400 }),
 				new Row({ id: 5, name: "Eve", created_at: 500 }),
 			];
 
-			await expect(sink.write(rows)).resolves.toBeUndefined();
+			await sink.write(rows);
 
-			const insertQuery = executedQueries.find((q) =>
+			const insertQueries = queries.filter((q) =>
 				q.sql.includes("INSERT"),
 			);
-			expect(insertQuery).toBeDefined();
-			await provider.disconnect?.();
+			expect(insertQueries).toHaveLength(1);
 		});
 
-		it("handles empty batch gracefully", async () => {
-			const provider = await mockProvider.connect(testCreds, testParams);
-			const sink = provider.createSink();
-			await expect(sink.write([])).resolves.toBeUndefined();
-			expect(
-				executedQueries.filter((q) => q.sql.includes("INSERT")),
-			).toHaveLength(0);
-			await provider.disconnect?.();
+		it("skips INSERT for an empty batch", async () => {
+			const sink = instance.createSink();
+			await sink.write([]);
+
+			const insertQueries = queries.filter((q) =>
+				q.sql.includes("INSERT"),
+			);
+			expect(insertQueries).toHaveLength(0);
 		});
 	});
 
 	describe("disconnect", () => {
 		it("can be called without error", async () => {
-			const provider = await mockProvider.connect(testCreds, testParams);
-			await expect(provider.disconnect?.()).resolves.toBeUndefined();
+			await expect(instance.disconnect?.()).resolves.toBeUndefined();
 		});
+	});
+});
+
+describe("pagination with small batchSize", () => {
+	let instance: ConnectedProvider;
+	let queries: QueryRecord[];
+
+	beforeEach(async () => {
+		const mock = createMockProvider({ batchSize: 2 });
+		queries = mock.queries;
+		instance = (await mock.provider.connect(
+			testCreds,
+			mock.params,
+		)) as ConnectedProvider;
+	});
+
+	afterEach(async () => {
+		await instance.disconnect?.();
+	});
+
+	it("fetches multiple pages when batchSize < total rows", async () => {
+		const source = instance.createSource();
+		const collected: Row[] = [];
+
+		for await (const resumable of source.read({
+			lastId: null,
+			lastTiebreaker: null,
+		})) {
+			collected.push(resumable.data);
+		}
+
+		expect(collected).toHaveLength(3);
+
+		// First page: 2 rows, second page: 1 row → 2 SELECT queries
+		const selectQueries = queries.filter((q) => q.sql.includes("SELECT"));
+		expect(selectQueries).toHaveLength(2);
+	});
+
+	it("second page resumes from the last cursor of the first page", async () => {
+		const source = instance.createSource();
+		const cursors: SqlCursor[] = [];
+
+		for await (const resumable of source.read({
+			lastId: null,
+			lastTiebreaker: null,
+		})) {
+			cursors.push(resumable.context);
+		}
+
+		// After first page: cursor at (2, 200). Second page starts after that.
+		expect(cursors[1]).toEqual({ lastId: 2, lastTiebreaker: 200 });
+		expect(cursors[2]).toEqual({ lastId: 3, lastTiebreaker: 300 });
 	});
 });

@@ -12,24 +12,22 @@ export const mockRows = [
 	{ id: 3, name: "Charlie", created_at: 300 },
 ];
 
-export let executedQueries: Array<{
+export interface QueryRecord {
 	sql: string;
 	params: ReadonlyArray<unknown>;
-}> = [];
-
-export function resetQueries(): void {
-	executedQueries = [];
 }
 
-function createMockConnection(): Connection {
+function createMockConnection(queries: QueryRecord[]): Connection {
 	return {
 		execute: (sql, params, _transform) =>
 			Effect.sync(() => {
-				executedQueries.push({ sql, params });
+				queries.push({ sql, params });
 
 				if (sql.includes("SELECT")) {
 					const limitMatch = sql.match(/LIMIT\s+(\d+)/i);
-					const limit = limitMatch ? Number(limitMatch[1]) : mockRows.length;
+					const limit = limitMatch
+						? Number(limitMatch[1])
+						: mockRows.length;
 
 					if (sql.includes(">")) {
 						const [lastId] = params;
@@ -53,7 +51,7 @@ function createMockConnection(): Connection {
 			}),
 		executeRaw: (sql, params) =>
 			Effect.sync(() => {
-				executedQueries.push({ sql, params });
+				queries.push({ sql, params });
 				return [];
 			}),
 		executeStream: () => {
@@ -61,33 +59,56 @@ function createMockConnection(): Connection {
 		},
 		executeValues: (sql, params) =>
 			Effect.sync(() => {
-				executedQueries.push({ sql, params });
+				queries.push({ sql, params });
 				return [];
 			}),
 		executeUnprepared: (sql, params, _transform) =>
 			Effect.sync(() => {
-				executedQueries.push({ sql, params });
+				queries.push({ sql, params });
 				return [];
 			}),
 	};
 }
 
-function createMockSqlLayer(): Layer.Layer<SqlClient.SqlClient, never> {
+function createMockSqlLayer(
+	queries: QueryRecord[],
+): Layer.Layer<SqlClient.SqlClient, never> {
 	const compiler = PgClient.makeCompiler();
 	return Layer.effect(
 		SqlClient.SqlClient,
 		SqlClient.make({
-			acquirer: Effect.succeed(createMockConnection()),
+			acquirer: Effect.succeed(createMockConnection(queries)),
 			compiler,
 			spanAttributes: [],
 		}),
 	).pipe(Layer.provide(Reactivity.layer));
 }
 
-export const mockProvider = makeSqlProvider({
-	id: "mock-sql",
-	makeLayer: () => createMockSqlLayer(),
-});
+/**
+ * Create an isolated mock provider with its own query log.
+ *
+ * Each call returns a fresh provider factory and an empty query array,
+ * so tests never share mutable state.
+ */
+export function createMockProvider(overrides?: Partial<SqlParams>) {
+	const queries: QueryRecord[] = [];
+
+	const provider = makeSqlProvider({
+		id: "sql/mock",
+		makeLayer: () => createMockSqlLayer(queries),
+	});
+
+	const params: SqlParams = {
+		table: "users",
+		columns: [],
+		idColumn: "id",
+		tiebreaker: "created_at",
+		batchSize: 1000,
+		...overrides,
+	};
+
+	return { provider, queries, params };
+}
 
 export const testCreds: SqlCredentials = {
 	host: "localhost",
@@ -95,12 +116,4 @@ export const testCreds: SqlCredentials = {
 	database: "testdb",
 	username: "admin",
 	password: "secret",
-};
-
-export const testParams: SqlParams = {
-	table: "users",
-	columns: [],
-	idColumn: "id",
-	tiebreaker: "created_at",
-	batchSize: 1000,
 };

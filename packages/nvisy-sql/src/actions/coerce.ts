@@ -2,13 +2,26 @@ import { Schema } from "effect";
 import { Action, Row } from "@nvisy/core";
 import type { JsonValue } from "@nvisy/core";
 
+/** Allowed target types for column coercion. */
 const CoerceTarget = Schema.Literal("string", "number", "boolean");
 
+/**
+ * Parameters for the `sql/coerce` action.
+ *
+ * `columns` maps column names to a target type. Columns not listed
+ * are passed through unchanged.
+ */
 const CoerceParams = Schema.Struct({
 	columns: Schema.Record({ key: Schema.String, value: CoerceTarget }),
 });
 type CoerceParams = typeof CoerceParams.Type;
 
+/**
+ * Cast a single value to the requested type.
+ *
+ * - `null` / `undefined` → `null` regardless of target.
+ * - `"number"` on a non-numeric string → `null`.
+ */
 function coerceValue(
 	value: JsonValue | undefined,
 	target: "string" | "number" | "boolean",
@@ -27,8 +40,14 @@ function coerceValue(
 	}
 }
 
+/**
+ * Coerce column values to a target type (`string`, `number`, or `boolean`).
+ *
+ * Null values remain null regardless of the target. Non-numeric strings
+ * coerced to `number` become `null`. Row identity and metadata are preserved.
+ */
 export const coerce = Action.Define({
-	id: "coerce",
+	id: "sql/coerce",
 	inputClass: Row,
 	outputClass: Row,
 	schema: CoerceParams,
