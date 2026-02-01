@@ -5,11 +5,9 @@ const BatchParams = Schema.Struct({
 	size: Schema.optional(Schema.Number),
 });
 
-export const batch = Action.Define({
-	id: "batch",
-	inputClass: Data,
-	outputClass: Data,
-	schema: BatchParams,
+export const batch = Action.withoutClient("batch", {
+	types: [Data],
+	params: BatchParams,
 	execute: async (items, _params) => {
 		// TODO: group items into batches of _params.size ?? 100
 		return [...items];

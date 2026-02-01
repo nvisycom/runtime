@@ -1,5 +1,10 @@
 import { Data } from "#datatypes/base-datatype.js";
-import type { Metadata } from "#datatypes/base-datatype.js";
+import type { DataOptions } from "#datatypes/base-datatype.js";
+
+/** Options for constructing a {@link Blob}. */
+export interface BlobOptions extends DataOptions {
+	readonly contentType?: string;
+}
 
 /**
  * A file or binary blob retrieved from object storage (S3, GCS, Dropbox, etc.).
@@ -18,12 +23,8 @@ export class Blob extends Data {
 	readonly #data: Buffer;
 	readonly #contentType?: string | undefined;
 
-	constructor(
-		path: string,
-		data: Buffer,
-		options?: { id?: string; contentType?: string; metadata?: Metadata },
-	) {
-		super(options?.id, options?.metadata);
+	constructor(path: string, data: Buffer, options?: BlobOptions) {
+		super(options);
 		this.#path = path;
 		this.#data = data;
 		this.#contentType = options?.contentType;

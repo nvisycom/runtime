@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { Effect } from "effect";
 import { parseGraph, buildRuntimeGraph } from "../src/compiler/parse.js";
 import {
-	GRAPH_ID, SOURCE_ID, ACTION_ID, SINK_ID,
+	GRAPH_ID, SOURCE_ID, ACTION_ID, TARGET_ID,
 	linearGraph,
 } from "./fixtures.js";
 
@@ -32,7 +32,7 @@ describe("parseGraph", () => {
 		const result = await run(parseGraph(linearGraph()));
 
 		expect(result.graph.hasEdge(`${SOURCE_ID}->${ACTION_ID}`)).toBe(true);
-		expect(result.graph.hasEdge(`${ACTION_ID}->${SINK_ID}`)).toBe(true);
+		expect(result.graph.hasEdge(`${ACTION_ID}->${TARGET_ID}`)).toBe(true);
 	});
 
 	it("rejects input missing required fields", async () => {

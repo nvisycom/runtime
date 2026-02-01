@@ -1,5 +1,5 @@
 import { Data } from "#datatypes/base-datatype.js";
-import type { Metadata } from "#datatypes/base-datatype.js";
+import type { DataOptions } from "#datatypes/base-datatype.js";
 
 /**
  * A dense vector embedding produced by an embedding model.
@@ -17,11 +17,8 @@ import type { Metadata } from "#datatypes/base-datatype.js";
 export class Embedding extends Data {
 	readonly #vector: Float32Array;
 
-	constructor(
-		vector: Float32Array | number[],
-		options?: { id?: string; metadata?: Metadata },
-	) {
-		super(options?.id, options?.metadata);
+	constructor(vector: Float32Array | number[], options?: DataOptions) {
+		super(options);
 		this.#vector =
 			vector instanceof Float32Array ? vector : new Float32Array(vector);
 	}

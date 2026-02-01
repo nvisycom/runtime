@@ -1,8 +1,9 @@
 import { Schema } from "effect";
 import { Provider } from "#providers/base-provider.js";
+import { Stream } from "#streams/base-stream.js";
 import { Row } from "#datatypes/record-datatype.js";
 import type { JsonValue } from "#datatypes/base-datatype.js";
-import type { Resumable } from "#providers/stream-types.js";
+import type { Resumable } from "#streams/stream-types.js";
 
 export const Credentials = Schema.Struct({
 	host: Schema.String,
@@ -20,7 +21,7 @@ export const Cursor = Schema.Struct({
 });
 export type Cursor = typeof Cursor.Type;
 
-class ExampleClient {
+export class ExampleClient {
 	readonly rows: ReadonlyArray<Record<string, JsonValue>> = [
 		{ id: "1", name: "Alice" },
 		{ id: "2", name: "Bob" },
@@ -46,12 +47,28 @@ async function write(
 	// no-op
 }
 
-export const ExampleProvider = Provider.Factory({
-	credentialSchema: Credentials,
-	paramSchema: Params,
-	connect: async (_credentials, _param) => {
-		return Provider.Instance({ id: "example-db", dataClass: Row, client: new ExampleClient() })
-			.withSource(Provider.Source({ contextSchema: Cursor, read }))
-			.withSink(Provider.Sink({ write }));
-	},
+export const ExampleProvider = Provider.withAuthentication("example", {
+	credentials: Credentials,
+	connect: async (_credentials) => ({
+		client: new ExampleClient(),
+		disconnect: async () => {},
+	}),
+});
+
+export const ExampleProviderWithId = Provider.withAuthentication("custom-provider-id", {
+	credentials: Credentials,
+	connect: async (_credentials) => ({
+		client: new ExampleClient(),
+		disconnect: async () => {},
+	}),
+});
+
+export const ExampleSource = Stream.createSource("read", ExampleClient, {
+	types: [Row, Cursor, Params],
+	reader: read,
+});
+
+export const ExampleTarget = Stream.createTarget("write", ExampleClient, {
+	types: [Row, Params],
+	writer: write,
 });

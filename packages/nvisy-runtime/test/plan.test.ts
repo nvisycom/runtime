@@ -4,7 +4,7 @@ import { parseGraph } from "../src/compiler/parse.js";
 import { validateGraph } from "../src/compiler/validate.js";
 import { buildPlan } from "../src/compiler/plan.js";
 import {
-	GRAPH_ID, SOURCE_ID, ACTION_ID, SINK_ID, EXTRA_ID,
+	GRAPH_ID, SOURCE_ID, ACTION_ID, TARGET_ID, EXTRA_ID,
 	linearGraph, diamondGraph, isolatedNodesGraph, runWithRegistry,
 } from "./fixtures.js";
 
@@ -19,7 +19,7 @@ describe("buildPlan", () => {
 			parseThenValidate(linearGraph()).pipe(Effect.flatMap(buildPlan)),
 		);
 
-		expect(plan.order).toEqual([SOURCE_ID, ACTION_ID, SINK_ID]);
+		expect(plan.order).toEqual([SOURCE_ID, ACTION_ID, TARGET_ID]);
 	});
 
 	it("produces a valid topological order for a diamond graph", async () => {
@@ -29,7 +29,7 @@ describe("buildPlan", () => {
 
 		// Source must come first, sink must come last
 		expect(plan.order[0]).toBe(SOURCE_ID);
-		expect(plan.order[plan.order.length - 1]).toBe(SINK_ID);
+		expect(plan.order[plan.order.length - 1]).toBe(TARGET_ID);
 		// Both middle nodes must appear between source and sink
 		expect(plan.order).toContain(ACTION_ID);
 		expect(plan.order).toContain(EXTRA_ID);
@@ -62,9 +62,9 @@ describe("buildPlan", () => {
 		expect(actionAttrs.resolved).toBeDefined();
 		expect(actionAttrs.resolved!.type).toBe("action");
 
-		const sinkAttrs = plan.graph.getNodeAttributes(SINK_ID);
+		const sinkAttrs = plan.graph.getNodeAttributes(TARGET_ID);
 		expect(sinkAttrs.resolved).toBeDefined();
-		expect(sinkAttrs.resolved!.type).toBe("sink");
+		expect(sinkAttrs.resolved!.type).toBe("target");
 	});
 
 	it("exposes the graph definition on the plan", async () => {

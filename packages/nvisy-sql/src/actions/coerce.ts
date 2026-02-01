@@ -46,11 +46,9 @@ function coerceValue(
  * Null values remain null regardless of the target. Non-numeric strings
  * coerced to `number` become `null`. Row identity and metadata are preserved.
  */
-export const coerce = Action.Define({
-	id: "sql/coerce",
-	inputClass: Row,
-	outputClass: Row,
-	schema: CoerceParams,
+export const coerce = Action.withoutClient("coerce", {
+	types: [Row],
+	params: CoerceParams,
 	execute: async (items, params) => {
 		return items.map((row) => {
 			const result: Record<string, JsonValue> = { ...row.columns };
@@ -59,10 +57,7 @@ export const coerce = Action.Define({
 				result[column] = coerceValue(result[column], target);
 			}
 
-			return new Row(result, {
-				id: row.id,
-				...(row.metadata !== undefined && { metadata: row.metadata }),
-			});
+			return new Row(result, { id: row.id, metadata: row.metadata });
 		});
 	},
 });

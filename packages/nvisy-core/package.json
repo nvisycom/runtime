@@ -14,7 +14,8 @@
 		"#datatypes/*.js": "./src/datatypes/*.ts",
 		"#errors/*.js": "./src/errors/*.ts",
 		"#module.js": "./src/module.ts",
-		"#providers/*.js": "./src/providers/*.ts"
+		"#providers/*.js": "./src/providers/*.ts",
+		"#streams/*.js": "./src/streams/*.ts"
 	},
 	"files": [
 		"dist"

@@ -4,7 +4,7 @@ export {
 	GraphEdge,
 	SourceNode,
 	ActionNode,
-	SinkNode,
+	TargetNode,
 	BranchNode,
 	RetryPolicy,
 	TimeoutPolicy,

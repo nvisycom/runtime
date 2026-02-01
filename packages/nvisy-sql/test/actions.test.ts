@@ -23,10 +23,11 @@ const rowWithIdentity = new Row(
 );
 
 async function expectPreservesIdentity(
-	action: ActionInstance<Row, Row, any>,
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	action: ActionInstance<void, Row, Row, any>,
 	params: unknown,
 ) {
-	const result = await action.execute([rowWithIdentity], params);
+	const result = await action.execute(undefined, [rowWithIdentity], params);
 	expect(result[0]!.id).toBe("test-id");
 	expect(result[0]!.metadata).toEqual({ source: "test" });
 }
@@ -37,7 +38,7 @@ async function expectPreservesIdentity(
 
 describe("filter action", () => {
 	it("filters by eq", async () => {
-		const result = await filter.execute(rows, {
+		const result = await filter.execute(undefined, rows, {
 			conditions: [{ column: "city", op: "eq", value: "NYC" }],
 		});
 		expect(result).toHaveLength(2);
@@ -46,7 +47,7 @@ describe("filter action", () => {
 	});
 
 	it("filters by neq", async () => {
-		const result = await filter.execute(rows, {
+		const result = await filter.execute(undefined, rows, {
 			conditions: [{ column: "city", op: "neq", value: "NYC" }],
 		});
 		expect(result).toHaveLength(2);
@@ -55,7 +56,7 @@ describe("filter action", () => {
 	});
 
 	it("filters by gt", async () => {
-		const result = await filter.execute(rows, {
+		const result = await filter.execute(undefined, rows, {
 			conditions: [{ column: "age", op: "gt", value: 28 }],
 		});
 		expect(result).toHaveLength(2);
@@ -64,14 +65,14 @@ describe("filter action", () => {
 	});
 
 	it("filters by gte", async () => {
-		const result = await filter.execute(rows, {
+		const result = await filter.execute(undefined, rows, {
 			conditions: [{ column: "age", op: "gte", value: 30 }],
 		});
 		expect(result).toHaveLength(2);
 	});
 
 	it("filters by lt", async () => {
-		const result = await filter.execute(rows, {
+		const result = await filter.execute(undefined, rows, {
 			conditions: [{ column: "age", op: "lt", value: 30 }],
 		});
 		expect(result).toHaveLength(1);
@@ -79,7 +80,7 @@ describe("filter action", () => {
 	});
 
 	it("filters by lte", async () => {
-		const result = await filter.execute(rows, {
+		const result = await filter.execute(undefined, rows, {
 			conditions: [{ column: "age", op: "lte", value: 25 }],
 		});
 		expect(result).toHaveLength(1);
@@ -87,14 +88,14 @@ describe("filter action", () => {
 	});
 
 	it("filters by in", async () => {
-		const result = await filter.execute(rows, {
+		const result = await filter.execute(undefined, rows, {
 			conditions: [{ column: "city", op: "in", value: ["NYC", "SF"] }],
 		});
 		expect(result).toHaveLength(3);
 	});
 
 	it("filters by notIn", async () => {
-		const result = await filter.execute(rows, {
+		const result = await filter.execute(undefined, rows, {
 			conditions: [{ column: "city", op: "notIn", value: ["NYC", "SF"] }],
 		});
 		expect(result).toHaveLength(1);
@@ -102,7 +103,7 @@ describe("filter action", () => {
 	});
 
 	it("filters by isNull", async () => {
-		const result = await filter.execute(rows, {
+		const result = await filter.execute(undefined, rows, {
 			conditions: [{ column: "age", op: "isNull" }],
 		});
 		expect(result).toHaveLength(1);
@@ -110,14 +111,14 @@ describe("filter action", () => {
 	});
 
 	it("filters by isNotNull", async () => {
-		const result = await filter.execute(rows, {
+		const result = await filter.execute(undefined, rows, {
 			conditions: [{ column: "age", op: "isNotNull" }],
 		});
 		expect(result).toHaveLength(3);
 	});
 
 	it("excludes null values from numeric gt comparison", async () => {
-		const result = await filter.execute(rows, {
+		const result = await filter.execute(undefined, rows, {
 			conditions: [{ column: "age", op: "gt", value: 0 }],
 		});
 		// Diana (age: null) is excluded because null is not a number
@@ -126,7 +127,7 @@ describe("filter action", () => {
 	});
 
 	it("treats non-existent column as undefined", async () => {
-		const result = await filter.execute(rows, {
+		const result = await filter.execute(undefined, rows, {
 			conditions: [{ column: "nonexistent", op: "isNull" }],
 		});
 		// undefined is treated as null-like → all rows match
@@ -134,14 +135,14 @@ describe("filter action", () => {
 	});
 
 	it("eq on non-existent column matches nothing (not equal to any value)", async () => {
-		const result = await filter.execute(rows, {
+		const result = await filter.execute(undefined, rows, {
 			conditions: [{ column: "nonexistent", op: "eq", value: "anything" }],
 		});
 		expect(result).toHaveLength(0);
 	});
 
 	it("combines conditions with AND (default)", async () => {
-		const result = await filter.execute(rows, {
+		const result = await filter.execute(undefined, rows, {
 			conditions: [
 				{ column: "city", op: "eq", value: "NYC" },
 				{ column: "age", op: "gt", value: 30 },
@@ -152,7 +153,7 @@ describe("filter action", () => {
 	});
 
 	it("combines conditions with OR", async () => {
-		const result = await filter.execute(rows, {
+		const result = await filter.execute(undefined, rows, {
 			conditions: [
 				{ column: "city", op: "eq", value: "LA" },
 				{ column: "age", op: "gt", value: 30 },
@@ -163,7 +164,7 @@ describe("filter action", () => {
 	});
 
 	it("returns all rows when conditions are empty", async () => {
-		const result = await filter.execute(rows, { conditions: [] });
+		const result = await filter.execute(undefined, rows, { conditions: [] });
 		expect(result).toHaveLength(4);
 	});
 
@@ -180,27 +181,27 @@ describe("filter action", () => {
 
 describe("project action", () => {
 	it("keeps specified columns", async () => {
-		const result = await project.execute(rows, { keep: ["id", "name"] });
+		const result = await project.execute(undefined, rows, { keep: ["id", "name"] });
 		expect(result).toHaveLength(4);
 		expect(Object.keys(result[0]!.columns)).toEqual(["id", "name"]);
 		expect(result[0]!.get("name")).toBe("Alice");
 	});
 
 	it("drops specified columns", async () => {
-		const result = await project.execute(rows, { drop: ["age", "city"] });
+		const result = await project.execute(undefined, rows, { drop: ["age", "city"] });
 		expect(result).toHaveLength(4);
 		expect(Object.keys(result[0]!.columns)).toEqual(["id", "name"]);
 	});
 
 	it("ignores missing columns in keep", async () => {
-		const result = await project.execute(rows, {
+		const result = await project.execute(undefined, rows, {
 			keep: ["id", "nonexistent"],
 		});
 		expect(Object.keys(result[0]!.columns)).toEqual(["id"]);
 	});
 
 	it("ignores missing columns in drop", async () => {
-		const result = await project.execute(rows, {
+		const result = await project.execute(undefined, rows, {
 			drop: ["nonexistent"],
 		});
 		// All original columns remain because "nonexistent" matched nothing
@@ -223,7 +224,7 @@ describe("project action", () => {
 
 describe("rename action", () => {
 	it("renames columns according to mapping", async () => {
-		const result = await rename.execute(rows, {
+		const result = await rename.execute(undefined, rows, {
 			mapping: { name: "full_name", city: "location" },
 		});
 		expect(result[0]!.get("full_name")).toBe("Alice");
@@ -233,7 +234,7 @@ describe("rename action", () => {
 	});
 
 	it("preserves columns not in the mapping", async () => {
-		const result = await rename.execute(rows, {
+		const result = await rename.execute(undefined, rows, {
 			mapping: { name: "full_name" },
 		});
 		expect(result[0]!.get("id")).toBe(1);
@@ -246,7 +247,7 @@ describe("rename action", () => {
 		// writing into a shared result object. When an unmapped key collides
 		// with a rename target, last-write wins.
 		const input = [new Row({ a: 1, b: 2, c: 3 })];
-		const result = await rename.execute(input, {
+		const result = await rename.execute(undefined, input, {
 			mapping: { a: "b", b: "c" },
 		});
 		// a=1 → writes result["b"]=1, b=2 → writes result["c"]=2,
@@ -258,7 +259,7 @@ describe("rename action", () => {
 
 	it("swaps keys when targets don't collide with unmapped columns", async () => {
 		const input = [new Row({ x: 10, y: 20 })];
-		const result = await rename.execute(input, {
+		const result = await rename.execute(undefined, input, {
 			mapping: { x: "y", y: "x" },
 		});
 		// x=10 → result["y"]=10, y=20 → result["x"]=20
@@ -267,7 +268,7 @@ describe("rename action", () => {
 	});
 
 	it("handles empty mapping (no-op)", async () => {
-		const result = await rename.execute(rows, { mapping: {} });
+		const result = await rename.execute(undefined, rows, { mapping: {} });
 		expect(result[0]!.columns).toEqual(rows[0]!.columns);
 	});
 
@@ -282,7 +283,7 @@ describe("rename action", () => {
 
 describe("coerce action", () => {
 	it("coerces number to string", async () => {
-		const result = await coerce.execute(rows, {
+		const result = await coerce.execute(undefined, rows, {
 			columns: { id: "string" },
 		});
 		expect(result[0]!.get("id")).toBe("1");
@@ -291,7 +292,7 @@ describe("coerce action", () => {
 
 	it("coerces string to number", async () => {
 		const input = [new Row({ value: "42" })];
-		const result = await coerce.execute(input, {
+		const result = await coerce.execute(undefined, input, {
 			columns: { value: "number" },
 		});
 		expect(result[0]!.get("value")).toBe(42);
@@ -299,7 +300,7 @@ describe("coerce action", () => {
 
 	it("returns null for non-numeric string coerced to number", async () => {
 		const input = [new Row({ value: "not-a-number" })];
-		const result = await coerce.execute(input, {
+		const result = await coerce.execute(undefined, input, {
 			columns: { value: "number" },
 		});
 		expect(result[0]!.get("value")).toBeNull();
@@ -307,7 +308,7 @@ describe("coerce action", () => {
 
 	it("coerces to boolean", async () => {
 		const input = [new Row({ flag: 0, active: "yes", empty: "" })];
-		const result = await coerce.execute(input, {
+		const result = await coerce.execute(undefined, input, {
 			columns: { flag: "boolean", active: "boolean", empty: "boolean" },
 		});
 		expect(result[0]!.get("flag")).toBe(false);
@@ -317,7 +318,7 @@ describe("coerce action", () => {
 
 	it("coerces null to null regardless of target", async () => {
 		const input = [new Row({ value: null })];
-		const result = await coerce.execute(input, {
+		const result = await coerce.execute(undefined, input, {
 			columns: { value: "string" },
 		});
 		expect(result[0]!.get("value")).toBeNull();
@@ -325,7 +326,7 @@ describe("coerce action", () => {
 
 	it("coerces missing column to null", async () => {
 		const input = [new Row({ existing: 1 })];
-		const result = await coerce.execute(input, {
+		const result = await coerce.execute(undefined, input, {
 			columns: { missing: "string" },
 		});
 		// undefined → null via coerceValue, column is created as null
@@ -335,7 +336,7 @@ describe("coerce action", () => {
 	});
 
 	it("preserves columns not in the coerce map", async () => {
-		const result = await coerce.execute(rows, {
+		const result = await coerce.execute(undefined, rows, {
 			columns: { id: "string" },
 		});
 		expect(result[0]!.get("name")).toBe("Alice");

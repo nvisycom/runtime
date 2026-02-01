@@ -25,11 +25,9 @@ type ProjectParams = typeof ProjectParams.Type;
  * `{ drop: [...] }` to remove named columns. Row identity and
  * metadata are preserved.
  */
-export const project = Action.Define({
-	id: "sql/project",
-	inputClass: Row,
-	outputClass: Row,
-	schema: ProjectParams,
+export const project = Action.withoutClient("project", {
+	types: [Row],
+	params: ProjectParams,
 	execute: async (items, params) => {
 		return items.map((row) => {
 			const cols = row.columns;
@@ -52,10 +50,7 @@ export const project = Action.Define({
 				}
 			}
 
-			return new Row(projected, {
-				id: row.id,
-				...(row.metadata !== undefined && { metadata: row.metadata }),
-			});
+			return new Row(projected, { id: row.id, metadata: row.metadata });
 		});
 	},
 });

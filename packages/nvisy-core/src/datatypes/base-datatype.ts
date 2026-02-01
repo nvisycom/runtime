@@ -22,6 +22,17 @@ export type JsonValue =
 export type Metadata = Record<string, JsonValue>;
 
 /**
+ * Common options shared by all {@link Data} subclass constructors.
+ *
+ * Subclasses that need extra fields (e.g. `contentType`) should extend
+ * this interface rather than redefining `id` and `metadata`.
+ */
+export interface DataOptions {
+	readonly id?: string;
+	readonly metadata?: Metadata | undefined;
+}
+
+/**
  * Abstract base class for all data types flowing through the pipeline.
  *
  * Every piece of data in the system — documents, embeddings, database rows,
@@ -35,9 +46,9 @@ export abstract class Data {
 	readonly #id: string;
 	readonly #metadata?: Metadata | undefined;
 
-	constructor(id?: string, metadata?: Metadata) {
-		this.#id = id ?? crypto.randomUUID();
-		this.#metadata = metadata;
+	constructor(options?: DataOptions) {
+		this.#id = options?.id ?? crypto.randomUUID();
+		this.#metadata = options?.metadata;
 	}
 
 	/** Unique identifier for this data item. */

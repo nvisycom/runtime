@@ -12,7 +12,7 @@ import type { RuntimeGraph, ParsedGraph } from "./parse.js";
 export type ResolvedNode =
 	| { readonly type: "source"; readonly provider: AnyProviderFactory; readonly config: Readonly<Record<string, unknown>> }
 	| { readonly type: "action"; readonly action: AnyActionInstance; readonly config: Readonly<Record<string, unknown>> }
-	| { readonly type: "sink"; readonly provider: AnyProviderFactory; readonly config: Readonly<Record<string, unknown>> }
+	| { readonly type: "target"; readonly provider: AnyProviderFactory; readonly config: Readonly<Record<string, unknown>> }
 	| { readonly type: "branch" };
 
 export interface ExecutionPlan {
@@ -46,9 +46,9 @@ export const buildPlan = (
 					graph.setNodeAttribute(node.id, "resolved", { type: "source", provider, config: node.config as Readonly<Record<string, unknown>> });
 					break;
 				}
-				case "sink": {
+				case "target": {
 					const provider = yield* registry.getProvider(node.connector);
-					graph.setNodeAttribute(node.id, "resolved", { type: "sink", provider, config: node.config as Readonly<Record<string, unknown>> });
+					graph.setNodeAttribute(node.id, "resolved", { type: "target", provider, config: node.config as Readonly<Record<string, unknown>> });
 					break;
 				}
 				case "action": {

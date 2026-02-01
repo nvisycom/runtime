@@ -95,11 +95,9 @@ function matchCondition(
  * Conditions are combined with AND (default) or OR. Supports equality,
  * comparison, set membership, and null checks.
  */
-export const filter = Action.Define({
-	id: "sql/filter",
-	inputClass: Row,
-	outputClass: Row,
-	schema: FilterParams,
+export const filter = Action.withoutClient("filter", {
+	types: [Row],
+	params: FilterParams,
 	execute: async (items, params) => {
 		const mode = params.mode ?? "and";
 

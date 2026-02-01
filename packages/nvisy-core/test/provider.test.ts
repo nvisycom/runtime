@@ -1,92 +1,102 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { Row } from "#datatypes/record-datatype.js";
-import { ExampleProvider, Credentials, Params, Cursor } from "./provider.js";
+import {
+	ExampleProvider,
+	ExampleProviderWithId,
+	ExampleSource,
+	ExampleTarget,
+	ExampleClient,
+	Credentials,
+	Params,
+	Cursor,
+} from "./provider.js";
 
 describe("ExampleProvider", () => {
-	it("exposes credential and param schemas on the factory", () => {
+	it("exposes credential schema on the factory", () => {
 		expect(ExampleProvider.credentialSchema).toBe(Credentials);
-		expect(ExampleProvider.paramSchema).toBe(Params);
 	});
 
-	it("connect returns a provider instance", async () => {
-		const provider = await ExampleProvider.connect(
-			{ host: "localhost", port: 5432 },
-			{ table: "users" },
-		);
-		expect(provider).toBeDefined();
-		expect(provider.id).toBe("example-db");
+	it("exposes configurable factory ID", () => {
+		expect(ExampleProviderWithId.id).toBe("custom-provider-id");
 	});
 
-	describe("instance", () => {
-		let provider: Awaited<ReturnType<typeof ExampleProvider.connect>>;
+	it("connect returns a provider instance with a client", async () => {
+		const instance = await ExampleProvider.connect({ host: "localhost", port: 5432 });
+		expect(instance).toBeDefined();
+		expect(instance.id).toBe("example");
+		expect(instance.client).toBeInstanceOf(ExampleClient);
+	});
 
-		beforeAll(async () => {
-			provider = await ExampleProvider.connect(
-				{ host: "localhost", port: 5432 },
-				{ table: "users" },
-			);
-		});
+	it("disconnect resolves without error", async () => {
+		const instance = await ExampleProvider.connect({ host: "localhost", port: 5432 });
+		await expect(instance.disconnect()).resolves.toBeUndefined();
+	});
+});
 
-		it("exposes id", () => {
-			expect(provider.id).toBe("example-db");
-		});
+describe("ExampleSource", () => {
+	let client: ExampleClient;
 
-		it("dataClass is Row", () => {
-			expect(provider.dataClass).toBe(Row);
-		});
+	beforeAll(async () => {
+		const instance = await ExampleProvider.connect({ host: "localhost", port: 5432 });
+		client = instance.client;
+	});
 
-		it("contextSchema is Cursor", () => {
-			expect(provider.contextSchema).toBe(Cursor);
-		});
+	it("exposes id, clientClass, dataClass, contextSchema, and paramSchema", () => {
+		expect(ExampleSource.id).toBe("read");
+		expect(ExampleSource.clientClass).toBe(ExampleClient);
+		expect(ExampleSource.dataClass).toBe(Row);
+		expect(ExampleSource.contextSchema).toBe(Cursor);
+		expect(ExampleSource.paramSchema).toBe(Params);
+	});
 
-		describe("createSource", () => {
-			it("reads all rows from offset 0", async () => {
-				const source = provider.createSource();
-				const collected: Row[] = [];
+	it("reads all rows from offset 0", async () => {
+		const collected: Row[] = [];
+		for await (const resumable of ExampleSource.read(client, { offset: 0 }, { table: "users" })) {
+			collected.push(resumable.data);
+		}
 
-				for await (const resumable of source.read({ offset: 0 })) {
-					collected.push(resumable.data);
-				}
+		expect(collected).toHaveLength(3);
+		expect(collected[0]!.columns).toEqual({ id: "1", name: "Alice" });
+		expect(collected[2]!.columns).toEqual({ id: "3", name: "Charlie" });
+	});
 
-				expect(collected).toHaveLength(3);
-				expect(collected[0]!.columns).toEqual({ id: "1", name: "Alice" });
-				expect(collected[2]!.columns).toEqual({ id: "3", name: "Charlie" });
-			});
+	it("resumes from a given offset", async () => {
+		const collected: Row[] = [];
+		for await (const resumable of ExampleSource.read(client, { offset: 2 }, { table: "users" })) {
+			collected.push(resumable.data);
+		}
 
-			it("resumes from a given offset", async () => {
-				const source = provider.createSource();
-				const collected: Row[] = [];
+		expect(collected).toHaveLength(1);
+		expect(collected[0]!.columns).toEqual({ id: "3", name: "Charlie" });
+	});
 
-				for await (const resumable of source.read({ offset: 2 })) {
-					collected.push(resumable.data);
-				}
+	it("yields correct resumption context", async () => {
+		const contexts: Cursor[] = [];
+		for await (const resumable of ExampleSource.read(client, { offset: 0 }, { table: "users" })) {
+			contexts.push(resumable.context);
+		}
 
-				expect(collected).toHaveLength(1);
-				expect(collected[0]!.columns).toEqual({ id: "3", name: "Charlie" });
-			});
+		expect(contexts).toEqual([{ offset: 1 }, { offset: 2 }, { offset: 3 }]);
+	});
+});
 
-			it("yields correct resumption context", async () => {
-				const source = provider.createSource();
-				const contexts: Cursor[] = [];
+describe("ExampleTarget", () => {
+	let client: ExampleClient;
 
-				for await (const resumable of source.read({ offset: 0 })) {
-					contexts.push(resumable.context);
-				}
+	beforeAll(async () => {
+		const instance = await ExampleProvider.connect({ host: "localhost", port: 5432 });
+		client = instance.client;
+	});
 
-				expect(contexts).toEqual([
-					{ offset: 1 },
-					{ offset: 2 },
-					{ offset: 3 },
-				]);
-			});
-		});
+	it("exposes id, clientClass, dataClass, and paramSchema", () => {
+		expect(ExampleTarget.id).toBe("write");
+		expect(ExampleTarget.clientClass).toBe(ExampleClient);
+		expect(ExampleTarget.dataClass).toBe(Row);
+		expect(ExampleTarget.paramSchema).toBe(Params);
+	});
 
-		describe("createSink", () => {
-			it("accepts a batch of rows without throwing", async () => {
-				const sink = provider.createSink();
-				const row = new Row({ id: "4", name: "Diana" });
-				await expect(sink.write([row])).resolves.toBeUndefined();
-			});
-		});
+	it("accepts a batch of rows without throwing", async () => {
+		const row = new Row({ id: "4", name: "Diana" });
+		await expect(ExampleTarget.write(client, [row], { table: "users" })).resolves.toBeUndefined();
 	});
 });

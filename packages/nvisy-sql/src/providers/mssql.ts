@@ -1,10 +1,10 @@
 import { MssqlClient } from "@effect/sql-mssql";
 import { Redacted } from "effect";
-import { makeSqlProvider } from "../shared/sql-provider.js";
+import { makeSqlProvider } from "./base.js";
 
 /** Microsoft SQL Server provider — keyset-paginated source and batch-insert sink via `@effect/sql-mssql`. */
 export const mssql = makeSqlProvider({
-	id: "sql/mssql",
+	id: "mssql",
 	makeLayer: (creds) =>
 		MssqlClient.layer({
 			server: creds.host,

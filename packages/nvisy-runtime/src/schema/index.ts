@@ -1,7 +1,7 @@
 export {
 	SourceNode,
 	ActionNode,
-	SinkNode,
+	TargetNode,
 	BranchNode,
 	GraphNode,
 	GraphEdge,

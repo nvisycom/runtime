@@ -5,11 +5,9 @@ const ConvertParams = Schema.Struct({
 	to: Schema.Literal("document", "embedding", "blob", "row"),
 });
 
-export const convert = Action.Define({
-	id: "convert",
-	inputClass: Data,
-	outputClass: Data,
-	schema: ConvertParams,
+export const convert = Action.withoutClient("convert", {
+	types: [Data],
+	params: ConvertParams,
 	execute: async (items, _params) => {
 		// TODO: cast between data types (Row → Document, etc.)
 		return [...items];

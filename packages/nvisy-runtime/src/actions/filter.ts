@@ -5,11 +5,9 @@ const FilterParams = Schema.Struct({
 	predicate: Schema.String,
 });
 
-export const filter = Action.Define({
-	id: "filter",
-	inputClass: Data,
-	outputClass: Data,
-	schema: FilterParams,
+export const filter = Action.withoutClient("filter", {
+	types: [Data],
+	params: FilterParams,
 	execute: async (items, _params) => {
 		// TODO: evaluate predicate expression from params
 		return [...items];

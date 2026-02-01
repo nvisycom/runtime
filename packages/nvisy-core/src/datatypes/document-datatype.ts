@@ -1,5 +1,10 @@
 import { Data } from "#datatypes/base-datatype.js";
-import type { JsonValue, Metadata } from "#datatypes/base-datatype.js";
+import type { JsonValue, DataOptions } from "#datatypes/base-datatype.js";
+
+/** Options for constructing a {@link Document}. */
+export interface DocumentOptions extends DataOptions {
+	readonly contentType?: string;
+}
 
 /**
  * A structured document with arbitrary JSON content.
@@ -17,11 +22,8 @@ export class Document extends Data {
 	readonly #content: JsonValue;
 	readonly #contentType?: string | undefined;
 
-	constructor(
-		content: JsonValue,
-		options?: { id?: string; contentType?: string; metadata?: Metadata },
-	) {
-		super(options?.id, options?.metadata);
+	constructor(content: JsonValue, options?: DocumentOptions) {
+		super(options);
 		this.#content = content;
 		this.#contentType = options?.contentType;
 	}

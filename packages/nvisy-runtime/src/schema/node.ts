@@ -28,10 +28,10 @@ export const ActionNode = Schema.extend(
 	}),
 );
 
-export const SinkNode = Schema.extend(
+export const TargetNode = Schema.extend(
 	NodeBase,
 	Schema.Struct({
-		type: Schema.Literal("sink"),
+		type: Schema.Literal("target"),
 		connector: Schema.String,
 		config: Schema.Record({ key: Schema.String, value: Schema.Unknown }),
 	}),
@@ -54,7 +54,7 @@ export const BranchNode = Schema.extend(
 export const GraphNode = Schema.Union(
 	SourceNode,
 	ActionNode,
-	SinkNode,
+	TargetNode,
 	BranchNode,
 );
 
@@ -65,7 +65,7 @@ export const GraphEdge = Schema.Struct({
 
 export type SourceNode = Schema.Schema.Type<typeof SourceNode>;
 export type ActionNode = Schema.Schema.Type<typeof ActionNode>;
-export type SinkNode = Schema.Schema.Type<typeof SinkNode>;
+export type TargetNode = Schema.Schema.Type<typeof TargetNode>;
 export type BranchNode = Schema.Schema.Type<typeof BranchNode>;
 export type GraphNode = Schema.Schema.Type<typeof GraphNode>;
 export type GraphEdge = Schema.Schema.Type<typeof GraphEdge>;

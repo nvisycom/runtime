@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { compile } from "../src/compiler/index.js";
 import {
-	GRAPH_ID, SOURCE_ID, ACTION_ID, SINK_ID,
+	GRAPH_ID, SOURCE_ID, ACTION_ID, TARGET_ID,
 	linearGraph, diamondGraph, runWithRegistry,
 } from "./fixtures.js";
 
@@ -10,7 +10,7 @@ describe("compile", () => {
 		const plan = await runWithRegistry(compile(linearGraph()));
 
 		expect(plan.definition.id).toBe(GRAPH_ID);
-		expect(plan.order).toEqual([SOURCE_ID, ACTION_ID, SINK_ID]);
+		expect(plan.order).toEqual([SOURCE_ID, ACTION_ID, TARGET_ID]);
 		expect(plan.graph.order).toBe(3);
 		expect(plan.graph.size).toBe(2);
 	});
@@ -19,7 +19,7 @@ describe("compile", () => {
 		const plan = await runWithRegistry(compile(diamondGraph()));
 
 		expect(plan.order[0]).toBe(SOURCE_ID);
-		expect(plan.order[plan.order.length - 1]).toBe(SINK_ID);
+		expect(plan.order[plan.order.length - 1]).toBe(TARGET_ID);
 		expect(plan.order).toHaveLength(4);
 	});
 

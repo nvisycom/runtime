@@ -13,7 +13,5 @@ export { deduplicate } from "./deduplicate.js";
 export { validate } from "./validate.js";
 export { convert } from "./convert.js";
 
-export const builtinModule = Module.Define({
-	id: "builtin",
-	actions: { filter, map, batch, deduplicate, validate, convert },
-});
+export const builtinModule = Module.define("builtin")
+	.withActions(filter, map, batch, deduplicate, validate, convert);

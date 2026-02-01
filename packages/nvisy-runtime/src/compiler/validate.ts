@@ -79,7 +79,7 @@ function resolveNodeNames(
 ): Effect.Effect<void> {
 	switch (node.type) {
 		case "source":
-		case "sink":
+		case "target":
 			return registry.getProvider(node.connector).pipe(
 				Effect.map(() => undefined),
 				Effect.catchAll(() => Effect.sync(() => {

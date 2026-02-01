@@ -3,7 +3,7 @@ import { Effect } from "effect";
 import { parseGraph } from "../src/compiler/parse.js";
 import { validateGraph } from "../src/compiler/validate.js";
 import {
-	GRAPH_ID, SOURCE_ID, ACTION_ID, SINK_ID,
+	GRAPH_ID, SOURCE_ID, ACTION_ID, TARGET_ID,
 	linearGraph, diamondGraph, runWithRegistry,
 } from "./fixtures.js";
 
@@ -78,12 +78,12 @@ describe("validateGraph", () => {
 			nodes: [
 				{ id: SOURCE_ID, type: "action", action: "test/noop", config: {} },
 				{ id: ACTION_ID, type: "action", action: "test/noop", config: {} },
-				{ id: SINK_ID, type: "action", action: "test/noop", config: {} },
+				{ id: TARGET_ID, type: "action", action: "test/noop", config: {} },
 			],
 			edges: [
 				{ from: SOURCE_ID, to: ACTION_ID },
-				{ from: ACTION_ID, to: SINK_ID },
-				{ from: SINK_ID, to: SOURCE_ID },
+				{ from: ACTION_ID, to: TARGET_ID },
+				{ from: TARGET_ID, to: SOURCE_ID },
 			],
 		};
 

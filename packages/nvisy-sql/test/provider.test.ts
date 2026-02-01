@@ -1,50 +1,42 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { Row } from "@nvisy/core";
-import type {
-	ProviderInstance,
-	SourceProvider,
-	SinkProvider,
-} from "@nvisy/core";
-import type { SqlCursor } from "../src/shared/schemas.js";
+import type { ProviderInstance } from "@nvisy/core";
+import { SqlRuntimeClient } from "../src/providers/base.js";
+import { read } from "../src/streams/read.js";
+import { write } from "../src/streams/write.js";
+import type { SqlCursor } from "../src/streams/schemas.js";
 import type { QueryRecord } from "./helpers.js";
 import { createMockProvider, testCreds } from "./helpers.js";
 
-type ConnectedProvider = ProviderInstance<Row> &
-	SourceProvider<Row, SqlCursor> &
-	SinkProvider<Row>;
-
 describe("makeSqlProvider with mock client", () => {
-	let instance: ConnectedProvider;
+	let instance: ProviderInstance<SqlRuntimeClient>;
 	let queries: QueryRecord[];
+	let params: ReturnType<typeof createMockProvider>["params"];
 
 	beforeEach(async () => {
 		const mock = createMockProvider();
 		queries = mock.queries;
-		instance = (await mock.provider.connect(
-			testCreds,
-			mock.params,
-		)) as ConnectedProvider;
+		params = mock.params;
+		instance = await mock.provider.connect(testCreds);
 	});
 
 	afterEach(async () => {
 		await instance.disconnect?.();
 	});
 
-	it("connect returns a provider instance", () => {
+	it("connect returns a provider instance with a client", () => {
 		expect(instance).toBeDefined();
-		expect(instance.id).toBe("sql/mock");
-		expect(instance.dataClass).toBe(Row);
+		expect(instance.client).toBeInstanceOf(SqlRuntimeClient);
 	});
 
-	describe("source (read)", () => {
+	describe("source (read stream)", () => {
 		it("reads all rows with null cursor (first page)", async () => {
-			const source = instance.createSource();
 			const collected: Row[] = [];
 
-			for await (const resumable of source.read({
+			for await (const resumable of read.read(instance.client, {
 				lastId: null,
 				lastTiebreaker: null,
-			})) {
+			}, params)) {
 				collected.push(resumable.data);
 			}
 
@@ -57,13 +49,12 @@ describe("makeSqlProvider with mock client", () => {
 		});
 
 		it("yields correct cursor progression", async () => {
-			const source = instance.createSource();
 			const cursors: SqlCursor[] = [];
 
-			for await (const resumable of source.read({
+			for await (const resumable of read.read(instance.client, {
 				lastId: null,
 				lastTiebreaker: null,
-			})) {
+			}, params)) {
 				cursors.push(resumable.context);
 			}
 
@@ -75,13 +66,12 @@ describe("makeSqlProvider with mock client", () => {
 		});
 
 		it("resumes from a given cursor", async () => {
-			const source = instance.createSource();
 			const collected: Row[] = [];
 
-			for await (const resumable of source.read({
+			for await (const resumable of read.read(instance.client, {
 				lastId: 1,
 				lastTiebreaker: 100,
-			})) {
+			}, params)) {
 				collected.push(resumable.data);
 			}
 
@@ -94,16 +84,14 @@ describe("makeSqlProvider with mock client", () => {
 		});
 	});
 
-	describe("sink (write)", () => {
+	describe("target (write stream)", () => {
 		it("issues INSERT for a batch of rows", async () => {
-			const sink = instance.createSink();
-
 			const rows = [
 				new Row({ id: 4, name: "Diana", created_at: 400 }),
 				new Row({ id: 5, name: "Eve", created_at: 500 }),
 			];
 
-			await sink.write(rows);
+			await write.write(instance.client, rows, params);
 
 			const insertQueries = queries.filter((q) =>
 				q.sql.includes("INSERT"),
@@ -112,8 +100,7 @@ describe("makeSqlProvider with mock client", () => {
 		});
 
 		it("skips INSERT for an empty batch", async () => {
-			const sink = instance.createSink();
-			await sink.write([]);
+			await write.write(instance.client, [], params);
 
 			const insertQueries = queries.filter((q) =>
 				q.sql.includes("INSERT"),
@@ -130,16 +117,15 @@ describe("makeSqlProvider with mock client", () => {
 });
 
 describe("pagination with small batchSize", () => {
-	let instance: ConnectedProvider;
+	let instance: ProviderInstance<SqlRuntimeClient>;
 	let queries: QueryRecord[];
+	let params: ReturnType<typeof createMockProvider>["params"];
 
 	beforeEach(async () => {
 		const mock = createMockProvider({ batchSize: 2 });
 		queries = mock.queries;
-		instance = (await mock.provider.connect(
-			testCreds,
-			mock.params,
-		)) as ConnectedProvider;
+		params = mock.params;
+		instance = await mock.provider.connect(testCreds);
 	});
 
 	afterEach(async () => {
@@ -147,13 +133,12 @@ describe("pagination with small batchSize", () => {
 	});
 
 	it("fetches multiple pages when batchSize < total rows", async () => {
-		const source = instance.createSource();
 		const collected: Row[] = [];
 
-		for await (const resumable of source.read({
+		for await (const resumable of read.read(instance.client, {
 			lastId: null,
 			lastTiebreaker: null,
-		})) {
+		}, params)) {
 			collected.push(resumable.data);
 		}
 
@@ -165,13 +150,12 @@ describe("pagination with small batchSize", () => {
 	});
 
 	it("second page resumes from the last cursor of the first page", async () => {
-		const source = instance.createSource();
 		const cursors: SqlCursor[] = [];
 
-		for await (const resumable of source.read({
+		for await (const resumable of read.read(instance.client, {
 			lastId: null,
 			lastTiebreaker: null,
-		})) {
+		}, params)) {
 			cursors.push(resumable.context);
 		}
 

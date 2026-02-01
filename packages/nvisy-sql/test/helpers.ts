@@ -3,8 +3,9 @@ import { SqlClient } from "@effect/sql";
 import { PgClient } from "@effect/sql-pg";
 import { Reactivity } from "@effect/experimental";
 import type { Connection } from "@effect/sql/SqlConnection";
-import { makeSqlProvider } from "../src/shared/sql-provider.js";
-import type { SqlCredentials, SqlParams } from "../src/shared/schemas.js";
+import { makeSqlProvider, SqlRuntimeClient } from "../src/providers/base.js";
+import type { SqlCredentials } from "../src/providers/base.js";
+import type { SqlParams } from "../src/streams/schemas.js";
 
 export const mockRows = [
 	{ id: 1, name: "Alice", created_at: 100 },
@@ -94,7 +95,7 @@ export function createMockProvider(overrides?: Partial<SqlParams>) {
 	const queries: QueryRecord[] = [];
 
 	const provider = makeSqlProvider({
-		id: "sql/mock",
+		id: "mock",
 		makeLayer: () => createMockSqlLayer(queries),
 	});
 

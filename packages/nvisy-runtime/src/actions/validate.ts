@@ -5,11 +5,9 @@ const ValidateParams = Schema.Struct({
 	schema: Schema.String,
 });
 
-export const validate = Action.Define({
-	id: "validate",
-	inputClass: Data,
-	outputClass: Data,
-	schema: ValidateParams,
+export const validate = Action.withoutClient("validate", {
+	types: [Data],
+	params: ValidateParams,
 	execute: async (items, _params) => {
 		// TODO: assert items match params.schema
 		// TODO: route failures to DLQ

@@ -1,5 +1,5 @@
 import { Data } from "#datatypes/base-datatype.js";
-import type { JsonValue, Metadata } from "#datatypes/base-datatype.js";
+import type { JsonValue, DataOptions } from "#datatypes/base-datatype.js";
 
 /**
  * A row from a relational database.
@@ -18,11 +18,8 @@ import type { JsonValue, Metadata } from "#datatypes/base-datatype.js";
 export class Row extends Data {
 	readonly #columns: Readonly<Record<string, JsonValue>>;
 
-	constructor(
-		columns: Record<string, JsonValue>,
-		options?: { id?: string; metadata?: Metadata },
-	) {
-		super(options?.id, options?.metadata);
+	constructor(columns: Record<string, JsonValue>, options?: DataOptions) {
+		super(options);
 		this.#columns = columns;
 	}
 

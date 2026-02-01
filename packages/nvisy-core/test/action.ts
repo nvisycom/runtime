@@ -8,11 +8,9 @@ export const FilterParams = Schema.Struct({
 });
 export type FilterParams = typeof FilterParams.Type;
 
-export const ExampleFilter = Action.Define({
-	id: "filter",
-	inputClass: Row,
-	outputClass: Row,
-	schema: FilterParams,
+export const ExampleFilter = Action.withoutClient("filter", {
+	types: [Row],
+	params: FilterParams,
 	execute: async (items, params) =>
 		items.filter((row) => row.get(params.column) === params.value),
 });
@@ -23,11 +21,9 @@ export const MapParams = Schema.Struct({
 });
 export type MapParams = typeof MapParams.Type;
 
-export const ExampleMap = Action.Define({
-	id: "map",
-	inputClass: Row,
-	outputClass: Row,
-	schema: MapParams,
+export const ExampleMap = Action.withoutClient("map", {
+	types: [Row],
+	params: MapParams,
 	execute: async (items, params) =>
 		items.map((row) => {
 			const val = row.get(params.column);

@@ -1,10 +1,10 @@
 import { PgClient } from "@effect/sql-pg";
 import { Redacted } from "effect";
-import { makeSqlProvider } from "../shared/sql-provider.js";
+import { makeSqlProvider } from "./base.js";
 
 /** PostgreSQL provider — keyset-paginated source and batch-insert sink via `@effect/sql-pg`. */
 export const postgres = makeSqlProvider({
-	id: "sql/postgres",
+	id: "postgres",
 	makeLayer: (creds) =>
 		PgClient.layer({
 			host: creds.host,

@@ -59,7 +59,7 @@ export const executeNode = (
 				}
 				break;
 			}
-			case "sink": {
+			case "target": {
 				// Drain inEdges, write to sink
 				const items: Data[] = [];
 				for (const edge of inEdges) {
@@ -70,7 +70,7 @@ export const executeNode = (
 				if (items.length > 0) {
 					const instance = yield* Effect.tryPromise(() =>
 						resolved.provider.connect(resolved.config, resolved.config),
-					).pipe(Effect.catchAll((e) => Effect.fail(new Error(`Sink connect failed: ${String(e)}`))));
+					).pipe(Effect.catchAll((e) => Effect.fail(new Error(`Target connect failed: ${String(e)}`))));
 
 					// TODO: call instance.createSink().write(items)
 					void instance;

@@ -19,11 +19,9 @@ type RenameParams = typeof RenameParams.Type;
  * Each entry in `mapping` renames `oldKey → newKey`. Columns not in
  * the mapping are preserved as-is. Row identity and metadata are kept.
  */
-export const rename = Action.Define({
-	id: "sql/rename",
-	inputClass: Row,
-	outputClass: Row,
-	schema: RenameParams,
+export const rename = Action.withoutClient("rename", {
+	types: [Row],
+	params: RenameParams,
 	execute: async (items, params) => {
 		return items.map((row) => {
 			const result: Record<string, JsonValue> = {};
@@ -33,10 +31,7 @@ export const rename = Action.Define({
 				result[newKey] = val;
 			}
 
-			return new Row(result, {
-				id: row.id,
-				...(row.metadata !== undefined && { metadata: row.metadata }),
-			});
+			return new Row(result, { id: row.id, metadata: row.metadata });
 		});
 	},
 });

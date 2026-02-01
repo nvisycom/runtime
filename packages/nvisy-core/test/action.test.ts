@@ -17,7 +17,7 @@ describe("ExampleFilter", () => {
 	});
 
 	it("keeps rows matching the predicate", async () => {
-		const result = await ExampleFilter.execute(rows, {
+		const result = await ExampleFilter.execute(undefined, rows, {
 			column: "name",
 			value: "Bob",
 		});
@@ -27,7 +27,7 @@ describe("ExampleFilter", () => {
 	});
 
 	it("returns empty array when nothing matches", async () => {
-		const result = await ExampleFilter.execute(rows, {
+		const result = await ExampleFilter.execute(undefined, rows, {
 			column: "name",
 			value: "Nobody",
 		});
@@ -45,7 +45,7 @@ describe("ExampleMap", () => {
 	});
 
 	it("transforms column values to uppercase", async () => {
-		const result = await ExampleMap.execute(rows, {
+		const result = await ExampleMap.execute(undefined, rows, {
 			column: "name",
 			fn: "uppercase",
 		});
@@ -57,7 +57,7 @@ describe("ExampleMap", () => {
 	});
 
 	it("transforms column values to lowercase", async () => {
-		const result = await ExampleMap.execute(rows, {
+		const result = await ExampleMap.execute(undefined, rows, {
 			column: "name",
 			fn: "lowercase",
 		});
@@ -66,7 +66,7 @@ describe("ExampleMap", () => {
 	});
 
 	it("leaves non-string columns unchanged", async () => {
-		const result = await ExampleMap.execute(rows, {
+		const result = await ExampleMap.execute(undefined, rows, {
 			column: "id",
 			fn: "uppercase",
 		});
