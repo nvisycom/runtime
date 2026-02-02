@@ -30,8 +30,8 @@ describe("validateGraph", () => {
 		const input = {
 			id: GRAPH_ID,
 			nodes: [
-				{ id: SOURCE_ID, type: "source", connector: "test/testdb", config: { host: "localhost", table: "t" } },
-				{ id: SOURCE_ID, type: "action", action: "test/noop", config: {} },
+				{ id: SOURCE_ID, type: "source", provider: "test/testdb", params: { host: "localhost", table: "t" } },
+				{ id: SOURCE_ID, type: "action", action: "test/noop", params: {} },
 			],
 		};
 
@@ -47,7 +47,7 @@ describe("validateGraph", () => {
 		const input = {
 			id: GRAPH_ID,
 			nodes: [
-				{ id: SOURCE_ID, type: "source", connector: "test/testdb", config: { host: "localhost", table: "t" } },
+				{ id: SOURCE_ID, type: "source", provider: "test/testdb", params: { host: "localhost", table: "t" } },
 			],
 			edges: [
 				{ from: ACTION_ID, to: SOURCE_ID },
@@ -65,7 +65,7 @@ describe("validateGraph", () => {
 		const input = {
 			id: GRAPH_ID,
 			nodes: [
-				{ id: SOURCE_ID, type: "source", connector: "test/testdb", config: { host: "localhost", table: "t" } },
+				{ id: SOURCE_ID, type: "source", provider: "test/testdb", params: { host: "localhost", table: "t" } },
 			],
 			edges: [
 				{ from: SOURCE_ID, to: ACTION_ID },
@@ -83,9 +83,9 @@ describe("validateGraph", () => {
 		const input = {
 			id: GRAPH_ID,
 			nodes: [
-				{ id: SOURCE_ID, type: "action", action: "test/noop", config: {} },
-				{ id: ACTION_ID, type: "action", action: "test/noop", config: {} },
-				{ id: TARGET_ID, type: "action", action: "test/noop", config: {} },
+				{ id: SOURCE_ID, type: "action", action: "test/noop", params: {} },
+				{ id: ACTION_ID, type: "action", action: "test/noop", params: {} },
+				{ id: TARGET_ID, type: "action", action: "test/noop", params: {} },
 			],
 			edges: [
 				{ from: SOURCE_ID, to: ACTION_ID },
@@ -103,7 +103,7 @@ describe("validateGraph", () => {
 		const input = {
 			id: GRAPH_ID,
 			nodes: [
-				{ id: ACTION_ID, type: "action", action: "nonexistent/action", config: {} },
+				{ id: ACTION_ID, type: "action", action: "nonexistent/action", params: {} },
 			],
 		};
 
@@ -116,7 +116,7 @@ describe("validateGraph", () => {
 		const input = {
 			id: GRAPH_ID,
 			nodes: [
-				{ id: SOURCE_ID, type: "source", connector: "nonexistent/provider", config: { key: "val" } },
+				{ id: SOURCE_ID, type: "source", provider: "nonexistent/provider", params: { key: "val" } },
 			],
 		};
 

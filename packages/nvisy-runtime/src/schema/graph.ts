@@ -3,7 +3,7 @@ import { GraphEdge, GraphNode } from "./node.js";
 import { ConcurrencyPolicy, TimeoutPolicy } from "./policy.js";
 
 export const GraphDefinition = z.object({
-	id: z.string().uuid(),
+	id: z.uuid(),
 	name: z.string().optional(),
 	description: z.string().optional(),
 	nodes: z.array(GraphNode),

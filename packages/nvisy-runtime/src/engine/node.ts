@@ -1,5 +1,6 @@
 import { getLogger } from "@logtape/logtape";
 import type { Data } from "@nvisy/core";
+import { type Operation, sleep, race, call } from "effection";
 import type { GraphNode } from "../schema/index.js";
 import type { ResolvedNode } from "../compiler/plan.js";
 import type { Edge } from "./edge.js";
@@ -13,21 +14,18 @@ export interface NodeResult {
 	readonly itemsProcessed: number;
 }
 
-const sleep = (ms: number): Promise<void> =>
-	new Promise((resolve) => setTimeout(resolve, ms));
-
-async function withRetry<T>(
-	fn: () => Promise<T>,
+function* withRetry<T>(
+	fn: () => Operation<T>,
 	node: GraphNode,
-): Promise<T> {
-	if (!node.retry) return fn();
+): Operation<T> {
+	if (!node.retry) return yield* fn();
 
 	const { maxRetries, backoff, initialDelayMs, maxDelayMs } = node.retry;
 	let lastError: unknown;
 
 	for (let attempt = 0; attempt <= maxRetries; attempt++) {
 		try {
-			return await fn();
+			return yield* fn();
 		} catch (error) {
 			lastError = error;
 			logger.warn("Node {nodeId} attempt {attempt} failed: {error}", {
@@ -46,7 +44,7 @@ async function withRetry<T>(
 				if (backoff === "jitter") {
 					delay = Math.min(initialDelayMs * 2 ** attempt, maxDelayMs) * Math.random();
 				}
-				await sleep(delay);
+				yield* sleep(delay);
 			}
 		}
 	}
@@ -54,16 +52,19 @@ async function withRetry<T>(
 	throw lastError;
 }
 
-async function withTimeout<T>(
-	fn: () => Promise<T>,
+function* withTimeout<T>(
+	fn: () => Operation<T>,
 	timeoutMs: number | undefined,
 	fallback: T,
-): Promise<T> {
-	if (!timeoutMs) return fn();
+): Operation<T> {
+	if (!timeoutMs) return yield* fn();
 
-	return Promise.race([
+	return yield* race([
 		fn(),
-		new Promise<T>((resolve) => setTimeout(() => resolve(fallback), timeoutMs)),
+		(function* (): Operation<T> {
+			yield* sleep(timeoutMs);
+			return fallback;
+		})(),
 	]);
 }
 
@@ -75,27 +76,26 @@ async function withTimeout<T>(
  * @param inEdges - Edges feeding data into this node.
  * @param outEdges - Edges carrying data out of this node.
  */
-export const executeNode = async (
+export function* executeNode(
 	node: GraphNode,
 	resolved: ResolvedNode,
 	inEdges: ReadonlyArray<Edge>,
 	outEdges: ReadonlyArray<Edge>,
-): Promise<NodeResult> => {
+): Operation<NodeResult> {
 	logger.debug("Executing node {nodeId} ({type})", { nodeId: node.id, type: resolved.type });
 
-	const base = async (): Promise<NodeResult> => {
+	function* base(): Operation<NodeResult> {
 		let itemsProcessed = 0;
 
 		switch (resolved.type) {
 			case "source": {
-				// Connect to provider, read from source, push to outEdges
-				const instance = await resolved.provider.connect(resolved.config);
+				const instance = yield* call(() => resolved.provider.connect(resolved.params));
 				try {
 					// TODO: pipe resolved.stream.read(instance.client, ctx, params) to outEdges
 					void instance;
 					void outEdges;
 				} finally {
-					await instance.disconnect();
+					yield* call(() => instance.disconnect());
 				}
 				break;
 			}
@@ -106,7 +106,6 @@ export const executeNode = async (
 				break;
 			}
 			case "target": {
-				// Drain inEdges, write to sink
 				const items: Data[] = [];
 				for (const edge of inEdges) {
 					// TODO: drain queue until upstream signals completion
@@ -114,20 +113,17 @@ export const executeNode = async (
 				}
 
 				if (items.length > 0) {
-					const instance = await resolved.provider.connect(resolved.config);
+					const instance = yield* call(() => resolved.provider.connect(resolved.params));
 					try {
 						// TODO: pipe data from inEdges into resolved.stream.write(instance.client, params)
 						void instance;
 						itemsProcessed = items.length;
 					} finally {
-						await instance.disconnect();
+						yield* call(() => instance.disconnect());
 					}
 				}
 				break;
 			}
-			default:
-				// branch -- control flow handled by runner
-				break;
 		}
 
 		logger.debug("Node {nodeId} completed, {itemsProcessed} items processed", {
@@ -140,7 +136,7 @@ export const executeNode = async (
 			status: "success" as const,
 			itemsProcessed,
 		};
-	};
+	}
 
 	const timeoutMs = node.timeout?.nodeTimeoutMs;
 	const timeoutFallback: NodeResult = {
@@ -150,9 +146,9 @@ export const executeNode = async (
 		itemsProcessed: 0,
 	};
 
-	return withTimeout(
+	return yield* withTimeout(
 		() => withRetry(base, node),
 		timeoutMs,
 		timeoutFallback,
 	);
-};
+}

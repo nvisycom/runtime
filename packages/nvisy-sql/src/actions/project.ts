@@ -12,7 +12,6 @@ const ProjectParams = z.union([
 	z.object({ keep: z.array(z.string()) }),
 	z.object({ drop: z.array(z.string()) }),
 ]);
-type ProjectParams = z.infer<typeof ProjectParams>;
 
 /**
  * Project (select / exclude) columns from each row.

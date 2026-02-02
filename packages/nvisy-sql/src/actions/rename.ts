@@ -11,7 +11,6 @@ import type { JsonValue } from "@nvisy/core";
 const RenameParams = z.object({
 	mapping: z.record(z.string(), z.string()),
 });
-type RenameParams = z.infer<typeof RenameParams>;
 
 /**
  * Rename columns according to a key mapping.

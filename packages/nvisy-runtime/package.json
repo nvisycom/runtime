@@ -24,6 +24,7 @@
 		"graphology": "^0.25.4",
 		"graphology-dag": "^0.4.1",
 		"graphology-types": "^0.24.7",
+		"effection": "^4.0.0",
 		"zod": "^4.3.0"
 	},
 	"engines": {

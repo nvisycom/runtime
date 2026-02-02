@@ -2,7 +2,6 @@ export {
 	SourceNode,
 	ActionNode,
 	TargetNode,
-	BranchNode,
 	GraphNode,
 	GraphEdge,
 } from "./node.js";

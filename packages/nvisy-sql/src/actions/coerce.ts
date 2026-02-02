@@ -14,7 +14,6 @@ const CoerceTarget = z.enum(["string", "number", "boolean"]);
 const CoerceParams = z.object({
 	columns: z.record(z.string(), CoerceTarget),
 });
-type CoerceParams = z.infer<typeof CoerceParams>;
 
 /**
  * Cast a single value to the requested type.

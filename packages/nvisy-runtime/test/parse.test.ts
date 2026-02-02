@@ -39,7 +39,7 @@ describe("parseGraph", () => {
 		const bad = {
 			id: GRAPH_ID,
 			nodes: [
-				{ id: "not-a-uuid", type: "action", action: "test/noop", config: {} },
+				{ id: "not-a-uuid", type: "action", action: "test/noop", params: {} },
 			],
 		};
 
@@ -59,7 +59,7 @@ describe("parseGraph", () => {
 		const input = {
 			id: GRAPH_ID,
 			nodes: [
-				{ id: SOURCE_ID, type: "source", connector: "x", config: { key: "val" } },
+				{ id: SOURCE_ID, type: "source", provider: "x", params: { key: "val" } },
 			],
 		};
 
@@ -84,8 +84,8 @@ describe("buildRuntimeGraph", () => {
 		const def = {
 			id: GRAPH_ID,
 			nodes: [
-				{ id: SOURCE_ID, type: "source" as const, connector: "x", config: { k: "v" } },
-				{ id: ACTION_ID, type: "action" as const, action: "y", config: {} },
+				{ id: SOURCE_ID, type: "source" as const, provider: "x", params: { k: "v" } },
+				{ id: ACTION_ID, type: "action" as const, action: "y", params: {} },
 			],
 			edges: [{ from: SOURCE_ID, to: ACTION_ID }],
 			metadata: {},

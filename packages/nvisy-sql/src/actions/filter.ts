@@ -27,14 +27,13 @@ const FilterCondition = z.object({
 /**
  * Parameters for the `sql/filter` action.
  *
- * - `conditions` — array of predicates applied to each row.
- * - `mode` — combine with `"and"` (default) or `"or"`.
+ * @param conditions Array of predicates applied to each row.
+ * @param mode Combine with `"and"` (default) or `"or"`.
  */
 const FilterParams = z.object({
 	conditions: z.array(FilterCondition),
 	mode: z.enum(["and", "or"]).optional(),
 });
-type FilterParams = z.infer<typeof FilterParams>;
 
 /** Evaluate a single {@link FilterCondition} against a row. */
 function matchCondition(

@@ -5,7 +5,6 @@ export {
 	SourceNode,
 	ActionNode,
 	TargetNode,
-	BranchNode,
 	RetryPolicy,
 	TimeoutPolicy,
 	ConcurrencyPolicy,
@@ -15,8 +14,8 @@ export {
 export { compile, parseGraph, validateGraph, buildPlan, buildRuntimeGraph } from "./compiler/index.js";
 export type { ExecutionPlan, ResolvedNode, ParsedGraph, RuntimeGraph, RuntimeNodeAttrs, RuntimeEdgeAttrs } from "./compiler/index.js";
 
-export { run } from "./engine/index.js";
-export type { RunResult, NodeResult, Edge, FiberPool } from "./engine/index.js";
+export { run, execute } from "./engine/index.js";
+export type { RunResult, NodeResult, Edge } from "./engine/index.js";
 
 export { Registry } from "./registry/index.js";
 export type {

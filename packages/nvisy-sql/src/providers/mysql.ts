@@ -1,18 +1,20 @@
-import { MysqlDialect } from "kysely";
+import { MysqlDialect, type Dialect } from "kysely";
 import { createPool } from "mysql2/promise";
+import type { SqlCredentials } from "./schemas.js";
 import { makeSqlProvider } from "./base.js";
 
-/** MySQL provider — keyset-paginated source and batch-insert sink via kysely + `mysql2`. */
-export const mysql = makeSqlProvider({
-	id: "mysql",
-	createDialect: (creds) =>
-		new MysqlDialect({
-			pool: createPool({
-				host: creds.host,
-				port: creds.port,
-				database: creds.database,
-				user: creds.username,
-				password: creds.password,
-			}),
+/** Create a MySQL dialect backed by a `mysql2` connection pool. */
+function createDialect(creds: SqlCredentials): Dialect {
+	return new MysqlDialect({
+		pool: createPool({
+			host: creds.host,
+			port: creds.port,
+			database: creds.database,
+			user: creds.username,
+			password: creds.password,
 		}),
-});
+	});
+}
+
+/** MySQL provider. Keyset-paginated source and batch-insert sink via kysely + `mysql2`. */
+export const mysql = makeSqlProvider({ id: "mysql", createDialect });

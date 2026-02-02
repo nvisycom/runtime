@@ -11,7 +11,7 @@ const logger = getLogger(["nvisy", "compiler"]);
  * 1. No duplicate node IDs
  * 2. No dangling edge references
  * 3. No cycles (via graphology-dag `hasCycle`)
- * 4. Every action/connector name resolves in the Registry
+ * 4. Every action/provider name resolves in the Registry
  */
 export const validateGraph = (
 	parsed: ParsedGraph,
@@ -76,9 +76,9 @@ function resolveNodeNames(
 		case "source":
 		case "target":
 			try {
-				registry.getProvider(node.connector);
+				registry.getProvider(node.provider);
 			} catch {
-				unresolved.push(`provider "${node.connector}" (node ${node.id})`);
+				unresolved.push(`provider "${node.provider}" (node ${node.id})`);
 			}
 			break;
 		case "action":

@@ -12,10 +12,9 @@ const logger = getLogger(["nvisy", "compiler"]);
  * node so the engine never needs to look things up at execution time.
  */
 export type ResolvedNode =
-	| { readonly type: "source"; readonly provider: AnyProviderFactory; readonly config: Readonly<Record<string, unknown>> }
-	| { readonly type: "action"; readonly action: AnyActionInstance; readonly config: Readonly<Record<string, unknown>> }
-	| { readonly type: "target"; readonly provider: AnyProviderFactory; readonly config: Readonly<Record<string, unknown>> }
-	| { readonly type: "branch" };
+	| { readonly type: "source"; readonly provider: AnyProviderFactory; readonly params: Readonly<Record<string, unknown>> }
+	| { readonly type: "action"; readonly action: AnyActionInstance; readonly params: Readonly<Record<string, unknown>> }
+	| { readonly type: "target"; readonly provider: AnyProviderFactory; readonly params: Readonly<Record<string, unknown>> };
 
 export interface ExecutionPlan {
 	readonly graph: RuntimeGraph;
@@ -27,7 +26,7 @@ export interface ExecutionPlan {
 /**
  * Build an execution plan from a validated graph:
  * 1. Compute topological order via graphology-dag `topologicalSort`
- * 2. Resolve every action/connector name against the Registry
+ * 2. Resolve every action/provider name against the Registry
  * 3. Store resolved references as node attributes on the RuntimeGraph
  */
 export const buildPlan = (
@@ -41,22 +40,20 @@ export const buildPlan = (
 	for (const node of definition.nodes) {
 		switch (node.type) {
 			case "source": {
-				const provider = registry.getProvider(node.connector);
-				graph.setNodeAttribute(node.id, "resolved", { type: "source", provider, config: node.config as Readonly<Record<string, unknown>> });
+				const provider = registry.getProvider(node.provider);
+				graph.setNodeAttribute(node.id, "resolved", { type: "source", provider, params: node.params as Readonly<Record<string, unknown>> });
 				break;
 			}
 			case "target": {
-				const provider = registry.getProvider(node.connector);
-				graph.setNodeAttribute(node.id, "resolved", { type: "target", provider, config: node.config as Readonly<Record<string, unknown>> });
+				const provider = registry.getProvider(node.provider);
+				graph.setNodeAttribute(node.id, "resolved", { type: "target", provider, params: node.params as Readonly<Record<string, unknown>> });
 				break;
 			}
 			case "action": {
 				const action = registry.getAction(node.action);
-				graph.setNodeAttribute(node.id, "resolved", { type: "action", action, config: node.config as Readonly<Record<string, unknown>> });
+				graph.setNodeAttribute(node.id, "resolved", { type: "action", action, params: node.params as Readonly<Record<string, unknown>> });
 				break;
 			}
-			default:
-				graph.setNodeAttribute(node.id, "resolved", { type: "branch" });
 		}
 	}
 

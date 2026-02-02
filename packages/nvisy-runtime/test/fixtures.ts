@@ -7,7 +7,6 @@ export const SOURCE_ID = "00000000-0000-4000-8000-000000000001";
 export const ACTION_ID = "00000000-0000-4000-8000-000000000002";
 export const TARGET_ID = "00000000-0000-4000-8000-000000000003";
 export const EXTRA_ID = "00000000-0000-4000-8000-000000000004";
-export const BRANCH_ID = "00000000-0000-4000-8000-000000000005";
 
 const NoopParams = z.object({});
 
@@ -45,9 +44,9 @@ export function linearGraph() {
 	return {
 		id: GRAPH_ID,
 		nodes: [
-			{ id: SOURCE_ID, type: "source" as const, connector: "test/testdb", config: { host: "localhost", table: "users" } },
-			{ id: ACTION_ID, type: "action" as const, action: "test/noop", config: {} },
-			{ id: TARGET_ID, type: "target" as const, connector: "test/testdb", config: { host: "localhost", table: "output" } },
+			{ id: SOURCE_ID, type: "source" as const, provider: "test/testdb", params: { host: "localhost", table: "users" } },
+			{ id: ACTION_ID, type: "action" as const, action: "test/noop", params: {} },
+			{ id: TARGET_ID, type: "target" as const, provider: "test/testdb", params: { host: "localhost", table: "output" } },
 		],
 		edges: [
 			{ from: SOURCE_ID, to: ACTION_ID },
@@ -60,8 +59,8 @@ export function isolatedNodesGraph() {
 	return {
 		id: GRAPH_ID,
 		nodes: [
-			{ id: SOURCE_ID, type: "source" as const, connector: "test/testdb", config: { host: "localhost", table: "users" } },
-			{ id: ACTION_ID, type: "action" as const, action: "test/noop", config: {} },
+			{ id: SOURCE_ID, type: "source" as const, provider: "test/testdb", params: { host: "localhost", table: "users" } },
+			{ id: ACTION_ID, type: "action" as const, action: "test/noop", params: {} },
 		],
 		edges: [],
 	};
@@ -71,10 +70,10 @@ export function diamondGraph() {
 	return {
 		id: GRAPH_ID,
 		nodes: [
-			{ id: SOURCE_ID, type: "source" as const, connector: "test/testdb", config: { host: "localhost", table: "users" } },
-			{ id: ACTION_ID, type: "action" as const, action: "test/noop", config: {} },
-			{ id: EXTRA_ID, type: "action" as const, action: "test/noop", config: {} },
-			{ id: TARGET_ID, type: "target" as const, connector: "test/testdb", config: { host: "localhost", table: "output" } },
+			{ id: SOURCE_ID, type: "source" as const, provider: "test/testdb", params: { host: "localhost", table: "users" } },
+			{ id: ACTION_ID, type: "action" as const, action: "test/noop", params: {} },
+			{ id: EXTRA_ID, type: "action" as const, action: "test/noop", params: {} },
+			{ id: TARGET_ID, type: "target" as const, provider: "test/testdb", params: { host: "localhost", table: "output" } },
 		],
 		edges: [
 			{ from: SOURCE_ID, to: ACTION_ID },
