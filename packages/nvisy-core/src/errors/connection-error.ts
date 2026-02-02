@@ -1,4 +1,4 @@
-import { RuntimeError, type ErrorContext } from "#errors/runtime-error.js";
+import { RuntimeError, type ErrorContext } from "./runtime-error.js";
 
 /**
  * Could not reach an external service, storage backend, or database.
@@ -6,7 +6,7 @@ import { RuntimeError, type ErrorContext } from "#errors/runtime-error.js";
  * Also covers missing or unregistered connections.
  */
 export class ConnectionError extends RuntimeError {
-	constructor(message: string, context?: ErrorContext, cause?: Error) {
-		super(message, context, cause);
+	constructor(message: string, context?: ErrorContext) {
+		super(message, context);
 	}
 }

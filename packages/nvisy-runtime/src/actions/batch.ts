@@ -1,15 +1,15 @@
-import { Schema } from "effect";
+import { z } from "zod";
 import { Action, Data } from "@nvisy/core";
 
-const BatchParams = Schema.Struct({
-	size: Schema.optional(Schema.Number),
+const BatchParams = z.object({
+	size: z.number().optional(),
 });
 
 export const batch = Action.withoutClient("batch", {
 	types: [Data],
 	params: BatchParams,
-	execute: async (items, _params) => {
-		// TODO: group items into batches of _params.size ?? 100
-		return [...items];
+	transform: (stream, _params) => {
+		// TODO: batching semantics belong at the runner/sink layer (e.g. Stream.grouped(n))
+		return stream;
 	},
 });

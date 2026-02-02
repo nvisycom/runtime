@@ -5,8 +5,9 @@ export {
 	RunStatus,
 	RunDetail,
 	RunListResponse,
-	ErrorResponse,
 	CancelResponse,
 } from "./graphs.js";
+
+export { ErrorResponse, type ErrorResponse as ErrorResponseType } from "./error.js";
 
 export { HealthResponse, ReadyResponse } from "./health.js";

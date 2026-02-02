@@ -1,15 +1,15 @@
-import { Schema } from "effect";
+import { z } from "zod";
 import { Action, Data } from "@nvisy/core";
 
-const DeduplicateParams = Schema.Struct({
-	key: Schema.optional(Schema.String),
+const DeduplicateParams = z.object({
+	key: z.string().optional(),
 });
 
 export const deduplicate = Action.withoutClient("deduplicate", {
 	types: [Data],
 	params: DeduplicateParams,
-	execute: async (items, _params) => {
+	transform: (stream, _params) => {
 		// TODO: drop duplicates by _params.key ?? "id"
-		return [...items];
+		return stream;
 	},
 });

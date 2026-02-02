@@ -1,5 +1,20 @@
+/**
+ * Global middleware registration.
+ *
+ * Middleware is applied in declaration order. The first three entries
+ * establish the per-request foundations that everything else relies on:
+ *
+ *  1. **OTel instrumentation** — wraps the request in an OpenTelemetry span.
+ *  2. **Request ID** — generates (or reads from `X-Request-Id`) a UUID.
+ *  3. **Implicit log context** — propagates `requestId` into every LogTape
+ *     log call for the remainder of the request via `withContext`.
+ *
+ * After that, the request logger and standard security / transport
+ * middleware are registered.
+ */
+
 import type { Hono } from "hono";
-import type { Runtime } from "effect";
+import { withContext } from "@logtape/logtape";
 import type { ServerConfig } from "../config.js";
 import { bodyLimit } from "hono/body-limit";
 import { compress } from "hono/compress";
@@ -11,17 +26,24 @@ import { secureHeaders } from "hono/secure-headers";
 import { timeout } from "hono/timeout";
 import { timing } from "hono/timing";
 import { httpInstrumentationMiddleware } from "@hono/otel";
-import { requestLogger } from "./logger.js";
+import { createRequestLogger } from "./request-logger.js";
+import { createErrorHandler, createNotFoundHandler } from "./error-handler.js";
 
 /** Register all global middleware on the given Hono app. */
 export function registerMiddleware(
 	app: Hono,
 	config: ServerConfig,
-	runtime: Runtime.Runtime<never>,
 ) {
+	app.onError(createErrorHandler({ isDevelopment: config.isDevelopment }));
+	app.notFound(createNotFoundHandler({ isDevelopment: config.isDevelopment }));
+
 	app.use("*", httpInstrumentationMiddleware());
 	app.use("*", requestId());
-	app.use("*", requestLogger(runtime));
+	app.use("*", async (c, next) => {
+		await withContext({ requestId: c.get("requestId") }, next);
+	});
+	app.use("*", createRequestLogger({ isDevelopment: config.isDevelopment }));
+
 	app.use("*", secureHeaders());
 	app.use("*", csrf());
 	app.use("*", compress());

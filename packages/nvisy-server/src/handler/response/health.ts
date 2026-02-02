@@ -1,9 +1,9 @@
-import { Schema as S } from "effect";
+import { z } from "zod";
 
-export const HealthResponse = S.standardSchemaV1(
-	S.Struct({ status: S.Literal("ok") }),
-);
+export const HealthResponse = z.object({
+	status: z.literal("ok"),
+});
 
-export const ReadyResponse = S.standardSchemaV1(
-	S.Struct({ status: S.Literal("ready", "unavailable") }),
-);
+export const ReadyResponse = z.object({
+	status: z.enum(["ready", "unavailable"]),
+});

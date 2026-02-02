@@ -1,5 +1,5 @@
-import { Data } from "#datatypes/base-datatype.js";
-import type { JsonValue, DataOptions } from "#datatypes/base-datatype.js";
+import { Data } from "./base-datatype.js";
+import type { JsonValue, DataOptions } from "./base-datatype.js";
 
 /** Options for constructing a {@link Document}. */
 export interface DocumentOptions extends DataOptions {

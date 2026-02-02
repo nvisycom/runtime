@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import { z } from "zod";
 import { Action, Row } from "@nvisy/core";
 import type { JsonValue } from "@nvisy/core";
 
@@ -8,22 +8,22 @@ import type { JsonValue } from "@nvisy/core";
  * `mapping` is a `{ oldName: newName }` record. Columns not present
  * in the mapping are passed through unchanged.
  */
-const RenameParams = Schema.Struct({
-	mapping: Schema.Record({ key: Schema.String, value: Schema.String }),
+const RenameParams = z.object({
+	mapping: z.record(z.string(), z.string()),
 });
-type RenameParams = typeof RenameParams.Type;
+type RenameParams = z.infer<typeof RenameParams>;
 
 /**
  * Rename columns according to a key mapping.
  *
- * Each entry in `mapping` renames `oldKey → newKey`. Columns not in
+ * Each entry in `mapping` renames `oldKey -> newKey`. Columns not in
  * the mapping are preserved as-is. Row identity and metadata are kept.
  */
 export const rename = Action.withoutClient("rename", {
 	types: [Row],
 	params: RenameParams,
-	execute: async (items, params) => {
-		return items.map((row) => {
+	transform: async function* (stream, params) {
+		for await (const row of stream) {
 			const result: Record<string, JsonValue> = {};
 
 			for (const [key, val] of Object.entries(row.columns)) {
@@ -31,7 +31,7 @@ export const rename = Action.withoutClient("rename", {
 				result[newKey] = val;
 			}
 
-			return new Row(result, { id: row.id, metadata: row.metadata });
-		});
+			yield new Row(result, { id: row.id, metadata: row.metadata });
+		}
 	},
 });

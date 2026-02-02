@@ -1,31 +1,29 @@
 import { describe, it, expect } from "vitest";
-import { Effect } from "effect";
 import { parseGraph } from "../src/compiler/parse.js";
 import { validateGraph } from "../src/compiler/validate.js";
 import { buildPlan } from "../src/compiler/plan.js";
 import {
 	GRAPH_ID, SOURCE_ID, ACTION_ID, TARGET_ID, EXTRA_ID,
-	linearGraph, diamondGraph, isolatedNodesGraph, runWithRegistry,
+	linearGraph, diamondGraph, isolatedNodesGraph, makeTestRegistry,
 } from "./fixtures.js";
 
-const parseThenValidate = (input: unknown) =>
-	parseGraph(input).pipe(
-		Effect.flatMap(validateGraph),
-	);
+const parseThenValidate = (input: unknown) => {
+	const registry = makeTestRegistry();
+	const parsed = parseGraph(input);
+	return { validated: validateGraph(parsed, registry), registry };
+};
 
 describe("buildPlan", () => {
-	it("produces a topological order for a linear graph", async () => {
-		const plan = await runWithRegistry(
-			parseThenValidate(linearGraph()).pipe(Effect.flatMap(buildPlan)),
-		);
+	it("produces a topological order for a linear graph", () => {
+		const { validated, registry } = parseThenValidate(linearGraph());
+		const plan = buildPlan(validated, registry);
 
 		expect(plan.order).toEqual([SOURCE_ID, ACTION_ID, TARGET_ID]);
 	});
 
-	it("produces a valid topological order for a diamond graph", async () => {
-		const plan = await runWithRegistry(
-			parseThenValidate(diamondGraph()).pipe(Effect.flatMap(buildPlan)),
-		);
+	it("produces a valid topological order for a diamond graph", () => {
+		const { validated, registry } = parseThenValidate(diamondGraph());
+		const plan = buildPlan(validated, registry);
 
 		// Source must come first, sink must come last
 		expect(plan.order[0]).toBe(SOURCE_ID);
@@ -39,20 +37,18 @@ describe("buildPlan", () => {
 		expect(plan.order.indexOf(EXTRA_ID)).toBeLessThan(plan.order.length - 1);
 	});
 
-	it("handles isolated nodes (no edges)", async () => {
-		const plan = await runWithRegistry(
-			parseThenValidate(isolatedNodesGraph()).pipe(Effect.flatMap(buildPlan)),
-		);
+	it("handles isolated nodes (no edges)", () => {
+		const { validated, registry } = parseThenValidate(isolatedNodesGraph());
+		const plan = buildPlan(validated, registry);
 
 		expect(plan.order).toHaveLength(2);
 		expect(plan.order).toContain(SOURCE_ID);
 		expect(plan.order).toContain(ACTION_ID);
 	});
 
-	it("stores resolved entries as node attributes", async () => {
-		const plan = await runWithRegistry(
-			parseThenValidate(linearGraph()).pipe(Effect.flatMap(buildPlan)),
-		);
+	it("stores resolved entries as node attributes", () => {
+		const { validated, registry } = parseThenValidate(linearGraph());
+		const plan = buildPlan(validated, registry);
 
 		const sourceAttrs = plan.graph.getNodeAttributes(SOURCE_ID);
 		expect(sourceAttrs.resolved).toBeDefined();
@@ -67,19 +63,17 @@ describe("buildPlan", () => {
 		expect(sinkAttrs.resolved!.type).toBe("target");
 	});
 
-	it("exposes the graph definition on the plan", async () => {
-		const plan = await runWithRegistry(
-			parseThenValidate(linearGraph()).pipe(Effect.flatMap(buildPlan)),
-		);
+	it("exposes the graph definition on the plan", () => {
+		const { validated, registry } = parseThenValidate(linearGraph());
+		const plan = buildPlan(validated, registry);
 
 		expect(plan.definition.id).toBe(GRAPH_ID);
 		expect(plan.definition.nodes).toHaveLength(3);
 	});
 
-	it("plan.graph is the same RuntimeGraph instance", async () => {
-		const plan = await runWithRegistry(
-			parseThenValidate(linearGraph()).pipe(Effect.flatMap(buildPlan)),
-		);
+	it("plan.graph is the same RuntimeGraph instance", () => {
+		const { validated, registry } = parseThenValidate(linearGraph());
+		const plan = buildPlan(validated, registry);
 
 		// Verify graph structure matches definition
 		expect(plan.graph.order).toBe(plan.definition.nodes.length);

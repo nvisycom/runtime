@@ -2,12 +2,13 @@ import { describe, it, expect } from "vitest";
 import { compile } from "../src/compiler/index.js";
 import {
 	GRAPH_ID, SOURCE_ID, ACTION_ID, TARGET_ID,
-	linearGraph, diamondGraph, runWithRegistry,
+	linearGraph, diamondGraph, makeTestRegistry,
 } from "./fixtures.js";
 
 describe("compile", () => {
-	it("compiles a valid linear graph end-to-end", async () => {
-		const plan = await runWithRegistry(compile(linearGraph()));
+	it("compiles a valid linear graph end-to-end", () => {
+		const registry = makeTestRegistry();
+		const plan = compile(linearGraph(), registry);
 
 		expect(plan.definition.id).toBe(GRAPH_ID);
 		expect(plan.order).toEqual([SOURCE_ID, ACTION_ID, TARGET_ID]);
@@ -15,16 +16,18 @@ describe("compile", () => {
 		expect(plan.graph.size).toBe(2);
 	});
 
-	it("compiles a diamond graph end-to-end", async () => {
-		const plan = await runWithRegistry(compile(diamondGraph()));
+	it("compiles a diamond graph end-to-end", () => {
+		const registry = makeTestRegistry();
+		const plan = compile(diamondGraph(), registry);
 
 		expect(plan.order[0]).toBe(SOURCE_ID);
 		expect(plan.order[plan.order.length - 1]).toBe(TARGET_ID);
 		expect(plan.order).toHaveLength(4);
 	});
 
-	it("resolves all nodes during compilation", async () => {
-		const plan = await runWithRegistry(compile(linearGraph()));
+	it("resolves all nodes during compilation", () => {
+		const registry = makeTestRegistry();
+		const plan = compile(linearGraph(), registry);
 
 		for (const id of plan.order) {
 			const attrs = plan.graph.getNodeAttributes(id);
@@ -32,13 +35,14 @@ describe("compile", () => {
 		}
 	});
 
-	it("rejects invalid input", async () => {
-		await expect(
-			runWithRegistry(compile("not a graph")),
-		).rejects.toThrow("Graph parse error");
+	it("rejects invalid input", () => {
+		const registry = makeTestRegistry();
+
+		expect(() => compile("not a graph", registry)).toThrow("Graph parse error");
 	});
 
-	it("rejects graphs with cycles through full pipeline", async () => {
+	it("rejects graphs with cycles through full pipeline", () => {
+		const registry = makeTestRegistry();
 		const cyclic = {
 			id: GRAPH_ID,
 			nodes: [
@@ -51,12 +55,11 @@ describe("compile", () => {
 			],
 		};
 
-		await expect(
-			runWithRegistry(compile(cyclic)),
-		).rejects.toThrow("Graph contains a cycle");
+		expect(() => compile(cyclic, registry)).toThrow("Graph contains a cycle");
 	});
 
-	it("rejects unresolved names through full pipeline", async () => {
+	it("rejects unresolved names through full pipeline", () => {
+		const registry = makeTestRegistry();
 		const unresolved = {
 			id: GRAPH_ID,
 			nodes: [
@@ -64,18 +67,17 @@ describe("compile", () => {
 			],
 		};
 
-		await expect(
-			runWithRegistry(compile(unresolved)),
-		).rejects.toThrow("Unresolved names");
+		expect(() => compile(unresolved, registry)).toThrow("Unresolved names");
 	});
 
-	it("preserves concurrency policy in definition", async () => {
+	it("preserves concurrency policy in definition", () => {
+		const registry = makeTestRegistry();
 		const input = {
 			...linearGraph(),
 			concurrency: { maxGlobal: 5 },
 		};
 
-		const plan = await runWithRegistry(compile(input));
+		const plan = compile(input, registry);
 
 		expect(plan.definition.concurrency?.maxGlobal).toBe(5);
 	});

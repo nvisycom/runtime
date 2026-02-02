@@ -1,32 +1,32 @@
 import { describe, it, expect } from "vitest";
-import { Effect } from "effect";
 import { parseGraph } from "../src/compiler/parse.js";
 import { validateGraph } from "../src/compiler/validate.js";
 import {
 	GRAPH_ID, SOURCE_ID, ACTION_ID, TARGET_ID,
-	linearGraph, diamondGraph, runWithRegistry,
+	linearGraph, diamondGraph, makeTestRegistry,
 } from "./fixtures.js";
 
 describe("validateGraph", () => {
-	it("validates a correct linear graph", async () => {
-		const result = await runWithRegistry(
-			parseGraph(linearGraph()).pipe(Effect.flatMap(validateGraph)),
-		);
+	it("validates a correct linear graph", () => {
+		const registry = makeTestRegistry();
+		const parsed = parseGraph(linearGraph());
+		const result = validateGraph(parsed, registry);
 
 		expect(result.definition.id).toBe(GRAPH_ID);
 		expect(result.graph.order).toBe(3);
 	});
 
-	it("validates a diamond graph", async () => {
-		const result = await runWithRegistry(
-			parseGraph(diamondGraph()).pipe(Effect.flatMap(validateGraph)),
-		);
+	it("validates a diamond graph", () => {
+		const registry = makeTestRegistry();
+		const parsed = parseGraph(diamondGraph());
+		const result = validateGraph(parsed, registry);
 
 		expect(result.graph.order).toBe(4);
 		expect(result.graph.size).toBe(4);
 	});
 
-	it("rejects duplicate node IDs (caught by graphology during parse)", async () => {
+	it("rejects duplicate node IDs (caught by graphology during parse)", () => {
+		const registry = makeTestRegistry();
 		const input = {
 			id: GRAPH_ID,
 			nodes: [
@@ -35,12 +35,15 @@ describe("validateGraph", () => {
 			],
 		};
 
-		await expect(
-			runWithRegistry(parseGraph(input).pipe(Effect.flatMap(validateGraph))),
-		).rejects.toThrow("already exist");
+		// graphology throws when adding a duplicate node
+		expect(() => {
+			const parsed = parseGraph(input);
+			validateGraph(parsed, registry);
+		}).toThrow("already exist");
 	});
 
-	it("rejects dangling edge.from references (caught by graphology during parse)", async () => {
+	it("rejects dangling edge.from references (caught by graphology during parse)", () => {
+		const registry = makeTestRegistry();
 		const input = {
 			id: GRAPH_ID,
 			nodes: [
@@ -51,12 +54,14 @@ describe("validateGraph", () => {
 			],
 		};
 
-		await expect(
-			runWithRegistry(parseGraph(input).pipe(Effect.flatMap(validateGraph))),
-		).rejects.toThrow("not found");
+		expect(() => {
+			const parsed = parseGraph(input);
+			validateGraph(parsed, registry);
+		}).toThrow("not found");
 	});
 
-	it("rejects dangling edge.to references (caught by graphology during parse)", async () => {
+	it("rejects dangling edge.to references (caught by graphology during parse)", () => {
+		const registry = makeTestRegistry();
 		const input = {
 			id: GRAPH_ID,
 			nodes: [
@@ -67,12 +72,14 @@ describe("validateGraph", () => {
 			],
 		};
 
-		await expect(
-			runWithRegistry(parseGraph(input).pipe(Effect.flatMap(validateGraph))),
-		).rejects.toThrow("not found");
+		expect(() => {
+			const parsed = parseGraph(input);
+			validateGraph(parsed, registry);
+		}).toThrow("not found");
 	});
 
-	it("rejects graphs with cycles", async () => {
+	it("rejects graphs with cycles", () => {
+		const registry = makeTestRegistry();
 		const input = {
 			id: GRAPH_ID,
 			nodes: [
@@ -87,12 +94,12 @@ describe("validateGraph", () => {
 			],
 		};
 
-		await expect(
-			runWithRegistry(parseGraph(input).pipe(Effect.flatMap(validateGraph))),
-		).rejects.toThrow("Graph contains a cycle");
+		const parsed = parseGraph(input);
+		expect(() => validateGraph(parsed, registry)).toThrow("Graph contains a cycle");
 	});
 
-	it("rejects unresolved action names", async () => {
+	it("rejects unresolved action names", () => {
+		const registry = makeTestRegistry();
 		const input = {
 			id: GRAPH_ID,
 			nodes: [
@@ -100,12 +107,12 @@ describe("validateGraph", () => {
 			],
 		};
 
-		await expect(
-			runWithRegistry(parseGraph(input).pipe(Effect.flatMap(validateGraph))),
-		).rejects.toThrow("Unresolved names");
+		const parsed = parseGraph(input);
+		expect(() => validateGraph(parsed, registry)).toThrow("Unresolved names");
 	});
 
-	it("rejects unresolved provider names", async () => {
+	it("rejects unresolved provider names", () => {
+		const registry = makeTestRegistry();
 		const input = {
 			id: GRAPH_ID,
 			nodes: [
@@ -113,17 +120,16 @@ describe("validateGraph", () => {
 			],
 		};
 
-		await expect(
-			runWithRegistry(parseGraph(input).pipe(Effect.flatMap(validateGraph))),
-		).rejects.toThrow("Unresolved names");
+		const parsed = parseGraph(input);
+		expect(() => validateGraph(parsed, registry)).toThrow("Unresolved names");
 	});
 
-	it("passes validation for an empty graph", async () => {
+	it("passes validation for an empty graph", () => {
+		const registry = makeTestRegistry();
 		const input = { id: GRAPH_ID, nodes: [] };
 
-		const result = await runWithRegistry(
-			parseGraph(input).pipe(Effect.flatMap(validateGraph)),
-		);
+		const parsed = parseGraph(input);
+		const result = validateGraph(parsed, registry);
 
 		expect(result.definition.nodes).toHaveLength(0);
 		expect(result.graph.order).toBe(0);

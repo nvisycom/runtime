@@ -1,74 +1,85 @@
-import { SqlClient } from "@effect/sql";
-import { Effect } from "effect";
-import { Stream, Row } from "@nvisy/core";
+import { sql, type SqlBool } from "kysely";
+import { getLogger } from "@logtape/logtape";
+import { StreamFactory, Row, RuntimeError } from "@nvisy/core";
 import type { Resumable, JsonValue } from "@nvisy/core";
-import { SqlRuntimeClient } from "../providers/base.js";
+import { KyselyClient } from "../providers/base.js";
 import { SqlCursor, SqlParams } from "./schemas.js";
+
+const logger = getLogger(["nvisy", "sql"]);
 
 /**
  * Keyset-paginated source stream that yields one {@link Row} at a time.
  *
  * Pages are fetched using a composite `(idColumn, tiebreaker)` cursor
- * for stable ordering across batches. The generator terminates when a
+ * for stable ordering across batches. The stream terminates when a
  * batch returns fewer rows than `batchSize`.
  */
-export const read = Stream.createSource("read", SqlRuntimeClient, {
+export const read = StreamFactory.createSource("read", KyselyClient, {
 	types: [Row, SqlCursor, SqlParams],
-	reader: readRows,
+	reader: (client, cursor, params) => readStream(client, cursor, params),
 });
 
-async function* readRows(
-	client: SqlRuntimeClient,
+async function* readStream(
+	client: KyselyClient,
 	cursor: SqlCursor,
 	params: SqlParams,
-): AsyncGenerator<Resumable<Row, SqlCursor>> {
+): AsyncIterable<Resumable<Row, SqlCursor>> {
 	const { table, columns, idColumn, tiebreaker, batchSize } = params;
+	const { ref } = client.db.dynamic;
+
+	logger.debug("Read stream opened on {table}", { table, idColumn, tiebreaker, batchSize });
+
 	let lastId = cursor.lastId;
 	let lastTiebreaker = cursor.lastTiebreaker;
+	let totalRows = 0;
 
-	for (;;) {
-		const rows = await client.runtime.runPromise(
-			Effect.gen(function* () {
-				const sql = yield* SqlClient.SqlClient;
+	while (true) {
+		let rows: ReadonlyArray<Record<string, unknown>>;
 
-				const selectCols =
-					columns.length > 0
-						? sql.literal(columns.map((c) => `"${c}"`).join(", "))
-						: sql.literal("*");
+		try {
+			let query = client.db
+				.selectFrom(table)
+				.orderBy(ref(idColumn), "asc")
+				.orderBy(ref(tiebreaker), "asc")
+				.limit(batchSize);
 
-				const orderClause = sql.literal(
-					`ORDER BY "${idColumn}" ASC, "${tiebreaker}" ASC`,
+			if (columns.length > 0) {
+				query = query.select(columns.map((c) => ref(c)));
+			} else {
+				query = query.selectAll();
+			}
+
+			if (lastId !== null && lastTiebreaker !== null) {
+				query = query.where(
+					sql<SqlBool>`(${sql.ref(idColumn)}, ${sql.ref(tiebreaker)}) > (${lastId}, ${lastTiebreaker})`,
 				);
+			}
 
-				if (lastId === null || lastTiebreaker === null) {
-					return yield* sql<Record<string, unknown>>`
-						SELECT ${selectCols}
-						FROM ${sql(table)}
-						${orderClause}
-						LIMIT ${batchSize}
-					`;
-				}
-
-				return yield* sql<Record<string, unknown>>`
-					SELECT ${selectCols}
-					FROM ${sql(table)}
-					WHERE (${sql(idColumn)}, ${sql(tiebreaker)}) > (${lastId}, ${lastTiebreaker})
-					${orderClause}
-					LIMIT ${batchSize}
-				`;
-			}),
-		);
+			rows = await query.execute();
+			logger.debug("Read batch returned {count} rows from {table}", { count: rows.length, table });
+		} catch (error) {
+			logger.error("Read failed on {table}: {error}", {
+				table,
+				error: error instanceof Error ? error.message : String(error),
+			});
+			throw new RuntimeError(
+				`Read failed: ${error instanceof Error ? error.message : String(error)}`,
+				{ source: "sql/read", retryable: false, cause: error instanceof Error ? error : undefined },
+			);
+		}
 
 		for (const row of rows) {
+			totalRows++;
 			lastId = (row[idColumn] as string | number) ?? null;
 			lastTiebreaker = (row[tiebreaker] as string | number) ?? null;
-
 			yield {
 				data: new Row(row as Record<string, JsonValue>),
-				context: { lastId, lastTiebreaker },
+				context: { lastId, lastTiebreaker } as SqlCursor,
 			};
 		}
 
 		if (rows.length < batchSize) break;
 	}
+
+	logger.debug("Read stream closed on {table}, {totalRows} rows yielded", { table, totalRows });
 }

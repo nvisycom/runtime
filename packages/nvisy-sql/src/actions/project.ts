@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import { z } from "zod";
 import { Action, Row } from "@nvisy/core";
 import type { JsonValue } from "@nvisy/core";
 
@@ -8,15 +8,11 @@ import type { JsonValue } from "@nvisy/core";
  * Provide **either** `keep` (include only these columns) or `drop`
  * (exclude these columns). Columns not present in the row are ignored.
  */
-const ProjectParams = Schema.Union(
-	Schema.Struct({
-		keep: Schema.Array(Schema.String),
-	}),
-	Schema.Struct({
-		drop: Schema.Array(Schema.String),
-	}),
-);
-type ProjectParams = typeof ProjectParams.Type;
+const ProjectParams = z.union([
+	z.object({ keep: z.array(z.string()) }),
+	z.object({ drop: z.array(z.string()) }),
+]);
+type ProjectParams = z.infer<typeof ProjectParams>;
 
 /**
  * Project (select / exclude) columns from each row.
@@ -28,8 +24,8 @@ type ProjectParams = typeof ProjectParams.Type;
 export const project = Action.withoutClient("project", {
 	types: [Row],
 	params: ProjectParams,
-	execute: async (items, params) => {
-		return items.map((row) => {
+	transform: async function* (stream, params) {
+		for await (const row of stream) {
 			const cols = row.columns;
 			let projected: Record<string, JsonValue>;
 
@@ -50,7 +46,7 @@ export const project = Action.withoutClient("project", {
 				}
 			}
 
-			return new Row(projected, { id: row.id, metadata: row.metadata });
-		});
+			yield new Row(projected, { id: row.id, metadata: row.metadata });
+		}
 	},
 });

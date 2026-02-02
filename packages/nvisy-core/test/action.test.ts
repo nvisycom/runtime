@@ -1,6 +1,27 @@
 import { describe, it, expect } from "vitest";
-import { Row } from "#datatypes/record-datatype.js";
+import { Row } from "../src/datatypes/record-datatype.js";
+import type { Data } from "../src/datatypes/base-datatype.js";
+import type { ActionInstance } from "../src/actions.js";
 import { ExampleFilter, ExampleMap, FilterParams, MapParams } from "./action.js";
+
+async function collect<T>(iter: AsyncIterable<T>): Promise<T[]> {
+	const result: T[] = [];
+	for await (const item of iter) result.push(item);
+	return result;
+}
+
+async function* fromArray<T>(items: ReadonlyArray<T>): AsyncIterable<T> {
+	yield* items;
+}
+
+async function runAction<TIn extends Data, TOut extends Data>(
+	action: ActionInstance<void, TIn, TOut, any>,
+	items: ReadonlyArray<TIn>,
+	params: unknown,
+): Promise<ReadonlyArray<TOut>> {
+	const stream = action.pipe(fromArray(items), params, undefined as void);
+	return collect(stream);
+}
 
 const rows = [
 	new Row({ id: "1", name: "Alice" }),
@@ -17,7 +38,7 @@ describe("ExampleFilter", () => {
 	});
 
 	it("keeps rows matching the predicate", async () => {
-		const result = await ExampleFilter.execute(undefined, rows, {
+		const result = await runAction(ExampleFilter, rows, {
 			column: "name",
 			value: "Bob",
 		});
@@ -27,7 +48,7 @@ describe("ExampleFilter", () => {
 	});
 
 	it("returns empty array when nothing matches", async () => {
-		const result = await ExampleFilter.execute(undefined, rows, {
+		const result = await runAction(ExampleFilter, rows, {
 			column: "name",
 			value: "Nobody",
 		});
@@ -45,7 +66,7 @@ describe("ExampleMap", () => {
 	});
 
 	it("transforms column values to uppercase", async () => {
-		const result = await ExampleMap.execute(undefined, rows, {
+		const result = await runAction(ExampleMap, rows, {
 			column: "name",
 			fn: "uppercase",
 		});
@@ -57,7 +78,7 @@ describe("ExampleMap", () => {
 	});
 
 	it("transforms column values to lowercase", async () => {
-		const result = await ExampleMap.execute(undefined, rows, {
+		const result = await runAction(ExampleMap, rows, {
 			column: "name",
 			fn: "lowercase",
 		});
@@ -66,7 +87,7 @@ describe("ExampleMap", () => {
 	});
 
 	it("leaves non-string columns unchanged", async () => {
-		const result = await ExampleMap.execute(undefined, rows, {
+		const result = await runAction(ExampleMap, rows, {
 			column: "id",
 			fn: "uppercase",
 		});

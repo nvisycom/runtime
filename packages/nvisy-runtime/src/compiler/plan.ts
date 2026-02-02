@@ -1,9 +1,11 @@
-import { Effect } from "effect";
+import { getLogger } from "@logtape/logtape";
 import { topologicalSort } from "graphology-dag";
 import type { AnyActionInstance, AnyProviderFactory } from "@nvisy/core";
 import type { GraphDefinition } from "../schema/index.js";
-import { Registry } from "../registry/index.js";
+import type { Registry } from "../registry/index.js";
 import type { RuntimeGraph, ParsedGraph } from "./parse.js";
+
+const logger = getLogger(["nvisy", "compiler"]);
 
 /**
  * A resolved reference to a registry entry, carried alongside the
@@ -30,42 +32,38 @@ export interface ExecutionPlan {
  */
 export const buildPlan = (
 	validated: ParsedGraph,
-): Effect.Effect<ExecutionPlan, Error, Registry> =>
-	Effect.gen(function* () {
-		const registry = yield* Registry;
-		const { definition, graph } = validated;
+	registry: Registry,
+): ExecutionPlan => {
+	const { definition, graph } = validated;
 
-		// ── Topological sort ──────────────────────────────────────────
-		const order = topologicalSort(graph);
+	const order = topologicalSort(graph);
 
-		// ── Resolve names & store as node attributes ──────────────────
-		for (const node of definition.nodes) {
-			switch (node.type) {
-				case "source": {
-					const provider = yield* registry.getProvider(node.connector);
-					graph.setNodeAttribute(node.id, "resolved", { type: "source", provider, config: node.config as Readonly<Record<string, unknown>> });
-					break;
-				}
-				case "target": {
-					const provider = yield* registry.getProvider(node.connector);
-					graph.setNodeAttribute(node.id, "resolved", { type: "target", provider, config: node.config as Readonly<Record<string, unknown>> });
-					break;
-				}
-				case "action": {
-					const action = yield* registry.getAction(node.action);
-					graph.setNodeAttribute(node.id, "resolved", { type: "action", action, config: node.config as Readonly<Record<string, unknown>> });
-					break;
-				}
-				default:
-					graph.setNodeAttribute(node.id, "resolved", { type: "branch" });
+	for (const node of definition.nodes) {
+		switch (node.type) {
+			case "source": {
+				const provider = registry.getProvider(node.connector);
+				graph.setNodeAttribute(node.id, "resolved", { type: "source", provider, config: node.config as Readonly<Record<string, unknown>> });
+				break;
 			}
+			case "target": {
+				const provider = registry.getProvider(node.connector);
+				graph.setNodeAttribute(node.id, "resolved", { type: "target", provider, config: node.config as Readonly<Record<string, unknown>> });
+				break;
+			}
+			case "action": {
+				const action = registry.getAction(node.action);
+				graph.setNodeAttribute(node.id, "resolved", { type: "action", action, config: node.config as Readonly<Record<string, unknown>> });
+				break;
+			}
+			default:
+				graph.setNodeAttribute(node.id, "resolved", { type: "branch" });
 		}
+	}
 
-		yield* Effect.logDebug("Execution plan built")
-			.pipe(Effect.annotateLogs({
-				graphId: definition.id,
-				order: order.join(" → "),
-			}));
-
-		return { graph, definition, order };
+	logger.debug("Execution plan built", {
+		graphId: definition.id,
+		order: order.join(" → "),
 	});
+
+	return { graph, definition, order };
+};

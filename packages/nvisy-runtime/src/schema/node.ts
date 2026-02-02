@@ -1,71 +1,57 @@
-import { Schema } from "effect";
+import { z } from "zod";
 import { ConcurrencyPolicy, RetryPolicy, TimeoutPolicy } from "./policy.js";
 
-const NodeBase = Schema.Struct({
-	id: Schema.UUID,
-	retry: Schema.optional(RetryPolicy),
-	timeout: Schema.optional(TimeoutPolicy),
-	concurrency: Schema.optional(ConcurrencyPolicy),
+const NodeBase = z.object({
+	id: z.string().uuid(),
+	retry: RetryPolicy.optional(),
+	timeout: TimeoutPolicy.optional(),
+	concurrency: ConcurrencyPolicy.optional(),
 });
 
-export const SourceNode = Schema.extend(
-	NodeBase,
-	Schema.Struct({
-		type: Schema.Literal("source"),
-		connector: Schema.String,
-		config: Schema.Record({ key: Schema.String, value: Schema.Unknown }),
-	}),
-);
-
-export const ActionNode = Schema.extend(
-	NodeBase,
-	Schema.Struct({
-		type: Schema.Literal("action"),
-		action: Schema.String,
-		config: Schema.optionalWith(Schema.Record({ key: Schema.String, value: Schema.Unknown }), {
-			default: () => ({}),
-		}),
-	}),
-);
-
-export const TargetNode = Schema.extend(
-	NodeBase,
-	Schema.Struct({
-		type: Schema.Literal("target"),
-		connector: Schema.String,
-		config: Schema.Record({ key: Schema.String, value: Schema.Unknown }),
-	}),
-);
-
-export const BranchRoute = Schema.Struct({
-	predicate: Schema.String,
-	target: Schema.String,
+export const SourceNode = NodeBase.extend({
+	type: z.literal("source"),
+	connector: z.string(),
+	config: z.record(z.string(), z.unknown()),
 });
 
-export const BranchNode = Schema.extend(
-	NodeBase,
-	Schema.Struct({
-		type: Schema.Literal("branch"),
-		routes: Schema.Array(BranchRoute),
-		default: Schema.optional(Schema.String),
-	}),
-);
+export const ActionNode = NodeBase.extend({
+	type: z.literal("action"),
+	action: z.string(),
+	config: z.record(z.string(), z.unknown()).default({}),
+});
 
-export const GraphNode = Schema.Union(
+export const TargetNode = NodeBase.extend({
+	type: z.literal("target"),
+	connector: z.string(),
+	config: z.record(z.string(), z.unknown()),
+});
+
+export const BranchRoute = z.object({
+	predicate: z.string(),
+	target: z.string(),
+});
+
+export const BranchNode = NodeBase.extend({
+	type: z.literal("branch"),
+	routes: z.array(BranchRoute),
+	default: z.string().optional(),
+});
+
+export const GraphNode = z.discriminatedUnion("type", [
 	SourceNode,
 	ActionNode,
 	TargetNode,
 	BranchNode,
-);
+]);
 
-export const GraphEdge = Schema.Struct({
-	from: Schema.UUID,
-	to: Schema.UUID,
+export const GraphEdge = z.object({
+	from: z.string().uuid(),
+	to: z.string().uuid(),
 });
 
-export type SourceNode = Schema.Schema.Type<typeof SourceNode>;
-export type ActionNode = Schema.Schema.Type<typeof ActionNode>;
-export type TargetNode = Schema.Schema.Type<typeof TargetNode>;
-export type BranchNode = Schema.Schema.Type<typeof BranchNode>;
-export type GraphNode = Schema.Schema.Type<typeof GraphNode>;
-export type GraphEdge = Schema.Schema.Type<typeof GraphEdge>;
+export type SourceNode = z.infer<typeof SourceNode>;
+export type ActionNode = z.infer<typeof ActionNode>;
+export type TargetNode = z.infer<typeof TargetNode>;
+export type BranchNode = z.infer<typeof BranchNode>;
+export type GraphNode = z.infer<typeof GraphNode>;
+export type GraphEdge = z.infer<typeof GraphEdge>;

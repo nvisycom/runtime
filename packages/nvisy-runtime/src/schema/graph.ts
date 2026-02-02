@@ -1,18 +1,16 @@
-import { Schema } from "effect";
+import { z } from "zod";
 import { GraphEdge, GraphNode } from "./node.js";
 import { ConcurrencyPolicy, TimeoutPolicy } from "./policy.js";
 
-export const GraphDefinition = Schema.Struct({
-	id: Schema.UUID,
-	name: Schema.optional(Schema.String),
-	description: Schema.optional(Schema.String),
-	nodes: Schema.Array(GraphNode),
-	edges: Schema.optionalWith(Schema.Array(GraphEdge), { default: () => [] }),
-	concurrency: Schema.optional(ConcurrencyPolicy),
-	timeout: Schema.optional(TimeoutPolicy),
-	metadata: Schema.optionalWith(Schema.Record({ key: Schema.String, value: Schema.Unknown }), {
-		default: () => ({}),
-	}),
+export const GraphDefinition = z.object({
+	id: z.string().uuid(),
+	name: z.string().optional(),
+	description: z.string().optional(),
+	nodes: z.array(GraphNode),
+	edges: z.array(GraphEdge).default([]),
+	concurrency: ConcurrencyPolicy.optional(),
+	timeout: TimeoutPolicy.optional(),
+	metadata: z.record(z.string(), z.unknown()).default({}),
 });
 
-export type GraphDefinition = Schema.Schema.Type<typeof GraphDefinition>;
+export type GraphDefinition = z.infer<typeof GraphDefinition>;

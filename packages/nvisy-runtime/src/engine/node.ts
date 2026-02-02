@@ -1,14 +1,70 @@
-import { Effect, Schedule } from "effect";
+import { getLogger } from "@logtape/logtape";
 import type { Data } from "@nvisy/core";
 import type { GraphNode } from "../schema/index.js";
 import type { ResolvedNode } from "../compiler/plan.js";
 import type { Edge } from "./edge.js";
+
+const logger = getLogger(["nvisy", "engine"]);
 
 export interface NodeResult {
 	readonly nodeId: string;
 	readonly status: "success" | "failure" | "skipped";
 	readonly error?: Error;
 	readonly itemsProcessed: number;
+}
+
+const sleep = (ms: number): Promise<void> =>
+	new Promise((resolve) => setTimeout(resolve, ms));
+
+async function withRetry<T>(
+	fn: () => Promise<T>,
+	node: GraphNode,
+): Promise<T> {
+	if (!node.retry) return fn();
+
+	const { maxRetries, backoff, initialDelayMs, maxDelayMs } = node.retry;
+	let lastError: unknown;
+
+	for (let attempt = 0; attempt <= maxRetries; attempt++) {
+		try {
+			return await fn();
+		} catch (error) {
+			lastError = error;
+			logger.warn("Node {nodeId} attempt {attempt} failed: {error}", {
+				nodeId: node.id,
+				attempt: attempt + 1,
+				maxRetries,
+				error: error instanceof Error ? error.message : String(error),
+			});
+			if (attempt < maxRetries) {
+				let delay: number;
+				if (backoff === "exponential") {
+					delay = Math.min(initialDelayMs * 2 ** attempt, maxDelayMs);
+				} else {
+					delay = initialDelayMs;
+				}
+				if (backoff === "jitter") {
+					delay = Math.min(initialDelayMs * 2 ** attempt, maxDelayMs) * Math.random();
+				}
+				await sleep(delay);
+			}
+		}
+	}
+
+	throw lastError;
+}
+
+async function withTimeout<T>(
+	fn: () => Promise<T>,
+	timeoutMs: number | undefined,
+	fallback: T,
+): Promise<T> {
+	if (!timeoutMs) return fn();
+
+	return Promise.race([
+		fn(),
+		new Promise<T>((resolve) => setTimeout(() => resolve(fallback), timeoutMs)),
+	]);
 }
 
 /**
@@ -19,44 +75,34 @@ export interface NodeResult {
  * @param inEdges - Edges feeding data into this node.
  * @param outEdges - Edges carrying data out of this node.
  */
-export const executeNode = (
+export const executeNode = async (
 	node: GraphNode,
 	resolved: ResolvedNode,
 	inEdges: ReadonlyArray<Edge>,
 	outEdges: ReadonlyArray<Edge>,
-): Effect.Effect<NodeResult, Error> => {
-	const base = Effect.gen(function* () {
+): Promise<NodeResult> => {
+	logger.debug("Executing node {nodeId} ({type})", { nodeId: node.id, type: resolved.type });
+
+	const base = async (): Promise<NodeResult> => {
 		let itemsProcessed = 0;
 
 		switch (resolved.type) {
 			case "source": {
 				// Connect to provider, read from source, push to outEdges
-				const instance = yield* Effect.tryPromise(() =>
-					resolved.provider.connect(resolved.config, resolved.config),
-				).pipe(Effect.catchAll((e) => Effect.fail(new Error(`Source connect failed: ${String(e)}`))));
-
-				// TODO: call instance.createSource().read() and push items to outEdges
-				void instance;
-				void outEdges;
+				const instance = await resolved.provider.connect(resolved.config);
+				try {
+					// TODO: pipe resolved.stream.read(instance.client, ctx, params) to outEdges
+					void instance;
+					void outEdges;
+				} finally {
+					await instance.disconnect();
+				}
 				break;
 			}
 			case "action": {
-				// Drain inEdges, execute action, push results to outEdges
-				const items: Data[] = [];
-				for (const edge of inEdges) {
-					// TODO: drain queue until upstream signals completion
-					void edge;
-				}
-
-				if (items.length > 0) {
-					const results = yield* Effect.tryPromise(() =>
-						resolved.action.execute(items, resolved.config),
-					).pipe(Effect.catchAll((e) => Effect.fail(new Error(`Action execute failed: ${String(e)}`))));
-
-					itemsProcessed = results.length;
-					// TODO: push results to outEdges
-					void outEdges;
-				}
+				// TODO: convert inEdge queues to AsyncIterable, apply action.pipe(stream, config, client), push to outEdges
+				void inEdges;
+				void outEdges;
 				break;
 			}
 			case "target": {
@@ -68,55 +114,45 @@ export const executeNode = (
 				}
 
 				if (items.length > 0) {
-					const instance = yield* Effect.tryPromise(() =>
-						resolved.provider.connect(resolved.config, resolved.config),
-					).pipe(Effect.catchAll((e) => Effect.fail(new Error(`Target connect failed: ${String(e)}`))));
-
-					// TODO: call instance.createSink().write(items)
-					void instance;
-					itemsProcessed = items.length;
+					const instance = await resolved.provider.connect(resolved.config);
+					try {
+						// TODO: pipe data from inEdges into resolved.stream.write(instance.client, params)
+						void instance;
+						itemsProcessed = items.length;
+					} finally {
+						await instance.disconnect();
+					}
 				}
 				break;
 			}
 			default:
-				// branch — control flow handled by runner
+				// branch -- control flow handled by runner
 				break;
 		}
+
+		logger.debug("Node {nodeId} completed, {itemsProcessed} items processed", {
+			nodeId: node.id,
+			itemsProcessed,
+		});
 
 		return {
 			nodeId: node.id,
 			status: "success" as const,
 			itemsProcessed,
 		};
-	});
+	};
 
-	// ── Apply retry policy ─────────────────────────────────────────────
-	const withRetry = node.retry
-		? base.pipe(
-			Effect.retry(
-				(node.retry.backoff === "exponential"
-					? Schedule.exponential(`${node.retry.initialDelayMs} millis`)
-					: Schedule.fixed(`${node.retry.initialDelayMs} millis`)
-				).pipe(Schedule.compose(Schedule.recurs(node.retry.maxRetries))),
-			),
-		)
-		: base;
-
-	// ── Apply timeout ──────────────────────────────────────────────────
 	const timeoutMs = node.timeout?.nodeTimeoutMs;
-	const withTimeout = timeoutMs
-		? withRetry.pipe(
-			Effect.timeout(`${timeoutMs} millis`),
-			Effect.map((option) =>
-				option ?? {
-					nodeId: node.id,
-					status: "failure" as const,
-					error: new Error(`Node ${node.id} timed out after ${timeoutMs}ms`),
-					itemsProcessed: 0,
-				},
-			),
-		)
-		: withRetry;
+	const timeoutFallback: NodeResult = {
+		nodeId: node.id,
+		status: "failure",
+		error: new Error(`Node ${node.id} timed out after ${timeoutMs}ms`),
+		itemsProcessed: 0,
+	};
 
-	return withTimeout;
+	return withTimeout(
+		() => withRetry(base, node),
+		timeoutMs,
+		timeoutFallback,
+	);
 };

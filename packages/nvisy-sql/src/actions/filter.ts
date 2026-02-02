@@ -1,9 +1,9 @@
-import { Schema } from "effect";
+import { z } from "zod";
 import { Action, Row } from "@nvisy/core";
 import type { JsonValue } from "@nvisy/core";
 
 /** Supported comparison operators for a single filter condition. */
-const Operator = Schema.Literal(
+const Operator = z.enum([
 	"eq",
 	"neq",
 	"gt",
@@ -14,14 +14,14 @@ const Operator = Schema.Literal(
 	"notIn",
 	"isNull",
 	"isNotNull",
-);
-type Operator = typeof Operator.Type;
+]);
+type Operator = z.infer<typeof Operator>;
 
 /** A single predicate: `column <op> value`. */
-const FilterCondition = Schema.Struct({
-	column: Schema.String,
+const FilterCondition = z.object({
+	column: z.string(),
 	op: Operator,
-	value: Schema.optional(Schema.Unknown),
+	value: z.unknown().optional(),
 });
 
 /**
@@ -30,11 +30,11 @@ const FilterCondition = Schema.Struct({
  * - `conditions` — array of predicates applied to each row.
  * - `mode` — combine with `"and"` (default) or `"or"`.
  */
-const FilterParams = Schema.Struct({
-	conditions: Schema.Array(FilterCondition),
-	mode: Schema.optional(Schema.Literal("and", "or")),
+const FilterParams = z.object({
+	conditions: z.array(FilterCondition),
+	mode: z.enum(["and", "or"]).optional(),
 });
-type FilterParams = typeof FilterParams.Type;
+type FilterParams = z.infer<typeof FilterParams>;
 
 /** Evaluate a single {@link FilterCondition} against a row. */
 function matchCondition(
@@ -98,14 +98,13 @@ function matchCondition(
 export const filter = Action.withoutClient("filter", {
 	types: [Row],
 	params: FilterParams,
-	execute: async (items, params) => {
+	transform: async function* (stream, params) {
 		const mode = params.mode ?? "and";
-
-		return items.filter((row) => {
-			if (mode === "and") {
-				return params.conditions.every((c) => matchCondition(row, c));
-			}
-			return params.conditions.some((c) => matchCondition(row, c));
-		});
+		for await (const row of stream) {
+			const match = mode === "and"
+				? params.conditions.every((c) => matchCondition(row, c))
+				: params.conditions.some((c) => matchCondition(row, c));
+			if (match) yield row;
+		}
 	},
 });

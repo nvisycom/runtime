@@ -1,7 +1,10 @@
+import { getLogger } from "@logtape/logtape";
 import type { Hono } from "hono";
 import { openAPIRouteHandler } from "hono-openapi";
 import { Scalar } from "@scalar/hono-api-reference";
 import type { ServerConfig } from "../config.js";
+
+const logger = getLogger(["nvisy", "server"]);
 
 /** Path where the OpenAPI 3.1 JSON specification is served. */
 const SPEC_PATH = "/openapi.json";
@@ -39,4 +42,6 @@ export function registerOpenApiHandler(app: Hono, config: ServerConfig): void {
 
 	app.get(SPEC_PATH, specRoute);
 	app.get(DOCS_PATH, docsRoute);
+	logger.debug("  GET {spec}", { spec: SPEC_PATH });
+	logger.debug("  GET {docs}", { docs: DOCS_PATH });
 }

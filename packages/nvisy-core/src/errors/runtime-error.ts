@@ -6,22 +6,39 @@ export interface ErrorContext {
 	readonly details?: Readonly<Record<string, unknown>>;
 	/** Whether the caller may safely retry the operation. */
 	readonly retryable?: boolean;
+	/** The underlying error that caused this one. */
+	readonly cause?: Error | undefined;
 }
 
 /**
  * Base class for all Nvisy runtime errors.
  *
- * Every error carries a structured {@link context} for logging and
+ * Every error carries a structured {@link ErrorContext} for logging and
  * debugging. Extends the built-in `Error` so `instanceof RuntimeError`
- * works everywhere — no framework dependency required.
+ * works everywhere.
  */
 export class RuntimeError extends Error {
-	/** Structured context about the failure. */
-	readonly context: ErrorContext;
+	readonly #context: ErrorContext;
 
-	constructor(message: string, context?: ErrorContext, cause?: Error) {
-		super(message, cause ? { cause } : undefined);
+	constructor(message: string, context?: ErrorContext) {
+		super(message, context?.cause ? { cause: context.cause } : undefined);
 		this.name = this.constructor.name;
-		this.context = context ?? {};
+		this.#context = context ?? {};
+	}
+
+	get context(): ErrorContext {
+		return this.#context;
+	}
+
+	get source(): string | undefined {
+		return this.#context.source;
+	}
+
+	get details(): Readonly<Record<string, unknown>> | undefined {
+		return this.#context.details;
+	}
+
+	get retryable(): boolean | undefined {
+		return this.#context.retryable;
 	}
 }

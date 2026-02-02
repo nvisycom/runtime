@@ -1,83 +1,79 @@
 /**
  * Server entry point.
  *
- * Composes the {@link HttpServer} Effect Service from the building
- * blocks in `app.ts`, selects a logger based on `NODE_ENV`, and
- * forks the program.
+ * Reads configuration from environment variables, configures
+ * logging via LogTape, builds the Hono app, and starts the
+ * HTTP server.
  *
- * - **development** — `Logger.pretty` (human-readable, coloured)
- * - **production**  — `Logger.structured` (JSON, machine-parseable)
+ * ## Logging
  *
- * All log output carries the `nvisy-server` span for easy filtering.
+ * - **development** — human-readable, coloured console output
+ *   via `@logtape/pretty`.
+ * - **production** — JSON Lines (machine-parseable) via the
+ *   built-in `jsonLinesFormatter`.
+ *
+ * Sensitive fields are automatically redacted by `@logtape/redaction`.
+ * Per-request `requestId` is propagated to every log call via
+ * `AsyncLocalStorage` — see `middleware/index.ts`.
  *
  * @module
  */
 
-import { Config, Effect, Layer, Logger } from "effect";
-import { ServerConfig } from "./config.js";
+import { AsyncLocalStorage } from "node:async_hooks";
+import {
+	configure,
+	getConsoleSink,
+	getLogger,
+	jsonLinesFormatter,
+} from "@logtape/logtape";
+import { prettyFormatter } from "@logtape/pretty";
+import { redactByField } from "@logtape/redaction";
+import { loadConfig } from "./config.js";
 import { createApp, startServer } from "./app.js";
 
-/**
- * Root Effect Service that owns the HTTP server lifecycle.
- *
- * On startup it reads {@link ServerConfig} from the environment,
- * captures the current Effect runtime (so Hono middleware can emit
- * logs through the configured logger), builds the Hono app, and
- * binds the server. The scoped lifecycle guarantees the server is
- * shut down cleanly when the fiber is interrupted.
- */
-class HttpServer extends Effect.Service<HttpServer>()(
-	"@nvisy/HttpServer",
-	{
-		scoped: Effect.gen(function* () {
-			const config = yield* ServerConfig;
-			const runtime = yield* Effect.runtime<never>();
+const config = loadConfig();
 
-			yield* Effect.logInfo("Configuration loaded").pipe(
-				Effect.annotateLogs({
-					port: config.port,
-					host: config.host,
-					corsOrigin: config.corsOrigin,
-					isDevelopment: config.isDevelopment,
-				}),
-			);
+// Development  → coloured, human-readable lines (@logtape/pretty)
+// Production   → one JSON object per line (jsonLinesFormatter)
+const consoleSink = config.isDevelopment
+	? getConsoleSink({ formatter: prettyFormatter })
+	: getConsoleSink({ formatter: jsonLinesFormatter });
 
-			const { app, injectWebSocket } = createApp(config, runtime);
-			yield* startServer({
-				app,
-				host: config.host,
-				port: config.port,
-				injectWebSocket,
-			});
+await configure({
+	// Enables LogTape implicit contexts so that `withContext({ requestId })`
+	// in middleware automatically attaches the request ID to every log record.
+	contextLocalStorage: new AsyncLocalStorage(),
+	sinks: { console: redactByField(consoleSink) },
+	loggers: [
+		{
+			category: ["logtape", "meta"],
+			lowestLevel: "warning",
+			sinks: ["console"],
+		},
+		{
+			category: ["nvisy"],
+			lowestLevel: config.isDevelopment ? "debug" : "info",
+			sinks: ["console"],
+		},
+	],
+});
 
-			return {};
-		}),
-	},
-) {}
+const { app, injectWebSocket } = createApp(config);
 
-/**
- * Select a logger layer based on the runtime environment.
- *
- * Returns `Logger.pretty` in development (coloured, human-readable)
- * and `Logger.structured` otherwise (JSON lines, machine-parseable).
- */
-function loggerLayer(isDevelopment: boolean): Layer.Layer<never> {
-	if (isDevelopment) {
-		return Logger.pretty;
-	}
-	return Logger.structured;
+const { close } = startServer({
+	app,
+	host: config.host,
+	port: config.port,
+	injectWebSocket,
+});
+
+const logger = getLogger(["nvisy", "server"]);
+
+function shutdown() {
+	logger.info("Shutting down");
+	close();
+	process.exit(0);
 }
 
-const isDevelopment = Effect.runSync(
-	Config.string("NODE_ENV").pipe(
-		Config.withDefault("development"),
-		Config.map((env) => env !== "production"),
-	),
-);
-
-const program = Layer.launch(Layer.mergeAll(HttpServer.Default)).pipe(
-	Effect.withLogSpan("nvisy-server"),
-	Effect.provide(loggerLayer(isDevelopment)),
-);
-
-Effect.runFork(program);
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);

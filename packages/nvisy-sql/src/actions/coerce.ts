@@ -1,9 +1,9 @@
-import { Schema } from "effect";
+import { z } from "zod";
 import { Action, Row } from "@nvisy/core";
 import type { JsonValue } from "@nvisy/core";
 
 /** Allowed target types for column coercion. */
-const CoerceTarget = Schema.Literal("string", "number", "boolean");
+const CoerceTarget = z.enum(["string", "number", "boolean"]);
 
 /**
  * Parameters for the `sql/coerce` action.
@@ -11,16 +11,16 @@ const CoerceTarget = Schema.Literal("string", "number", "boolean");
  * `columns` maps column names to a target type. Columns not listed
  * are passed through unchanged.
  */
-const CoerceParams = Schema.Struct({
-	columns: Schema.Record({ key: Schema.String, value: CoerceTarget }),
+const CoerceParams = z.object({
+	columns: z.record(z.string(), CoerceTarget),
 });
-type CoerceParams = typeof CoerceParams.Type;
+type CoerceParams = z.infer<typeof CoerceParams>;
 
 /**
  * Cast a single value to the requested type.
  *
- * - `null` / `undefined` → `null` regardless of target.
- * - `"number"` on a non-numeric string → `null`.
+ * - `null` / `undefined` -> `null` regardless of target.
+ * - `"number"` on a non-numeric string -> `null`.
  */
 function coerceValue(
 	value: JsonValue | undefined,
@@ -49,15 +49,15 @@ function coerceValue(
 export const coerce = Action.withoutClient("coerce", {
 	types: [Row],
 	params: CoerceParams,
-	execute: async (items, params) => {
-		return items.map((row) => {
+	transform: async function* (stream, params) {
+		for await (const row of stream) {
 			const result: Record<string, JsonValue> = { ...row.columns };
 
 			for (const [column, target] of Object.entries(params.columns)) {
 				result[column] = coerceValue(result[column], target);
 			}
 
-			return new Row(result, { id: row.id, metadata: row.metadata });
-		});
+			yield new Row(result, { id: row.id, metadata: row.metadata });
+		}
 	},
 });

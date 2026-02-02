@@ -1,23 +1,23 @@
-import { Schema } from "effect";
+import { z } from "zod";
 
 /**
  * Per-node parameters that describe what to read from or write to.
  *
  * Attached to each provider node in the workflow graph.
  */
-export const SqlParams = Schema.Struct({
+export const SqlParams = z.object({
 	/** Target table name. */
-	table: Schema.String,
+	table: z.string(),
 	/** Columns to select (empty array = `SELECT *`). */
-	columns: Schema.Array(Schema.String),
+	columns: z.array(z.string()),
 	/** Primary sort column for keyset pagination (must be sequential / monotonic). */
-	idColumn: Schema.String,
+	idColumn: z.string(),
 	/** Secondary sort column for stable ordering when `idColumn` values collide. */
-	tiebreaker: Schema.String,
+	tiebreaker: z.string(),
 	/** Maximum rows per page during keyset pagination. */
-	batchSize: Schema.Number,
+	batchSize: z.number(),
 });
-export type SqlParams = typeof SqlParams.Type;
+export type SqlParams = z.infer<typeof SqlParams>;
 
 /**
  * Keyset pagination cursor for resumable reads.
@@ -25,10 +25,10 @@ export type SqlParams = typeof SqlParams.Type;
  * Both fields are `null` on the very first page and are updated after
  * each yielded row.
  */
-export const SqlCursor = Schema.Struct({
+export const SqlCursor = z.object({
 	/** Last seen value of the `idColumn`, or `null` for the first page. */
-	lastId: Schema.Union(Schema.Number, Schema.String, Schema.Null),
+	lastId: z.union([z.number(), z.string(), z.null()]),
 	/** Last seen value of the `tiebreaker` column, or `null` for the first page. */
-	lastTiebreaker: Schema.Union(Schema.Number, Schema.String, Schema.Null),
+	lastTiebreaker: z.union([z.number(), z.string(), z.null()]),
 });
-export type SqlCursor = typeof SqlCursor.Type;
+export type SqlCursor = z.infer<typeof SqlCursor>;

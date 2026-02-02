@@ -1,18 +1,12 @@
-import { Schema as S } from "effect";
+import { z } from "zod";
 
-export const ExecuteRequest = S.standardSchemaV1(
-	S.Struct({
-		graph: S.Record({ key: S.String, value: S.Unknown }),
-		config: S.optional(S.Record({ key: S.String, value: S.Unknown })),
-	}),
-);
+export const ExecuteRequest = z.object({
+	graph: z.record(z.string(), z.unknown()),
+	config: z.record(z.string(), z.unknown()).optional(),
+});
 
-export const ValidateRequest = S.standardSchemaV1(
-	S.Struct({
-		graph: S.Record({ key: S.String, value: S.Unknown }),
-	}),
-);
+export const ValidateRequest = z.object({
+	graph: z.record(z.string(), z.unknown()),
+});
 
-export const RunIdParam = S.standardSchemaV1(
-	S.Struct({ runId: S.String }),
-);
+export const RunIdParam = z.object({ runId: z.string() });

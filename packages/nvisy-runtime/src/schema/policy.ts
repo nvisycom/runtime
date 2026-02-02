@@ -1,24 +1,24 @@
-import { Schema } from "effect";
+import { z } from "zod";
 
-export const BackoffStrategy = Schema.Literal("fixed", "exponential", "jitter");
+export const BackoffStrategy = z.enum(["fixed", "exponential", "jitter"]);
 
-export const RetryPolicy = Schema.Struct({
-	maxRetries: Schema.optionalWith(Schema.Number, { default: () => 3 }),
-	backoff: Schema.optionalWith(BackoffStrategy, { default: () => "exponential" as const }),
-	initialDelayMs: Schema.optionalWith(Schema.Number, { default: () => 1000 }),
-	maxDelayMs: Schema.optionalWith(Schema.Number, { default: () => 30_000 }),
+export const RetryPolicy = z.object({
+	maxRetries: z.number().default(3),
+	backoff: BackoffStrategy.default("exponential"),
+	initialDelayMs: z.number().default(1000),
+	maxDelayMs: z.number().default(30_000),
 });
 
-export const TimeoutPolicy = Schema.Struct({
-	nodeTimeoutMs: Schema.optional(Schema.Number),
-	graphTimeoutMs: Schema.optional(Schema.Number),
+export const TimeoutPolicy = z.object({
+	nodeTimeoutMs: z.number().optional(),
+	graphTimeoutMs: z.number().optional(),
 });
 
-export const ConcurrencyPolicy = Schema.Struct({
-	maxGlobal: Schema.optionalWith(Schema.Number, { default: () => 10 }),
-	maxPerNode: Schema.optional(Schema.Number),
+export const ConcurrencyPolicy = z.object({
+	maxGlobal: z.number().default(10),
+	maxPerNode: z.number().optional(),
 });
 
-export type RetryPolicy = Schema.Schema.Type<typeof RetryPolicy>;
-export type TimeoutPolicy = Schema.Schema.Type<typeof TimeoutPolicy>;
-export type ConcurrencyPolicy = Schema.Schema.Type<typeof ConcurrencyPolicy>;
+export type RetryPolicy = z.infer<typeof RetryPolicy>;
+export type TimeoutPolicy = z.infer<typeof TimeoutPolicy>;
+export type ConcurrencyPolicy = z.infer<typeof ConcurrencyPolicy>;

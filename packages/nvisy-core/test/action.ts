@@ -1,34 +1,41 @@
-import { Schema } from "effect";
-import { Action } from "#actions/base-action.js";
-import { Row } from "#datatypes/record-datatype.js";
+import { z } from "zod";
+import { Action } from "../src/actions.js";
+import { Row } from "../src/datatypes/record-datatype.js";
 
-export const FilterParams = Schema.Struct({
-	column: Schema.String,
-	value: Schema.String,
+export const FilterParams = z.object({
+	column: z.string(),
+	value: z.string(),
 });
-export type FilterParams = typeof FilterParams.Type;
+export type FilterParams = z.infer<typeof FilterParams>;
 
 export const ExampleFilter = Action.withoutClient("filter", {
 	types: [Row],
 	params: FilterParams,
-	execute: async (items, params) =>
-		items.filter((row) => row.get(params.column) === params.value),
+	transform: async function*(stream, params) {
+		for await (const row of stream) {
+			if (row.get(params.column) === params.value) yield row;
+		}
+	},
 });
 
-export const MapParams = Schema.Struct({
-	column: Schema.String,
-	fn: Schema.Literal("uppercase", "lowercase"),
+export const MapParams = z.object({
+	column: z.string(),
+	fn: z.enum(["uppercase", "lowercase"]),
 });
-export type MapParams = typeof MapParams.Type;
+export type MapParams = z.infer<typeof MapParams>;
 
 export const ExampleMap = Action.withoutClient("map", {
 	types: [Row],
 	params: MapParams,
-	execute: async (items, params) =>
-		items.map((row) => {
+	transform: async function*(stream, params) {
+		for await (const row of stream) {
 			const val = row.get(params.column);
-			if (typeof val !== "string") return row;
-			const mapped = params.fn === "uppercase" ? val.toUpperCase() : val.toLowerCase();
-			return new Row({ ...row.columns, [params.column]: mapped });
-		}),
+			if (typeof val !== "string") {
+				yield row;
+			} else {
+				const mapped = params.fn === "uppercase" ? val.toUpperCase() : val.toLowerCase();
+				yield new Row({ ...row.columns, [params.column]: mapped });
+			}
+		}
+	},
 });

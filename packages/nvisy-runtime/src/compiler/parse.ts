@@ -1,8 +1,10 @@
-import { Effect, Schema } from "effect";
+import { getLogger } from "@logtape/logtape";
 import { DirectedGraph } from "graphology";
 import { GraphDefinition } from "../schema/index.js";
 import type { GraphNode } from "../schema/index.js";
 import type { ResolvedNode } from "./plan.js";
+
+const logger = getLogger(["nvisy", "compiler"]);
 
 export interface RuntimeNodeAttrs {
 	readonly schema: GraphNode;
@@ -35,15 +37,20 @@ export const buildRuntimeGraph = (def: GraphDefinition): RuntimeGraph => {
 	return graph;
 };
 
-export const parseGraph = (
-	input: unknown,
-): Effect.Effect<ParsedGraph, Error> =>
-	Schema.decodeUnknown(GraphDefinition)(input).pipe(
-		Effect.mapError(
-			(error) => new Error(`Graph parse error: ${String(error)}`),
-		),
-		Effect.map((definition) => ({
-			definition,
-			graph: buildRuntimeGraph(definition),
-		})),
-	);
+export const parseGraph = (input: unknown): ParsedGraph => {
+	const result = GraphDefinition.safeParse(input);
+	if (!result.success) {
+		logger.warn("Graph parse failed: {error}", { error: result.error.message });
+		throw new Error(`Graph parse error: ${result.error.message}`);
+	}
+	const definition = result.data;
+	logger.debug("Graph parsed: {graphId} ({nodeCount} nodes, {edgeCount} edges)", {
+		graphId: definition.id,
+		nodeCount: definition.nodes.length,
+		edgeCount: definition.edges.length,
+	});
+	return {
+		definition,
+		graph: buildRuntimeGraph(definition),
+	};
+};

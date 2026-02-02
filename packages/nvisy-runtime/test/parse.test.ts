@@ -1,17 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { Effect } from "effect";
 import { parseGraph, buildRuntimeGraph } from "../src/compiler/parse.js";
 import {
 	GRAPH_ID, SOURCE_ID, ACTION_ID, TARGET_ID,
 	linearGraph,
 } from "./fixtures.js";
 
-const run = <A>(effect: Effect.Effect<A, Error>): Promise<A> =>
-	Effect.runPromise(effect);
-
 describe("parseGraph", () => {
-	it("parses a valid linear graph", async () => {
-		const result = await run(parseGraph(linearGraph()));
+	it("parses a valid linear graph", () => {
+		const result = parseGraph(linearGraph());
 
 		expect(result.definition.id).toBe(GRAPH_ID);
 		expect(result.definition.nodes).toHaveLength(3);
@@ -20,26 +16,26 @@ describe("parseGraph", () => {
 		expect(result.graph.size).toBe(2);
 	});
 
-	it("returns a RuntimeGraph with correct node attributes", async () => {
-		const result = await run(parseGraph(linearGraph()));
+	it("returns a RuntimeGraph with correct node attributes", () => {
+		const result = parseGraph(linearGraph());
 
 		const attrs = result.graph.getNodeAttributes(SOURCE_ID);
 		expect(attrs.schema.type).toBe("source");
 		expect(attrs.resolved).toBeUndefined();
 	});
 
-	it("creates edge keys in from->to format", async () => {
-		const result = await run(parseGraph(linearGraph()));
+	it("creates edge keys in from->to format", () => {
+		const result = parseGraph(linearGraph());
 
 		expect(result.graph.hasEdge(`${SOURCE_ID}->${ACTION_ID}`)).toBe(true);
 		expect(result.graph.hasEdge(`${ACTION_ID}->${TARGET_ID}`)).toBe(true);
 	});
 
-	it("rejects input missing required fields", async () => {
-		await expect(run(parseGraph({}))).rejects.toThrow("Graph parse error");
+	it("rejects input missing required fields", () => {
+		expect(() => parseGraph({})).toThrow("Graph parse error");
 	});
 
-	it("rejects non-UUID node IDs", async () => {
+	it("rejects non-UUID node IDs", () => {
 		const bad = {
 			id: GRAPH_ID,
 			nodes: [
@@ -47,19 +43,19 @@ describe("parseGraph", () => {
 			],
 		};
 
-		await expect(run(parseGraph(bad))).rejects.toThrow("Graph parse error");
+		expect(() => parseGraph(bad)).toThrow("Graph parse error");
 	});
 
-	it("rejects non-UUID graph ID", async () => {
+	it("rejects non-UUID graph ID", () => {
 		const bad = {
 			id: "bad-graph-id",
 			nodes: [],
 		};
 
-		await expect(run(parseGraph(bad))).rejects.toThrow("Graph parse error");
+		expect(() => parseGraph(bad)).toThrow("Graph parse error");
 	});
 
-	it("defaults edges to empty array", async () => {
+	it("defaults edges to empty array", () => {
 		const input = {
 			id: GRAPH_ID,
 			nodes: [
@@ -67,18 +63,18 @@ describe("parseGraph", () => {
 			],
 		};
 
-		const result = await run(parseGraph(input));
+		const result = parseGraph(input);
 		expect(result.definition.edges).toEqual([]);
 		expect(result.graph.size).toBe(0);
 	});
 
-	it("defaults metadata to empty object", async () => {
+	it("defaults metadata to empty object", () => {
 		const input = {
 			id: GRAPH_ID,
 			nodes: [],
 		};
 
-		const result = await run(parseGraph(input));
+		const result = parseGraph(input);
 		expect(result.definition.metadata).toEqual({});
 	});
 });

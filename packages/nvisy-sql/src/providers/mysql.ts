@@ -1,16 +1,18 @@
-import { MysqlClient } from "@effect/sql-mysql2";
-import { Redacted } from "effect";
+import { MysqlDialect } from "kysely";
+import { createPool } from "mysql2/promise";
 import { makeSqlProvider } from "./base.js";
 
-/** MySQL provider — keyset-paginated source and batch-insert sink via `@effect/sql-mysql2`. */
+/** MySQL provider — keyset-paginated source and batch-insert sink via kysely + `mysql2`. */
 export const mysql = makeSqlProvider({
 	id: "mysql",
-	makeLayer: (creds) =>
-		MysqlClient.layer({
-			host: creds.host,
-			port: creds.port,
-			database: creds.database,
-			username: creds.username,
-			password: Redacted.make(creds.password),
+	createDialect: (creds) =>
+		new MysqlDialect({
+			pool: createPool({
+				host: creds.host,
+				port: creds.port,
+				database: creds.database,
+				user: creds.username,
+				password: creds.password,
+			}),
 		}),
 });

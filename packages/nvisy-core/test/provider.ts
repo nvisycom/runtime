@@ -1,25 +1,25 @@
-import { Schema } from "effect";
-import { Provider } from "#providers/base-provider.js";
-import { Stream } from "#streams/base-stream.js";
-import { Row } from "#datatypes/record-datatype.js";
-import type { JsonValue } from "#datatypes/base-datatype.js";
-import type { Resumable } from "#streams/stream-types.js";
+import { z } from "zod";
+import { Provider } from "../src/providers.js";
+import { StreamFactory } from "../src/streams.js";
+import { Row } from "../src/datatypes/record-datatype.js";
+import type { JsonValue } from "../src/datatypes/base-datatype.js";
+import type { Resumable } from "../src/streams.js";
 
-export const Credentials = Schema.Struct({
-	host: Schema.String,
-	port: Schema.Number,
+export const Credentials = z.object({
+	host: z.string(),
+	port: z.number(),
 });
-export type Credentials = typeof Credentials.Type;
+export type Credentials = z.infer<typeof Credentials>;
 
-export const Params = Schema.Struct({
-	table: Schema.String,
+export const Params = z.object({
+	table: z.string(),
 });
-export type Params = typeof Params.Type;
+export type Params = z.infer<typeof Params>;
 
-export const Cursor = Schema.Struct({
-	offset: Schema.Number,
+export const Cursor = z.object({
+	offset: z.number(),
 });
-export type Cursor = typeof Cursor.Type;
+export type Cursor = z.infer<typeof Cursor>;
 
 export class ExampleClient {
 	readonly rows: ReadonlyArray<Record<string, JsonValue>> = [
@@ -29,22 +29,16 @@ export class ExampleClient {
 	];
 }
 
-async function* read(
+async function* readStream(
 	client: ExampleClient,
 	ctx: Cursor,
 	_params: Params,
-): AsyncGenerator<Resumable<Row, Cursor>> {
-	for (let i = ctx.offset; i < client.rows.length; i++) {
-		yield { data: new Row(client.rows[i]!), context: { offset: i + 1 } };
-	}
-}
-
-async function write(
-	_client: ExampleClient,
-	_items: ReadonlyArray<Row>,
-	_params: Params,
-): Promise<void> {
-	// no-op
+): AsyncIterable<Resumable<Row, Cursor>> {
+	const items = client.rows.slice(ctx.offset).map((row, i) => ({
+		data: new Row(row),
+		context: { offset: ctx.offset + i + 1 },
+	}));
+	yield* items;
 }
 
 export const ExampleProvider = Provider.withAuthentication("example", {
@@ -63,12 +57,12 @@ export const ExampleProviderWithId = Provider.withAuthentication("custom-provide
 	}),
 });
 
-export const ExampleSource = Stream.createSource("read", ExampleClient, {
+export const ExampleSource = StreamFactory.createSource("read", ExampleClient, {
 	types: [Row, Cursor, Params],
-	reader: read,
+	reader: (client, ctx, params) => readStream(client, ctx, params),
 });
 
-export const ExampleTarget = Stream.createTarget("write", ExampleClient, {
+export const ExampleTarget = StreamFactory.createTarget("write", ExampleClient, {
 	types: [Row, Params],
-	writer: write,
+	writer: (_client, _params) => async (_item) => {},
 });

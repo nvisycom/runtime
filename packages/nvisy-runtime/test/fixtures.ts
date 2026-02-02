@@ -1,9 +1,6 @@
-import { Effect, Layer } from "effect";
+import { z } from "zod";
 import { Module, Action, Provider, Data } from "@nvisy/core";
-import { Schema } from "effect";
 import { Registry } from "../src/registry/index.js";
-
-// ── Stable UUIDs for test fixtures ────────────────────────────────────
 
 export const GRAPH_ID = "00000000-0000-4000-8000-000000000000";
 export const SOURCE_ID = "00000000-0000-4000-8000-000000000001";
@@ -12,19 +9,15 @@ export const TARGET_ID = "00000000-0000-4000-8000-000000000003";
 export const EXTRA_ID = "00000000-0000-4000-8000-000000000004";
 export const BRANCH_ID = "00000000-0000-4000-8000-000000000005";
 
-// ── Test action ───────────────────────────────────────────────────────
-
-const NoopParams = Schema.Struct({});
+const NoopParams = z.object({});
 
 export const noopAction = Action.withoutClient("noop", {
 	types: [Data],
 	params: NoopParams,
-	execute: async (items, _params) => [...items],
+	transform: (stream, _params) => stream,
 });
 
-// ── Test provider ─────────────────────────────────────────────────────
-
-const TestCredentials = Schema.Struct({ host: Schema.String });
+const TestCredentials = z.object({ host: z.string() });
 
 class TestClient {}
 
@@ -35,36 +28,18 @@ export const testProvider = Provider.withAuthentication("testdb", {
 	}),
 });
 
-// ── Test module ───────────────────────────────────────────────────────
-
 export const testModule = Module.define("test")
 	.withActions(noopAction)
 	.withProviders(testProvider);
 
-// ── Registry layer with test module loaded ────────────────────────────
-
-export const TestRegistryLayer = Layer.effect(
-	Registry,
-	Effect.gen(function* () {
-		const registry = yield* Layer.build(Registry.Live).pipe(
-			Effect.map((ctx) => ctx.pipe(Effect.provideService(Registry, ctx.unsafeGet(Registry)))),
-			Effect.flatten,
-		);
-		// We build the live registry, load the module, and return it.
-		return registry;
-	}),
-);
-
-// Simpler approach: build live registry and load module in one go
-export const makeTestRegistry = Effect.gen(function* () {
-	const registry = yield* Registry;
-	yield* registry.loadModule(testModule);
+/**
+ * Create a Registry pre-loaded with the test module.
+ */
+export function makeTestRegistry(): Registry {
+	const registry = new Registry();
+	registry.loadModule(testModule);
 	return registry;
-});
-
-export const TestRegistry = Registry.Live;
-
-// ── Graph factory helpers ─────────────────────────────────────────────
+}
 
 export function linearGraph() {
 	return {
@@ -109,19 +84,3 @@ export function diamondGraph() {
 		],
 	};
 }
-
-/**
- * Run an Effect that requires Registry, providing a live registry
- * with the test module pre-loaded.
- */
-export const runWithRegistry = <A, E>(
-	effect: Effect.Effect<A, E, Registry>,
-): Promise<A> =>
-	Effect.gen(function* () {
-		const registry = yield* Registry;
-		yield* registry.loadModule(testModule);
-		return yield* effect;
-	}).pipe(
-		Effect.provide(Registry.Live),
-		Effect.runPromise,
-	);

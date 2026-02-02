@@ -1,44 +1,13 @@
-import { Context, Effect, Layer, Metric } from "effect";
+import { getLogger } from "@logtape/logtape";
 import type { ModuleInstance, AnyProviderFactory, AnyActionInstance } from "@nvisy/core";
 
-// ── Metrics ────────────────────────────────────────────────────────────
-
-const modulesLoaded = Metric.counter("registry.modules_loaded", {
-	description: "Total number of modules loaded into the registry",
-});
-
-const actionsRegistered = Metric.counter("registry.actions_registered", {
-	description: "Total number of actions registered via modules",
-});
-
-const providersRegistered = Metric.counter("registry.providers_registered", {
-	description: "Total number of providers registered via modules",
-});
-
-const actionLookups = Metric.counter("registry.action_lookups", {
-	description: "Total action lookup attempts",
-});
-
-const actionMisses = Metric.counter("registry.action_misses", {
-	description: "Action lookups that failed with unknown name",
-});
-
-const providerLookups = Metric.counter("registry.provider_lookups", {
-	description: "Total provider lookup attempts",
-});
-
-const providerMisses = Metric.counter("registry.provider_misses", {
-	description: "Provider lookups that failed with unknown name",
-});
-
-// ── Schema descriptor ──────────────────────────────────────────────────
+const logger = getLogger(["nvisy", "registry"]);
 
 /**
  * Describes a single registered action for schema generation.
  */
 export interface ActionDescriptor {
 	readonly name: string;
-	/** The Effect Schema attached to the underlying ActionInstance. */
 	readonly configSchema: AnyActionInstance["schema"];
 }
 
@@ -48,7 +17,6 @@ export interface ActionDescriptor {
 export interface ProviderDescriptor {
 	readonly name: string;
 	readonly credentialSchema: AnyProviderFactory["credentialSchema"];
-	readonly paramSchema: AnyProviderFactory["paramSchema"];
 }
 
 /**
@@ -61,153 +29,114 @@ export interface RegistrySchema {
 	readonly providers: ReadonlyArray<ProviderDescriptor>;
 }
 
-// ── Registry service ───────────────────────────────────────────────────
-
 /**
  * Unified registry that stores providers and actions contributed by
  * {@link ModuleInstance} objects.
  *
  * All entries are keyed as `"moduleId/name"`.
  */
-export class Registry extends Context.Tag("@nvisy/Registry")<
-	Registry,
-	{
-		/** Load all providers and actions declared by a module. */
-		readonly loadModule: (mod: ModuleInstance) => Effect.Effect<void, Error>;
+export class Registry {
+	readonly #actions = new Map<string, AnyActionInstance>();
+	readonly #providers = new Map<string, AnyProviderFactory>();
+	readonly #modules = new Set<string>();
 
-		/** Look up an action by name. */
-		readonly getAction: (name: string) => Effect.Effect<AnyActionInstance, Error>;
+	/** Load all providers and actions declared by a module. */
+	loadModule(mod: ModuleInstance): void {
+		if (this.#modules.has(mod.id)) {
+			throw new Error(`Module already loaded: ${mod.id}`);
+		}
 
-		/** Look up a provider factory by name. */
-		readonly getProvider: (name: string) => Effect.Effect<AnyProviderFactory, Error>;
+		const collisions: string[] = [];
 
-		/** List all registered action names. */
-		readonly listActions: () => Effect.Effect<ReadonlyArray<string>>;
+		for (const name of Object.keys(mod.providers)) {
+			const key = `${mod.id}/${name}`;
+			if (this.#providers.has(key)) {
+				collisions.push(`provider "${key}"`);
+			}
+		}
+		for (const name of Object.keys(mod.actions)) {
+			const key = `${mod.id}/${name}`;
+			if (this.#actions.has(key)) {
+				collisions.push(`action "${key}"`);
+			}
+		}
+		if (collisions.length > 0) {
+			logger.error("Registry collision loading module {moduleId}: {collisions}", {
+				moduleId: mod.id,
+				collisions: collisions.join(", "),
+			});
+			throw new Error(`Registry collision: ${collisions.join(", ")}`);
+		}
 
-		/** List all registered provider names. */
-		readonly listProviders: () => Effect.Effect<ReadonlyArray<string>>;
+		this.#modules.add(mod.id);
 
-		/** List IDs of all loaded modules. */
-		readonly listModules: () => Effect.Effect<ReadonlyArray<string>>;
+		const providerNames = Object.keys(mod.providers);
+		for (const [name, factory] of Object.entries(mod.providers)) {
+			this.#providers.set(`${mod.id}/${name}`, factory);
+		}
 
-		/**
-		 * Return a snapshot of every action and provider currently
-		 * registered, with their Effect Schemas attached.
-		 */
-		readonly describe: () => Effect.Effect<RegistrySchema>;
+		const actionNames = Object.keys(mod.actions);
+		for (const [name, action] of Object.entries(mod.actions)) {
+			this.#actions.set(`${mod.id}/${name}`, action);
+		}
+
+		logger.info(`Module loaded: ${mod.id}`, {
+			moduleId: mod.id,
+			providers: providerNames.join(", "),
+			actions: actionNames.join(", "),
+		});
 	}
->() {
-	static Live = Layer.sync(Registry, () => {
-		const actions = new Map<string, AnyActionInstance>();
-		const providers = new Map<string, AnyProviderFactory>();
-		const modules = new Set<string>();
 
-		return {
-			loadModule: (mod) =>
-				Effect.gen(function* () {
-					if (modules.has(mod.id)) {
-						return yield* Effect.fail(
-							new Error(`Module already loaded: ${mod.id}`),
-						);
-					}
+	/** Look up an action by name. */
+	getAction(name: string): AnyActionInstance {
+		const action = this.#actions.get(name);
+		if (!action) {
+			logger.warn(`Action not found: ${name}`, { action: name });
+			throw new Error(`Unknown action: ${name}`);
+		}
+		return action;
+	}
 
-					const collisions: string[] = [];
+	/** Look up a provider factory by name. */
+	getProvider(name: string): AnyProviderFactory {
+		const factory = this.#providers.get(name);
+		if (!factory) {
+			logger.warn(`Provider not found: ${name}`, { provider: name });
+			throw new Error(`Unknown provider: ${name}`);
+		}
+		return factory;
+	}
 
-					for (const name of Object.keys(mod.providers)) {
-						const key = `${mod.id}/${name}`;
-						if (providers.has(key)) {
-							collisions.push(`provider "${key}"`);
-						}
-					}
-					for (const name of Object.keys(mod.actions)) {
-						const key = `${mod.id}/${name}`;
-						if (actions.has(key)) {
-							collisions.push(`action "${key}"`);
-						}
-					}
-					if (collisions.length > 0) {
-						return yield* Effect.fail(
-							new Error(`Registry collision: ${collisions.join(", ")}`),
-						);
-					}
+	/** List all registered action names. */
+	listActions(): ReadonlyArray<string> {
+		return [...this.#actions.keys()];
+	}
 
-					modules.add(mod.id);
+	/** List all registered provider names. */
+	listProviders(): ReadonlyArray<string> {
+		return [...this.#providers.keys()];
+	}
 
-					const providerNames = Object.keys(mod.providers);
-					for (const [name, factory] of Object.entries(mod.providers)) {
-						providers.set(`${mod.id}/${name}`, factory);
-					}
+	/** List IDs of all loaded modules. */
+	listModules(): ReadonlyArray<string> {
+		return [...this.#modules];
+	}
 
-					const actionNames = Object.keys(mod.actions);
-					for (const [name, action] of Object.entries(mod.actions)) {
-						actions.set(`${mod.id}/${name}`, action);
-					}
+	/**
+	 * Return a snapshot of every action and provider currently
+	 * registered, with their schemas attached.
+	 */
+	describe(): RegistrySchema {
+		const actions: ActionDescriptor[] = [];
+		for (const [name, action] of this.#actions) {
+			actions.push({ name, configSchema: action.schema });
+		}
 
-					yield* Metric.increment(modulesLoaded);
-					yield* Metric.incrementBy(providersRegistered, providerNames.length);
-					yield* Metric.incrementBy(actionsRegistered, actionNames.length);
-					yield* Effect.log(`Module loaded: ${mod.id}`)
-						.pipe(Effect.annotateLogs({
-							moduleId: mod.id,
-							providers: providerNames.join(", "),
-							actions: actionNames.join(", "),
-						}));
-				}),
+		const providers: ProviderDescriptor[] = [];
+		for (const [name, factory] of this.#providers) {
+			providers.push({ name, credentialSchema: factory.credentialSchema });
+		}
 
-			getAction: (name) =>
-				Effect.gen(function* () {
-					yield* Metric.increment(actionLookups);
-					const action = actions.get(name);
-					if (!action) {
-						yield* Metric.increment(actionMisses);
-						yield* Effect.logWarning(`Action not found: ${name}`)
-							.pipe(Effect.annotateLogs({ action: name }));
-						return yield* Effect.fail(new Error(`Unknown action: ${name}`));
-					}
-					return action;
-				}),
-
-			getProvider: (name) =>
-				Effect.gen(function* () {
-					yield* Metric.increment(providerLookups);
-					const factory = providers.get(name);
-					if (!factory) {
-						yield* Metric.increment(providerMisses);
-						yield* Effect.logWarning(`Provider not found: ${name}`)
-							.pipe(Effect.annotateLogs({ provider: name }));
-						return yield* Effect.fail(new Error(`Unknown provider: ${name}`));
-					}
-					return factory;
-				}),
-
-			listActions: () => Effect.sync(() => [...actions.keys()]),
-			listProviders: () => Effect.sync(() => [...providers.keys()]),
-			listModules: () => Effect.sync(() => [...modules]),
-
-			describe: () =>
-				Effect.sync(() => {
-					const actionDescriptors: ActionDescriptor[] = [];
-					for (const [name, action] of actions) {
-						actionDescriptors.push({
-							name,
-							configSchema: action.schema,
-						});
-					}
-
-					const providerDescriptors: ProviderDescriptor[] = [];
-					for (const [name, factory] of providers) {
-						providerDescriptors.push({
-							name,
-							credentialSchema: factory.credentialSchema,
-							paramSchema: factory.paramSchema,
-						});
-					}
-
-					return {
-						actions: actionDescriptors,
-						providers: providerDescriptors,
-					};
-				}),
-		};
-	});
+		return { actions, providers };
+	}
 }

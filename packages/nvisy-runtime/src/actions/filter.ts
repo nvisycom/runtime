@@ -1,15 +1,15 @@
-import { Schema } from "effect";
+import { z } from "zod";
 import { Action, Data } from "@nvisy/core";
 
-const FilterParams = Schema.Struct({
-	predicate: Schema.String,
+const FilterParams = z.object({
+	predicate: z.string(),
 });
 
 export const filter = Action.withoutClient("filter", {
 	types: [Data],
 	params: FilterParams,
-	execute: async (items, _params) => {
+	transform: (stream, _params) => {
 		// TODO: evaluate predicate expression from params
-		return [...items];
+		return stream;
 	},
 });

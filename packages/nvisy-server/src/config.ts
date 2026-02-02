@@ -1,6 +1,5 @@
 /**
- * Typed server configuration loaded from environment variables via
- * Effect's {@link Config} module.
+ * Typed server configuration loaded from environment variables.
  *
  * | Variable             | Type   | Default         |
  * |----------------------|--------|-----------------|
@@ -15,22 +14,35 @@
  * `NODE_ENV` is explicitly set to `"production"`.
  */
 
-import { Config } from "effect";
+import { z } from "zod";
 
-export const ServerConfig = Config.all({
-	port: Config.number("PORT").pipe(Config.withDefault(8080)),
-	host: Config.string("HOST").pipe(Config.withDefault("0.0.0.0")),
-	corsOrigin: Config.string("CORS_ORIGIN").pipe(Config.withDefault("*")),
-	bodyLimitBytes: Config.number("BODY_LIMIT_BYTES").pipe(
-		Config.withDefault(1024 * 1024),
-	),
-	requestTimeoutMs: Config.number("REQUEST_TIMEOUT_MS").pipe(
-		Config.withDefault(30_000),
-	),
-	isDevelopment: Config.string("NODE_ENV").pipe(
-		Config.withDefault("development"),
-		Config.map((env) => env !== "production"),
-	),
+const EnvSchema = z.object({
+	PORT: z.coerce.number().default(8080),
+	HOST: z.string().default("0.0.0.0"),
+	CORS_ORIGIN: z.string().default("*"),
+	BODY_LIMIT_BYTES: z.coerce.number().default(1024 * 1024),
+	REQUEST_TIMEOUT_MS: z.coerce.number().default(30_000),
+	NODE_ENV: z.string().default("development"),
 });
 
-export type ServerConfig = Config.Config.Success<typeof ServerConfig>;
+export interface ServerConfig {
+	readonly port: number;
+	readonly host: string;
+	readonly corsOrigin: string;
+	readonly bodyLimitBytes: number;
+	readonly requestTimeoutMs: number;
+	readonly isDevelopment: boolean;
+}
+
+export function loadConfig(): ServerConfig {
+	const env = EnvSchema.parse(process.env);
+
+	return {
+		port: env.PORT,
+		host: env.HOST,
+		corsOrigin: env.CORS_ORIGIN,
+		bodyLimitBytes: env.BODY_LIMIT_BYTES,
+		requestTimeoutMs: env.REQUEST_TIMEOUT_MS,
+		isDevelopment: env.NODE_ENV !== "production",
+	};
+}

@@ -1,20 +1,20 @@
-import { Schema } from "effect";
+import { z } from "zod";
 
 /**
  * Connection credentials shared by all SQL providers.
  *
  * Validated at graph parse time before any connection is attempted.
  */
-export const SqlCredentials = Schema.Struct({
+export const SqlCredentials = z.object({
 	/** Database server hostname or IP address. */
-	host: Schema.String,
+	host: z.string(),
 	/** Database server port. */
-	port: Schema.Number,
+	port: z.number(),
 	/** Target database name. */
-	database: Schema.String,
+	database: z.string(),
 	/** Authentication username. */
-	username: Schema.String,
-	/** Authentication password (stored as plain text in config, wrapped in `Redacted` at connect time). */
-	password: Schema.String,
+	username: z.string(),
+	/** Authentication password. */
+	password: z.string(),
 });
-export type SqlCredentials = typeof SqlCredentials.Type;
+export type SqlCredentials = z.infer<typeof SqlCredentials>;

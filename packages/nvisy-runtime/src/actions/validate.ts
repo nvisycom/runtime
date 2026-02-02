@@ -1,16 +1,16 @@
-import { Schema } from "effect";
+import { z } from "zod";
 import { Action, Data } from "@nvisy/core";
 
-const ValidateParams = Schema.Struct({
-	schema: Schema.String,
+const ValidateParams = z.object({
+	schema: z.string(),
 });
 
 export const validate = Action.withoutClient("validate", {
 	types: [Data],
 	params: ValidateParams,
-	execute: async (items, _params) => {
+	transform: (stream, _params) => {
 		// TODO: assert items match params.schema
 		// TODO: route failures to DLQ
-		return [...items];
+		return stream;
 	},
 });
