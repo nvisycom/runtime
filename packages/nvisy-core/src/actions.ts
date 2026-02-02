@@ -10,26 +10,45 @@ import type { Data } from "./datatypes/base-datatype.js";
 import type { ClassRef } from "./types.js";
 
 /** Stream transform that operates without a provider client. */
-export type ClientlessTransformFn<TIn extends Data, TOut extends Data, TParam> = (
-	stream: AsyncIterable<TIn>,
-	params: TParam,
-) => AsyncIterable<TOut>;
+export type ClientlessTransformFn<
+	TIn extends Data,
+	TOut extends Data,
+	TParam,
+> = (stream: AsyncIterable<TIn>, params: TParam) => AsyncIterable<TOut>;
 
 /** Stream transform that requires a provider client. */
-export type ClientTransformFn<TClient, TIn extends Data, TOut extends Data, TParam> = (
+export type ClientTransformFn<
+	TClient,
+	TIn extends Data,
+	TOut extends Data,
+	TParam,
+> = (
 	stream: AsyncIterable<TIn>,
 	params: TParam,
 	client: TClient,
 ) => AsyncIterable<TOut>;
 
-export interface ClientlessActionConfig<TIn extends Data, TOut extends Data, TParam> {
-	readonly types: [inputClass: ClassRef<TIn>, outputClass: ClassRef<TOut>] | [inputClass: ClassRef<TIn>];
+export interface ClientlessActionConfig<
+	TIn extends Data,
+	TOut extends Data,
+	TParam,
+> {
+	readonly types:
+		| [inputClass: ClassRef<TIn>, outputClass: ClassRef<TOut>]
+		| [inputClass: ClassRef<TIn>];
 	readonly params: z.ZodType<TParam>;
 	readonly transform: ClientlessTransformFn<TIn, TOut, TParam>;
 }
 
-export interface ClientActionConfig<TClient, TIn extends Data, TOut extends Data, TParam> {
-	readonly types: [inputClass: ClassRef<TIn>, outputClass: ClassRef<TOut>] | [inputClass: ClassRef<TIn>];
+export interface ClientActionConfig<
+	TClient,
+	TIn extends Data,
+	TOut extends Data,
+	TParam,
+> {
+	readonly types:
+		| [inputClass: ClassRef<TIn>, outputClass: ClassRef<TOut>]
+		| [inputClass: ClassRef<TIn>];
 	readonly params: z.ZodType<TParam>;
 	readonly transform: ClientTransformFn<TClient, TIn, TOut, TParam>;
 }
@@ -45,7 +64,11 @@ export interface ActionInstance<
 	readonly inputClass: ClassRef<TIn>;
 	readonly outputClass: ClassRef<TOut>;
 	readonly schema: z.ZodType<TParam>;
-	pipe(stream: AsyncIterable<TIn>, params: TParam, client: TClient): AsyncIterable<TOut>;
+	pipe(
+		stream: AsyncIterable<TIn>,
+		params: TParam,
+		client: TClient,
+	): AsyncIterable<TOut>;
 }
 
 class ActionImpl<TClient, TIn extends Data, TOut extends Data, TParam>
@@ -74,7 +97,11 @@ class ActionImpl<TClient, TIn extends Data, TOut extends Data, TParam>
 		this.#transform = config.transform;
 	}
 
-	pipe(stream: AsyncIterable<TIn>, params: TParam, client: TClient): AsyncIterable<TOut> {
+	pipe(
+		stream: AsyncIterable<TIn>,
+		params: TParam,
+		client: TClient,
+	): AsyncIterable<TOut> {
 		return this.#transform(stream, params, client);
 	}
 }
@@ -114,7 +141,13 @@ export const Action: {
 			inputClass,
 			outputClass: outputClass ?? inputClass,
 			schema: config.params,
-			transform: (stream, params, _client) => (config.transform as (stream: AsyncIterable<Data>, params: unknown) => AsyncIterable<Data>)(stream, params),
+			transform: (stream, params, _client) =>
+				(
+					config.transform as (
+						stream: AsyncIterable<Data>,
+						params: unknown,
+					) => AsyncIterable<Data>
+				)(stream, params),
 		});
 	},
 
@@ -134,7 +167,11 @@ export const Action: {
 			inputClass,
 			outputClass: outputClass ?? inputClass,
 			schema: config.params,
-			transform: config.transform as (stream: AsyncIterable<Data>, params: unknown, client: unknown) => AsyncIterable<Data>,
+			transform: config.transform as (
+				stream: AsyncIterable<Data>,
+				params: unknown,
+				client: unknown,
+			) => AsyncIterable<Data>,
 		});
 	},
 };

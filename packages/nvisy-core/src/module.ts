@@ -1,17 +1,17 @@
-import type { ProviderFactory } from "./providers.js";
 import type { ActionInstance } from "./actions.js";
+import type { ProviderFactory } from "./providers.js";
 import type { StreamSource, StreamTarget } from "./streams.js";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: existential type alias
 export type AnyProviderFactory = ProviderFactory<any, any>;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: existential type alias
 export type AnyActionInstance = ActionInstance<any, any, any, any>;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: existential type alias
 export type AnyStreamSource = StreamSource<any, any, any, any>;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: existential type alias
 export type AnyStreamTarget = StreamTarget<any, any, any>;
 
 export interface ModuleInstance {
@@ -24,7 +24,9 @@ export interface ModuleInstance {
 class ModuleBuilder implements ModuleInstance {
 	readonly id: string;
 	readonly providers: Readonly<Record<string, AnyProviderFactory>> = {};
-	readonly streams: Readonly<Record<string, AnyStreamSource | AnyStreamTarget>> = {};
+	readonly streams: Readonly<
+		Record<string, AnyStreamSource | AnyStreamTarget>
+	> = {};
 	readonly actions: Readonly<Record<string, AnyActionInstance>> = {};
 
 	constructor(id: string) {

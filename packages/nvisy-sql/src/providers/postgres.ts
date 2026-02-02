@@ -1,7 +1,7 @@
-import { PostgresDialect, type Dialect } from "kysely";
+import { type Dialect, PostgresDialect } from "kysely";
 import pg from "pg";
-import type { SqlCredentials } from "./schemas.js";
 import { makeSqlProvider } from "./base.js";
+import type { SqlCredentials } from "./schemas.js";
 
 /** Create a PostgreSQL dialect backed by a `pg.Pool`. */
 function createDialect(creds: SqlCredentials): Dialect {

@@ -1,7 +1,7 @@
 import { getLogger } from "@logtape/logtape";
+import { Scalar } from "@scalar/hono-api-reference";
 import type { Hono } from "hono";
 import { openAPIRouteHandler } from "hono-openapi";
-import { Scalar } from "@scalar/hono-api-reference";
 import type { ServerConfig } from "../config.js";
 
 const logger = getLogger(["nvisy", "server"]);
@@ -27,8 +27,7 @@ export function registerOpenApiHandler(app: Hono, config: ServerConfig): void {
 			info: {
 				title: "Nvisy Runtime",
 				version: "0.1.0",
-				description:
-					"Stateless execution worker for Nvisy graph pipelines.",
+				description: "Stateless execution worker for Nvisy graph pipelines.",
 				license: { name: "Apache-2.0" },
 			},
 			servers: [{ url: `http://${config.host}:${config.port}` }],

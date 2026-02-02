@@ -1,6 +1,6 @@
-import { z } from "zod";
-import { Action, Row } from "@nvisy/core";
 import type { JsonValue } from "@nvisy/core";
+import { Action, Row } from "@nvisy/core";
+import { z } from "zod";
 
 /** Allowed target types for column coercion. */
 const CoerceTarget = z.enum(["string", "number", "boolean"]);

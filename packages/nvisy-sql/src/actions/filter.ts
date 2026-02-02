@@ -1,6 +1,6 @@
-import { z } from "zod";
-import { Action, Row } from "@nvisy/core";
 import type { JsonValue } from "@nvisy/core";
+import { Action, Row } from "@nvisy/core";
+import { z } from "zod";
 
 /** Supported comparison operators for a single filter condition. */
 const Operator = z.enum([
@@ -100,9 +100,10 @@ export const filter = Action.withoutClient("filter", {
 	transform: async function* (stream, params) {
 		const mode = params.mode ?? "and";
 		for await (const row of stream) {
-			const match = mode === "and"
-				? params.conditions.every((c) => matchCondition(row, c))
-				: params.conditions.some((c) => matchCondition(row, c));
+			const match =
+				mode === "and"
+					? params.conditions.every((c) => matchCondition(row, c))
+					: params.conditions.some((c) => matchCondition(row, c));
 			if (match) yield row;
 		}
 	},

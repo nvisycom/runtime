@@ -1,7 +1,7 @@
-import { sql, type SqlBool } from "kysely";
 import { getLogger } from "@logtape/logtape";
-import { StreamFactory, Row, RuntimeError } from "@nvisy/core";
-import type { Resumable, JsonValue } from "@nvisy/core";
+import type { JsonValue, Resumable } from "@nvisy/core";
+import { Row, RuntimeError, StreamFactory } from "@nvisy/core";
+import { type SqlBool, sql } from "kysely";
 import { KyselyClient } from "../providers/base.js";
 import { SqlCursor, SqlParams } from "./schemas.js";
 
@@ -27,7 +27,12 @@ async function* readStream(
 	const { table, columns, idColumn, tiebreaker, batchSize } = params;
 	const { ref } = client.db.dynamic;
 
-	logger.debug("Read stream opened on {table}", { table, idColumn, tiebreaker, batchSize });
+	logger.debug("Read stream opened on {table}", {
+		table,
+		idColumn,
+		tiebreaker,
+		batchSize,
+	});
 
 	let lastId = cursor.lastId;
 	let lastTiebreaker = cursor.lastTiebreaker;
@@ -56,7 +61,10 @@ async function* readStream(
 			}
 
 			rows = await query.execute();
-			logger.debug("Read batch returned {count} rows from {table}", { count: rows.length, table });
+			logger.debug("Read batch returned {count} rows from {table}", {
+				count: rows.length,
+				table,
+			});
 		} catch (error) {
 			logger.error("Read failed on {table}: {error}", {
 				table,
@@ -64,7 +72,11 @@ async function* readStream(
 			});
 			throw new RuntimeError(
 				`Read failed: ${error instanceof Error ? error.message : String(error)}`,
-				{ source: "sql/read", retryable: false, cause: error instanceof Error ? error : undefined },
+				{
+					source: "sql/read",
+					retryable: false,
+					cause: error instanceof Error ? error : undefined,
+				},
 			);
 		}
 
@@ -81,5 +93,8 @@ async function* readStream(
 		if (rows.length < batchSize) break;
 	}
 
-	logger.debug("Read stream closed on {table}, {totalRows} rows yielded", { table, totalRows });
+	logger.debug("Read stream closed on {table}, {totalRows} rows yielded", {
+		table,
+		totalRows,
+	});
 }

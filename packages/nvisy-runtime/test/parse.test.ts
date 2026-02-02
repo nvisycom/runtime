@@ -1,8 +1,11 @@
-import { describe, it, expect } from "vitest";
-import { parseGraph, buildRuntimeGraph } from "../src/compiler/parse.js";
+import { describe, expect, it } from "vitest";
+import { buildRuntimeGraph, parseGraph } from "../src/compiler/parse.js";
 import {
-	GRAPH_ID, SOURCE_ID, ACTION_ID, TARGET_ID,
+	ACTION_ID,
+	GRAPH_ID,
 	linearGraph,
+	SOURCE_ID,
+	TARGET_ID,
 } from "./fixtures.js";
 
 describe("parseGraph", () => {
@@ -59,7 +62,12 @@ describe("parseGraph", () => {
 		const input = {
 			id: GRAPH_ID,
 			nodes: [
-				{ id: SOURCE_ID, type: "source", provider: "x", params: { key: "val" } },
+				{
+					id: SOURCE_ID,
+					type: "source",
+					provider: "x",
+					params: { key: "val" },
+				},
 			],
 		};
 
@@ -84,7 +92,12 @@ describe("buildRuntimeGraph", () => {
 		const def = {
 			id: GRAPH_ID,
 			nodes: [
-				{ id: SOURCE_ID, type: "source" as const, provider: "x", params: { k: "v" } },
+				{
+					id: SOURCE_ID,
+					type: "source" as const,
+					provider: "x",
+					params: { k: "v" },
+				},
 				{ id: ACTION_ID, type: "action" as const, action: "y", params: {} },
 			],
 			edges: [{ from: SOURCE_ID, to: ACTION_ID }],
@@ -93,6 +106,7 @@ describe("buildRuntimeGraph", () => {
 
 		// buildRuntimeGraph requires the full decoded type; we cast here
 		// because we're testing the graph construction, not schema validation
+		// biome-ignore lint/suspicious/noExplicitAny: test cast
 		const graph = buildRuntimeGraph(def as any);
 
 		expect(graph.order).toBe(2);

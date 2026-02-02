@@ -1,10 +1,10 @@
 import { getLogger } from "@logtape/logtape";
 import {
+	run as effectionRun,
 	type Operation,
 	spawn,
-	run as effectionRun,
-	withResolvers,
 	type WithResolvers,
+	withResolvers,
 } from "effection";
 import type { ExecutionPlan } from "../compiler/plan.js";
 import { createEdge, type Edge } from "./edge.js";
@@ -105,7 +105,11 @@ function* runGraph(plan: ExecutionPlan): Operation<RunResult> {
 
 	const hasFailure = results.some((r) => r.status === "failure");
 	const allFailure = results.every((r) => r.status === "failure");
-	const status = allFailure ? "failure" : hasFailure ? "partial_failure" : "success";
+	const status = allFailure
+		? "failure"
+		: hasFailure
+			? "partial_failure"
+			: "success";
 
 	logger.info("Run {runId} completed ({status})", {
 		runId,

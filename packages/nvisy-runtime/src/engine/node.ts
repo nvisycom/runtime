@@ -1,8 +1,8 @@
 import { getLogger } from "@logtape/logtape";
 import type { Data } from "@nvisy/core";
-import { type Operation, sleep, race, call } from "effection";
-import type { GraphNode } from "../schema/index.js";
+import { call, type Operation, race, sleep } from "effection";
 import type { ResolvedNode } from "../compiler/plan.js";
+import type { GraphNode } from "../schema/index.js";
 import type { Edge } from "./edge.js";
 
 const logger = getLogger(["nvisy", "engine"]);
@@ -14,10 +14,7 @@ export interface NodeResult {
 	readonly itemsProcessed: number;
 }
 
-function* withRetry<T>(
-	fn: () => Operation<T>,
-	node: GraphNode,
-): Operation<T> {
+function* withRetry<T>(fn: () => Operation<T>, node: GraphNode): Operation<T> {
 	if (!node.retry) return yield* fn();
 
 	const { maxRetries, backoff, initialDelayMs, maxDelayMs } = node.retry;
@@ -42,7 +39,8 @@ function* withRetry<T>(
 					delay = initialDelayMs;
 				}
 				if (backoff === "jitter") {
-					delay = Math.min(initialDelayMs * 2 ** attempt, maxDelayMs) * Math.random();
+					delay =
+						Math.min(initialDelayMs * 2 ** attempt, maxDelayMs) * Math.random();
 				}
 				yield* sleep(delay);
 			}
@@ -82,14 +80,19 @@ export function* executeNode(
 	inEdges: ReadonlyArray<Edge>,
 	outEdges: ReadonlyArray<Edge>,
 ): Operation<NodeResult> {
-	logger.debug("Executing node {nodeId} ({type})", { nodeId: node.id, type: resolved.type });
+	logger.debug("Executing node {nodeId} ({type})", {
+		nodeId: node.id,
+		type: resolved.type,
+	});
 
 	function* base(): Operation<NodeResult> {
 		let itemsProcessed = 0;
 
 		switch (resolved.type) {
 			case "source": {
-				const instance = yield* call(() => resolved.provider.connect(resolved.params));
+				const instance = yield* call(() =>
+					resolved.provider.connect(resolved.params),
+				);
 				try {
 					// TODO: pipe resolved.stream.read(instance.client, ctx, params) to outEdges
 					void instance;
@@ -113,7 +116,9 @@ export function* executeNode(
 				}
 
 				if (items.length > 0) {
-					const instance = yield* call(() => resolved.provider.connect(resolved.params));
+					const instance = yield* call(() =>
+						resolved.provider.connect(resolved.params),
+					);
 					try {
 						// TODO: pipe data from inEdges into resolved.stream.write(instance.client, params)
 						void instance;

@@ -13,8 +13,8 @@ import { createNodeWebSocket } from "@hono/node-ws";
 import { getLogger } from "@logtape/logtape";
 import { Hono } from "hono";
 import type { ServerConfig } from "./config.js";
-import { registerMiddleware } from "./middleware/index.js";
 import { registerHandlers } from "./handler/index.js";
+import { registerMiddleware } from "./middleware/index.js";
 
 const logger = getLogger(["nvisy", "server"]);
 

@@ -1,5 +1,5 @@
-import { Data } from "./base-datatype.js";
 import type { DataOptions } from "./base-datatype.js";
+import { Data } from "./base-datatype.js";
 
 /**
  * A dense vector embedding produced by an embedding model.

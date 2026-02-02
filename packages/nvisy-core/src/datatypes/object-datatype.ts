@@ -1,5 +1,5 @@
-import { Data } from "./base-datatype.js";
 import type { DataOptions } from "./base-datatype.js";
+import { Data } from "./base-datatype.js";
 
 /** Options for constructing a {@link Blob}. */
 export interface BlobOptions extends DataOptions {

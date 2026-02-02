@@ -1,10 +1,17 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { parseGraph } from "../src/compiler/parse.js";
-import { validateGraph } from "../src/compiler/validate.js";
 import { buildPlan } from "../src/compiler/plan.js";
+import { validateGraph } from "../src/compiler/validate.js";
 import {
-	GRAPH_ID, SOURCE_ID, ACTION_ID, TARGET_ID, EXTRA_ID,
-	linearGraph, diamondGraph, isolatedNodesGraph, makeTestRegistry,
+	ACTION_ID,
+	diamondGraph,
+	EXTRA_ID,
+	GRAPH_ID,
+	isolatedNodesGraph,
+	linearGraph,
+	makeTestRegistry,
+	SOURCE_ID,
+	TARGET_ID,
 } from "./fixtures.js";
 
 const parseThenValidate = (input: unknown) => {

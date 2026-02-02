@@ -1,9 +1,9 @@
 import { getLogger } from "@logtape/logtape";
-import { topologicalSort } from "graphology-dag";
 import type { AnyActionInstance, AnyProviderFactory } from "@nvisy/core";
-import type { GraphDefinition } from "../schema/index.js";
+import { topologicalSort } from "graphology-dag";
 import type { Registry } from "../registry/index.js";
-import type { RuntimeGraph, ParsedGraph } from "./parse.js";
+import type { GraphDefinition } from "../schema/index.js";
+import type { ParsedGraph, RuntimeGraph } from "./parse.js";
 
 const logger = getLogger(["nvisy", "compiler"]);
 
@@ -12,9 +12,21 @@ const logger = getLogger(["nvisy", "compiler"]);
  * node so the engine never needs to look things up at execution time.
  */
 export type ResolvedNode =
-	| { readonly type: "source"; readonly provider: AnyProviderFactory; readonly params: Readonly<Record<string, unknown>> }
-	| { readonly type: "action"; readonly action: AnyActionInstance; readonly params: Readonly<Record<string, unknown>> }
-	| { readonly type: "target"; readonly provider: AnyProviderFactory; readonly params: Readonly<Record<string, unknown>> };
+	| {
+			readonly type: "source";
+			readonly provider: AnyProviderFactory;
+			readonly params: Readonly<Record<string, unknown>>;
+	  }
+	| {
+			readonly type: "action";
+			readonly action: AnyActionInstance;
+			readonly params: Readonly<Record<string, unknown>>;
+	  }
+	| {
+			readonly type: "target";
+			readonly provider: AnyProviderFactory;
+			readonly params: Readonly<Record<string, unknown>>;
+	  };
 
 export interface ExecutionPlan {
 	readonly graph: RuntimeGraph;
@@ -41,17 +53,29 @@ export const buildPlan = (
 		switch (node.type) {
 			case "source": {
 				const provider = registry.getProvider(node.provider);
-				graph.setNodeAttribute(node.id, "resolved", { type: "source", provider, params: node.params as Readonly<Record<string, unknown>> });
+				graph.setNodeAttribute(node.id, "resolved", {
+					type: "source",
+					provider,
+					params: node.params as Readonly<Record<string, unknown>>,
+				});
 				break;
 			}
 			case "target": {
 				const provider = registry.getProvider(node.provider);
-				graph.setNodeAttribute(node.id, "resolved", { type: "target", provider, params: node.params as Readonly<Record<string, unknown>> });
+				graph.setNodeAttribute(node.id, "resolved", {
+					type: "target",
+					provider,
+					params: node.params as Readonly<Record<string, unknown>>,
+				});
 				break;
 			}
 			case "action": {
 				const action = registry.getAction(node.action);
-				graph.setNodeAttribute(node.id, "resolved", { type: "action", action, params: node.params as Readonly<Record<string, unknown>> });
+				graph.setNodeAttribute(node.id, "resolved", {
+					type: "action",
+					action,
+					params: node.params as Readonly<Record<string, unknown>>,
+				});
 				break;
 			}
 		}

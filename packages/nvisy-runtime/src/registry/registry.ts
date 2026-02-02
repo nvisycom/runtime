@@ -1,5 +1,9 @@
 import { getLogger } from "@logtape/logtape";
-import type { ModuleInstance, AnyProviderFactory, AnyActionInstance } from "@nvisy/core";
+import type {
+	AnyActionInstance,
+	AnyProviderFactory,
+	ModuleInstance,
+} from "@nvisy/core";
 
 const logger = getLogger(["nvisy", "registry"]);
 
@@ -61,10 +65,13 @@ export class Registry {
 			}
 		}
 		if (collisions.length > 0) {
-			logger.error("Registry collision loading module {moduleId}: {collisions}", {
-				moduleId: mod.id,
-				collisions: collisions.join(", "),
-			});
+			logger.error(
+				"Registry collision loading module {moduleId}: {collisions}",
+				{
+					moduleId: mod.id,
+					collisions: collisions.join(", "),
+				},
+			);
 			throw new Error(`Registry collision: ${collisions.join(", ")}`);
 		}
 

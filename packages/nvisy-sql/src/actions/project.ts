@@ -1,6 +1,6 @@
-import { z } from "zod";
-import { Action, Row } from "@nvisy/core";
 import type { JsonValue } from "@nvisy/core";
+import { Action, Row } from "@nvisy/core";
+import { z } from "zod";
 
 /**
  * Parameters for the `sql/project` action.

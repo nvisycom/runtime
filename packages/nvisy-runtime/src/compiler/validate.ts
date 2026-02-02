@@ -1,7 +1,7 @@
 import { getLogger } from "@logtape/logtape";
 import { hasCycle } from "graphology-dag";
-import type { GraphNode } from "../schema/index.js";
 import type { Registry } from "../registry/index.js";
+import type { GraphNode } from "../schema/index.js";
 import type { ParsedGraph } from "./parse.js";
 
 const logger = getLogger(["nvisy", "compiler"]);
@@ -27,7 +27,10 @@ export const validateGraph = (
 			if (seen.has(n.id)) dupes.push(n.id);
 			seen.add(n.id);
 		}
-		logger.warn("Duplicate node IDs: {dupes}", { graphId: definition.id, dupes: dupes.join(", ") });
+		logger.warn("Duplicate node IDs: {dupes}", {
+			graphId: definition.id,
+			dupes: dupes.join(", "),
+		});
 		throw new Error(`Duplicate node IDs: ${dupes.join(", ")}`);
 	}
 
@@ -41,7 +44,10 @@ export const validateGraph = (
 		}
 	}
 	if (dangling.length > 0) {
-		logger.warn("Dangling edge references: {refs}", { graphId: definition.id, refs: dangling.join(", ") });
+		logger.warn("Dangling edge references: {refs}", {
+			graphId: definition.id,
+			refs: dangling.join(", "),
+		});
 		throw new Error(`Dangling edge references: ${dangling.join(", ")}`);
 	}
 
@@ -55,7 +61,10 @@ export const validateGraph = (
 		resolveNodeNames(node, registry, unresolved);
 	}
 	if (unresolved.length > 0) {
-		logger.warn("Unresolved names: {names}", { graphId: definition.id, names: unresolved.join(", ") });
+		logger.warn("Unresolved names: {names}", {
+			graphId: definition.id,
+			names: unresolved.join(", "),
+		});
 		throw new Error(`Unresolved names: ${unresolved.join(", ")}`);
 	}
 

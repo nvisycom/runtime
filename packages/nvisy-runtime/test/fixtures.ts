@@ -1,5 +1,5 @@
+import { Action, Data, Module, Provider } from "@nvisy/core";
 import { z } from "zod";
-import { Module, Action, Provider, Data } from "@nvisy/core";
 import { Registry } from "../src/registry/index.js";
 
 export const GRAPH_ID = "00000000-0000-4000-8000-000000000000";
@@ -44,9 +44,24 @@ export function linearGraph() {
 	return {
 		id: GRAPH_ID,
 		nodes: [
-			{ id: SOURCE_ID, type: "source" as const, provider: "test/testdb", params: { host: "localhost", table: "users" } },
-			{ id: ACTION_ID, type: "action" as const, action: "test/noop", params: {} },
-			{ id: TARGET_ID, type: "target" as const, provider: "test/testdb", params: { host: "localhost", table: "output" } },
+			{
+				id: SOURCE_ID,
+				type: "source" as const,
+				provider: "test/testdb",
+				params: { host: "localhost", table: "users" },
+			},
+			{
+				id: ACTION_ID,
+				type: "action" as const,
+				action: "test/noop",
+				params: {},
+			},
+			{
+				id: TARGET_ID,
+				type: "target" as const,
+				provider: "test/testdb",
+				params: { host: "localhost", table: "output" },
+			},
 		],
 		edges: [
 			{ from: SOURCE_ID, to: ACTION_ID },
@@ -59,8 +74,18 @@ export function isolatedNodesGraph() {
 	return {
 		id: GRAPH_ID,
 		nodes: [
-			{ id: SOURCE_ID, type: "source" as const, provider: "test/testdb", params: { host: "localhost", table: "users" } },
-			{ id: ACTION_ID, type: "action" as const, action: "test/noop", params: {} },
+			{
+				id: SOURCE_ID,
+				type: "source" as const,
+				provider: "test/testdb",
+				params: { host: "localhost", table: "users" },
+			},
+			{
+				id: ACTION_ID,
+				type: "action" as const,
+				action: "test/noop",
+				params: {},
+			},
 		],
 		edges: [],
 	};
@@ -70,10 +95,30 @@ export function diamondGraph() {
 	return {
 		id: GRAPH_ID,
 		nodes: [
-			{ id: SOURCE_ID, type: "source" as const, provider: "test/testdb", params: { host: "localhost", table: "users" } },
-			{ id: ACTION_ID, type: "action" as const, action: "test/noop", params: {} },
-			{ id: EXTRA_ID, type: "action" as const, action: "test/noop", params: {} },
-			{ id: TARGET_ID, type: "target" as const, provider: "test/testdb", params: { host: "localhost", table: "output" } },
+			{
+				id: SOURCE_ID,
+				type: "source" as const,
+				provider: "test/testdb",
+				params: { host: "localhost", table: "users" },
+			},
+			{
+				id: ACTION_ID,
+				type: "action" as const,
+				action: "test/noop",
+				params: {},
+			},
+			{
+				id: EXTRA_ID,
+				type: "action" as const,
+				action: "test/noop",
+				params: {},
+			},
+			{
+				id: TARGET_ID,
+				type: "target" as const,
+				provider: "test/testdb",
+				params: { host: "localhost", table: "output" },
+			},
 		],
 		edges: [
 			{ from: SOURCE_ID, to: ACTION_ID },

@@ -13,9 +13,9 @@
  * still read from the Hono context for inclusion in the JSON body.
  */
 
+import { getLogger } from "@logtape/logtape";
 import type { Context, ErrorHandler, NotFoundHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { getLogger } from "@logtape/logtape";
 import type { ErrorResponse } from "../handler/response/error.js";
 
 const logger = getLogger(["nvisy", "server"]);
@@ -27,7 +27,9 @@ const logger = getLogger(["nvisy", "server"]);
  * - Anything else   → logs at error, returns 500 with a generic message
  *   (or the real message + stack trace in development).
  */
-export function createErrorHandler(opts: { isDevelopment: boolean }): ErrorHandler {
+export function createErrorHandler(opts: {
+	isDevelopment: boolean;
+}): ErrorHandler {
 	return (error: Error, c: Context): Response => {
 		const requestId = c.get("requestId") as string | undefined;
 
@@ -66,7 +68,9 @@ export function createErrorHandler(opts: { isDevelopment: boolean }): ErrorHandl
  * - **development** — includes the method and path in the error message.
  * - **production**  — returns a generic "Not found" message.
  */
-export function createNotFoundHandler(opts: { isDevelopment: boolean }): NotFoundHandler {
+export function createNotFoundHandler(opts: {
+	isDevelopment: boolean;
+}): NotFoundHandler {
 	return (c) => {
 		const requestId = c.get("requestId") as string | undefined;
 		const body: ErrorResponse = opts.isDevelopment

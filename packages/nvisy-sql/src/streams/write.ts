@@ -1,5 +1,5 @@
 import { getLogger } from "@logtape/logtape";
-import { StreamFactory, Row, RuntimeError } from "@nvisy/core";
+import { Row, RuntimeError, StreamFactory } from "@nvisy/core";
 import { KyselyClient } from "../providers/base.js";
 import { SqlParams } from "./schemas.js";
 
@@ -28,7 +28,11 @@ export const write = StreamFactory.createTarget("write", KyselyClient, {
 			});
 			throw new RuntimeError(
 				`Write failed: ${error instanceof Error ? error.message : String(error)}`,
-				{ source: "sql/write", retryable: false, cause: error instanceof Error ? error : undefined },
+				{
+					source: "sql/write",
+					retryable: false,
+					cause: error instanceof Error ? error : undefined,
+				},
 			);
 		}
 	},

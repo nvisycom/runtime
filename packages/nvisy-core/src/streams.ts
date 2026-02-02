@@ -37,20 +37,26 @@ export interface SourceConfig<TClient, TData extends DataType, TCtx, TParam> {
 }
 
 export interface TargetConfig<TClient, TData extends DataType, TParam> {
-	readonly types: [
-		dataClass: ClassRef<TData>,
-		paramSchema: z.ZodType<TParam>,
-	];
+	readonly types: [dataClass: ClassRef<TData>, paramSchema: z.ZodType<TParam>];
 	readonly writer: WriterFn<TClient, TData, TParam>;
 }
 
-export interface StreamSource<TClient, TData extends DataType, TCtx, TParam = void> {
+export interface StreamSource<
+	TClient,
+	TData extends DataType,
+	TCtx,
+	TParam = void,
+> {
 	readonly id: string;
 	readonly clientClass: ClassRef<TClient>;
 	readonly dataClass: ClassRef<TData>;
 	readonly contextSchema: z.ZodType<TCtx>;
 	readonly paramSchema: z.ZodType<TParam>;
-	read(client: TClient, ctx: TCtx, params: TParam): AsyncIterable<Resumable<TData, TCtx>>;
+	read(
+		client: TClient,
+		ctx: TCtx,
+		params: TParam,
+	): AsyncIterable<Resumable<TData, TCtx>>;
 }
 
 export interface StreamTarget<TClient, TData extends DataType, TParam = void> {
@@ -87,7 +93,11 @@ class StreamSourceImpl<TClient, TData extends DataType, TCtx, TParam>
 		this.#read = config.read;
 	}
 
-	read(client: TClient, ctx: TCtx, params: TParam): AsyncIterable<Resumable<TData, TCtx>> {
+	read(
+		client: TClient,
+		ctx: TCtx,
+		params: TParam,
+	): AsyncIterable<Resumable<TData, TCtx>> {
 		return this.#read(client, ctx, params);
 	}
 }

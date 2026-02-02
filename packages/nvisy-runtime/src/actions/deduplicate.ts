@@ -1,5 +1,5 @@
-import { z } from "zod";
 import { Action, Data } from "@nvisy/core";
+import { z } from "zod";
 
 const DeduplicateParams = z.object({
 	key: z.string().optional(),

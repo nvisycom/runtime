@@ -13,9 +13,9 @@
  * middleware are registered.
  */
 
-import type { Hono } from "hono";
+import { httpInstrumentationMiddleware } from "@hono/otel";
 import { withContext } from "@logtape/logtape";
-import type { ServerConfig } from "../config.js";
+import type { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { compress } from "hono/compress";
 import { cors } from "hono/cors";
@@ -25,15 +25,12 @@ import { requestId } from "hono/request-id";
 import { secureHeaders } from "hono/secure-headers";
 import { timeout } from "hono/timeout";
 import { timing } from "hono/timing";
-import { httpInstrumentationMiddleware } from "@hono/otel";
-import { createRequestLogger } from "./request-logger.js";
+import type { ServerConfig } from "../config.js";
 import { createErrorHandler, createNotFoundHandler } from "./error-handler.js";
+import { createRequestLogger } from "./request-logger.js";
 
 /** Register all global middleware on the given Hono app. */
-export function registerMiddleware(
-	app: Hono,
-	config: ServerConfig,
-) {
+export function registerMiddleware(app: Hono, config: ServerConfig) {
 	app.onError(createErrorHandler({ isDevelopment: config.isDevelopment }));
 	app.notFound(createNotFoundHandler({ isDevelopment: config.isDevelopment }));
 

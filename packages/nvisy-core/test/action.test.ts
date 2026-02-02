@@ -1,8 +1,13 @@
-import { describe, it, expect } from "vitest";
-import { Row } from "../src/datatypes/record-datatype.js";
-import type { Data } from "../src/datatypes/base-datatype.js";
+import { describe, expect, it } from "vitest";
 import type { ActionInstance } from "../src/actions.js";
-import { ExampleFilter, ExampleMap, FilterParams, MapParams } from "./action.js";
+import type { Data } from "../src/datatypes/base-datatype.js";
+import { Row } from "../src/datatypes/record-datatype.js";
+import {
+	ExampleFilter,
+	ExampleMap,
+	FilterParams,
+	MapParams,
+} from "./action.js";
 
 async function collect<T>(iter: AsyncIterable<T>): Promise<T[]> {
 	const result: T[] = [];
@@ -15,11 +20,12 @@ async function* fromArray<T>(items: ReadonlyArray<T>): AsyncIterable<T> {
 }
 
 async function runAction<TIn extends Data, TOut extends Data>(
+	// biome-ignore lint/suspicious/noExplicitAny: generic test helper
 	action: ActionInstance<void, TIn, TOut, any>,
 	items: ReadonlyArray<TIn>,
 	params: unknown,
 ): Promise<ReadonlyArray<TOut>> {
-	const stream = action.pipe(fromArray(items), params, undefined as void);
+	const stream = action.pipe(fromArray(items), params, undefined as undefined);
 	return collect(stream);
 }
 

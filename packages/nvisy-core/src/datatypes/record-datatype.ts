@@ -1,5 +1,5 @@
+import type { DataOptions, JsonValue } from "./base-datatype.js";
 import { Data } from "./base-datatype.js";
-import type { JsonValue, DataOptions } from "./base-datatype.js";
 
 /**
  * A row from a relational database.

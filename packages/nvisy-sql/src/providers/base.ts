@@ -1,7 +1,8 @@
-import { Kysely, sql, type Dialect } from "kysely";
 import { getLogger } from "@logtape/logtape";
-import { Provider, ConnectionError, type ProviderFactory } from "@nvisy/core";
+import { ConnectionError, Provider, type ProviderFactory } from "@nvisy/core";
+import { type Dialect, Kysely, sql } from "kysely";
 import { SqlCredentials } from "./schemas.js";
+
 export type { SqlCredentials } from "./schemas.js";
 
 const logger = getLogger(["nvisy", "sql"]);
@@ -18,11 +19,11 @@ type DynamicDatabase = Record<string, Record<string, unknown>>;
  * because table structures are not known at compile time.
  */
 export class KyselyClient {
-  #kysely: Kysely<DynamicDatabase>;
+	#kysely: Kysely<DynamicDatabase>;
 
 	constructor(db: Kysely<DynamicDatabase>) {
 		this.#kysely = db;
-  }
+	}
 
 	/** The underlying Kysely instance used for query building and execution. */
 	get db(): Kysely<DynamicDatabase> {
@@ -39,18 +40,27 @@ export interface SqlProviderConfig {
 }
 
 /** Instantiate a Kysely dialect and wrap it in a {@link KyselyClient}. */
-function createClient(config: SqlProviderConfig, credentials: SqlCredentials): KyselyClient {
+function createClient(
+	config: SqlProviderConfig,
+	credentials: SqlCredentials,
+): KyselyClient {
 	logger.debug("Connecting to {provider} at {host}:{port}/{database}", {
 		provider: config.id,
 		host: credentials.host,
 		port: credentials.port,
 		database: credentials.database,
 	});
-	return new KyselyClient(new Kysely<DynamicDatabase>({ dialect: config.createDialect(credentials) }));
+	return new KyselyClient(
+		new Kysely<DynamicDatabase>({ dialect: config.createDialect(credentials) }),
+	);
 }
 
 /** Run `SELECT 1` to verify the connection is live. */
-async function verifyConnection(client: KyselyClient, config: SqlProviderConfig, credentials: SqlCredentials): Promise<void> {
+async function verifyConnection(
+	client: KyselyClient,
+	config: SqlProviderConfig,
+	credentials: SqlCredentials,
+): Promise<void> {
 	await sql`SELECT 1`.execute(client.db);
 	logger.info("Connected to {provider} at {host}:{port}/{database}", {
 		provider: config.id,
@@ -69,7 +79,11 @@ function toConnectionError(error: unknown, source: string): ConnectionError {
 	});
 	return new ConnectionError(
 		`Failed to connect: ${error instanceof Error ? error.message : String(error)}`,
-		{ source, retryable: false, cause: error instanceof Error ? error : undefined },
+		{
+			source,
+			retryable: false,
+			cause: error instanceof Error ? error : undefined,
+		},
 	);
 }
 
@@ -80,7 +94,9 @@ function toConnectionError(error: unknown, source: string): ConnectionError {
  * opens a {@link KyselyClient} on connect and tears it down on disconnect.
  * Actual data I/O is handled by the stream layer, not the provider.
  */
-export const makeSqlProvider = (config: SqlProviderConfig): ProviderFactory<SqlCredentials, KyselyClient> =>
+export const makeSqlProvider = (
+	config: SqlProviderConfig,
+): ProviderFactory<SqlCredentials, KyselyClient> =>
 	Provider.withAuthentication(config.id, {
 		credentials: SqlCredentials,
 		connect: async (credentials) => {
@@ -91,7 +107,9 @@ export const makeSqlProvider = (config: SqlProviderConfig): ProviderFactory<SqlC
 					client,
 					disconnect: async () => {
 						await client.db.destroy();
-						logger.debug("Disconnected from {provider}", { provider: config.id });
+						logger.debug("Disconnected from {provider}", {
+							provider: config.id,
+						});
 					},
 				};
 			} catch (error) {

@@ -1,7 +1,7 @@
 import { getLogger } from "@logtape/logtape";
 import { DirectedGraph } from "graphology";
-import { GraphDefinition } from "../schema/index.js";
 import type { GraphNode } from "../schema/index.js";
+import { GraphDefinition } from "../schema/index.js";
 import type { ResolvedNode } from "./plan.js";
 
 const logger = getLogger(["nvisy", "compiler"]);
@@ -44,11 +44,14 @@ export const parseGraph = (input: unknown): ParsedGraph => {
 		throw new Error(`Graph parse error: ${result.error.message}`);
 	}
 	const definition = result.data;
-	logger.debug("Graph parsed: {graphId} ({nodeCount} nodes, {edgeCount} edges)", {
-		graphId: definition.id,
-		nodeCount: definition.nodes.length,
-		edgeCount: definition.edges.length,
-	});
+	logger.debug(
+		"Graph parsed: {graphId} ({nodeCount} nodes, {edgeCount} edges)",
+		{
+			graphId: definition.id,
+			nodeCount: definition.nodes.length,
+			edgeCount: definition.edges.length,
+		},
+	);
 	return {
 		definition,
 		graph: buildRuntimeGraph(definition),

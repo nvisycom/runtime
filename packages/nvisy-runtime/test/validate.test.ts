@@ -1,9 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { parseGraph } from "../src/compiler/parse.js";
 import { validateGraph } from "../src/compiler/validate.js";
 import {
-	GRAPH_ID, SOURCE_ID, ACTION_ID, TARGET_ID,
-	linearGraph, diamondGraph, makeTestRegistry,
+	ACTION_ID,
+	diamondGraph,
+	GRAPH_ID,
+	linearGraph,
+	makeTestRegistry,
+	SOURCE_ID,
+	TARGET_ID,
 } from "./fixtures.js";
 
 describe("validateGraph", () => {
@@ -30,7 +35,12 @@ describe("validateGraph", () => {
 		const input = {
 			id: GRAPH_ID,
 			nodes: [
-				{ id: SOURCE_ID, type: "source", provider: "test/testdb", params: { host: "localhost", table: "t" } },
+				{
+					id: SOURCE_ID,
+					type: "source",
+					provider: "test/testdb",
+					params: { host: "localhost", table: "t" },
+				},
 				{ id: SOURCE_ID, type: "action", action: "test/noop", params: {} },
 			],
 		};
@@ -47,11 +57,14 @@ describe("validateGraph", () => {
 		const input = {
 			id: GRAPH_ID,
 			nodes: [
-				{ id: SOURCE_ID, type: "source", provider: "test/testdb", params: { host: "localhost", table: "t" } },
+				{
+					id: SOURCE_ID,
+					type: "source",
+					provider: "test/testdb",
+					params: { host: "localhost", table: "t" },
+				},
 			],
-			edges: [
-				{ from: ACTION_ID, to: SOURCE_ID },
-			],
+			edges: [{ from: ACTION_ID, to: SOURCE_ID }],
 		};
 
 		expect(() => {
@@ -65,11 +78,14 @@ describe("validateGraph", () => {
 		const input = {
 			id: GRAPH_ID,
 			nodes: [
-				{ id: SOURCE_ID, type: "source", provider: "test/testdb", params: { host: "localhost", table: "t" } },
+				{
+					id: SOURCE_ID,
+					type: "source",
+					provider: "test/testdb",
+					params: { host: "localhost", table: "t" },
+				},
 			],
-			edges: [
-				{ from: SOURCE_ID, to: ACTION_ID },
-			],
+			edges: [{ from: SOURCE_ID, to: ACTION_ID }],
 		};
 
 		expect(() => {
@@ -95,7 +111,9 @@ describe("validateGraph", () => {
 		};
 
 		const parsed = parseGraph(input);
-		expect(() => validateGraph(parsed, registry)).toThrow("Graph contains a cycle");
+		expect(() => validateGraph(parsed, registry)).toThrow(
+			"Graph contains a cycle",
+		);
 	});
 
 	it("rejects unresolved action names", () => {
@@ -103,7 +121,12 @@ describe("validateGraph", () => {
 		const input = {
 			id: GRAPH_ID,
 			nodes: [
-				{ id: ACTION_ID, type: "action", action: "nonexistent/action", params: {} },
+				{
+					id: ACTION_ID,
+					type: "action",
+					action: "nonexistent/action",
+					params: {},
+				},
 			],
 		};
 
@@ -116,7 +139,12 @@ describe("validateGraph", () => {
 		const input = {
 			id: GRAPH_ID,
 			nodes: [
-				{ id: SOURCE_ID, type: "source", provider: "nonexistent/provider", params: { key: "val" } },
+				{
+					id: SOURCE_ID,
+					type: "source",
+					provider: "nonexistent/provider",
+					params: { key: "val" },
+				},
 			],
 		};
 

@@ -67,7 +67,9 @@ class ConnectedInstanceImpl<TClient> implements ConnectedInstance<TClient> {
 	}
 }
 
-class ProviderFactoryImpl<TCred, TClient> implements ProviderFactory<TCred, TClient> {
+class ProviderFactoryImpl<TCred, TClient>
+	implements ProviderFactory<TCred, TClient>
+{
 	readonly id: string;
 	readonly credentialSchema: z.ZodType<TCred>;
 	readonly #connect: (credentials: TCred) => Promise<ProviderInstance<TClient>>;

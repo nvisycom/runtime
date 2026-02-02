@@ -1,8 +1,13 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { compile } from "../src/compiler/index.js";
 import {
-	GRAPH_ID, SOURCE_ID, ACTION_ID, TARGET_ID,
-	linearGraph, diamondGraph, makeTestRegistry,
+	ACTION_ID,
+	diamondGraph,
+	GRAPH_ID,
+	linearGraph,
+	makeTestRegistry,
+	SOURCE_ID,
+	TARGET_ID,
 } from "./fixtures.js";
 
 describe("compile", () => {

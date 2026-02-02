@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { Provider } from "../src/providers.js";
-import { StreamFactory } from "../src/streams.js";
-import { Row } from "../src/datatypes/record-datatype.js";
 import type { JsonValue } from "../src/datatypes/base-datatype.js";
+import { Row } from "../src/datatypes/record-datatype.js";
+import { Provider } from "../src/providers.js";
 import type { Resumable } from "../src/streams.js";
+import { StreamFactory } from "../src/streams.js";
 
 export const Credentials = z.object({
 	host: z.string(),
@@ -49,20 +49,27 @@ export const ExampleProvider = Provider.withAuthentication("example", {
 	}),
 });
 
-export const ExampleProviderWithId = Provider.withAuthentication("custom-provider-id", {
-	credentials: Credentials,
-	connect: async (_credentials) => ({
-		client: new ExampleClient(),
-		disconnect: async () => {},
-	}),
-});
+export const ExampleProviderWithId = Provider.withAuthentication(
+	"custom-provider-id",
+	{
+		credentials: Credentials,
+		connect: async (_credentials) => ({
+			client: new ExampleClient(),
+			disconnect: async () => {},
+		}),
+	},
+);
 
 export const ExampleSource = StreamFactory.createSource("read", ExampleClient, {
 	types: [Row, Cursor, Params],
 	reader: (client, ctx, params) => readStream(client, ctx, params),
 });
 
-export const ExampleTarget = StreamFactory.createTarget("write", ExampleClient, {
-	types: [Row, Params],
-	writer: (_client, _params) => async (_item) => {},
-});
+export const ExampleTarget = StreamFactory.createTarget(
+	"write",
+	ExampleClient,
+	{
+		types: [Row, Params],
+		writer: (_client, _params) => async (_item) => {},
+	},
+);

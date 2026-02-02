@@ -1,8 +1,8 @@
 import { getLogger } from "@logtape/logtape";
 import type { Hono } from "hono";
 import type { ServerConfig } from "../config.js";
-import { registerHealthHandler } from "./health.js";
 import { registerGraphHandler } from "./graphs.js";
+import { registerHealthHandler } from "./health.js";
 import { registerOpenApiHandler } from "./openapi.js";
 
 const logger = getLogger(["nvisy", "server"]);

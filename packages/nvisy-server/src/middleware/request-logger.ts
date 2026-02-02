@@ -10,8 +10,8 @@
  * implicit context — see the `withContext` middleware in `index.ts`.
  */
 
+import { type HonoContext, honoLogger } from "@logtape/hono";
 import type { MiddlewareHandler } from "hono";
-import { honoLogger, type HonoContext } from "@logtape/hono";
 
 /** Human-readable request summary for development console output. */
 const devFormat = (c: HonoContext, ms: number): string =>

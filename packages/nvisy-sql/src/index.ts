@@ -17,9 +17,9 @@
  */
 
 import { Module } from "@nvisy/core";
-import { postgres, mysql, mssql } from "./providers/index.js";
+import { coerce, filter, project, rename } from "./actions/index.js";
+import { mssql, mysql, postgres } from "./providers/index.js";
 import { read, write } from "./streams/index.js";
-import { filter, project, rename, coerce } from "./actions/index.js";
 
 /** The SQL module: register this with the runtime to enable all SQL providers, streams, and actions. */
 export const sqlModule = Module.define("sql")

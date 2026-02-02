@@ -1,14 +1,14 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { Row } from "../src/datatypes/record-datatype.js";
 import {
+	Credentials,
+	Cursor,
+	ExampleClient,
 	ExampleProvider,
 	ExampleProviderWithId,
 	ExampleSource,
 	ExampleTarget,
-	ExampleClient,
-	Credentials,
 	Params,
-	Cursor,
 } from "./provider.js";
 
 async function collect<T>(iter: AsyncIterable<T>): Promise<T[]> {
@@ -27,14 +27,20 @@ describe("ExampleProvider", () => {
 	});
 
 	it("connect returns a provider instance with a client", async () => {
-		const instance = await ExampleProvider.connect({ host: "localhost", port: 5432 });
+		const instance = await ExampleProvider.connect({
+			host: "localhost",
+			port: 5432,
+		});
 		expect(instance).toBeDefined();
 		expect(instance.id).toBe("example");
 		expect(instance.client).toBeInstanceOf(ExampleClient);
 	});
 
 	it("disconnect resolves without error", async () => {
-		const instance = await ExampleProvider.connect({ host: "localhost", port: 5432 });
+		const instance = await ExampleProvider.connect({
+			host: "localhost",
+			port: 5432,
+		});
 		await expect(instance.disconnect()).resolves.toBeUndefined();
 	});
 });
@@ -43,7 +49,10 @@ describe("ExampleSource", () => {
 	let client: ExampleClient;
 
 	beforeAll(async () => {
-		const instance = await ExampleProvider.connect({ host: "localhost", port: 5432 });
+		const instance = await ExampleProvider.connect({
+			host: "localhost",
+			port: 5432,
+		});
 		client = instance.client;
 	});
 
@@ -56,7 +65,9 @@ describe("ExampleSource", () => {
 	});
 
 	it("reads all rows from offset 0", async () => {
-		const collected = await collect(ExampleSource.read(client, { offset: 0 }, { table: "users" }));
+		const collected = await collect(
+			ExampleSource.read(client, { offset: 0 }, { table: "users" }),
+		);
 
 		expect(collected).toHaveLength(3);
 		expect(collected[0]!.data.columns).toEqual({ id: "1", name: "Alice" });
@@ -64,14 +75,18 @@ describe("ExampleSource", () => {
 	});
 
 	it("resumes from a given offset", async () => {
-		const collected = await collect(ExampleSource.read(client, { offset: 2 }, { table: "users" }));
+		const collected = await collect(
+			ExampleSource.read(client, { offset: 2 }, { table: "users" }),
+		);
 
 		expect(collected).toHaveLength(1);
 		expect(collected[0]!.data.columns).toEqual({ id: "3", name: "Charlie" });
 	});
 
 	it("yields correct resumption context", async () => {
-		const collected = await collect(ExampleSource.read(client, { offset: 0 }, { table: "users" }));
+		const collected = await collect(
+			ExampleSource.read(client, { offset: 0 }, { table: "users" }),
+		);
 		const contexts = collected.map((r) => r.context);
 
 		expect(contexts).toEqual([{ offset: 1 }, { offset: 2 }, { offset: 3 }]);
@@ -82,7 +97,10 @@ describe("ExampleTarget", () => {
 	let client: ExampleClient;
 
 	beforeAll(async () => {
-		const instance = await ExampleProvider.connect({ host: "localhost", port: 5432 });
+		const instance = await ExampleProvider.connect({
+			host: "localhost",
+			port: 5432,
+		});
 		client = instance.client;
 	});
 

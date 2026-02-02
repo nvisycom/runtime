@@ -28,8 +28,8 @@ import {
 } from "@logtape/logtape";
 import { prettyFormatter } from "@logtape/pretty";
 import { redactByField } from "@logtape/redaction";
-import { loadConfig } from "./config.js";
 import { createApp, startServer } from "./app.js";
+import { loadConfig } from "./config.js";
 
 const config = loadConfig();
 
