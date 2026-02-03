@@ -31,10 +31,19 @@ npm run build
 
 ## Documentation
 
-- [Product Specification](docs/README.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Contributing](CONTRIBUTING.md)
+See [`docs/`](docs/) for architecture, intelligence capabilities, provider
+design, and security documentation.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for release notes and version history.
 
 ## License
 
-Apache License 2.0. See [LICENSE.txt](LICENSE.txt).
+Apache 2.0 License, see [LICENSE.txt](LICENSE.txt)
+
+## Support
+
+- **Documentation**: [docs.nvisy.com](https://docs.nvisy.com)
+- **Issues**: [GitHub Issues](https://github.com/nvisycom/runtime/issues)
+- **Email**: [support@nvisy.com](mailto:support@nvisy.com)
