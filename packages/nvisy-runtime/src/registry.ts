@@ -121,11 +121,14 @@ export class Registry {
 				"Registry collision loading module {moduleId}: {collisions}",
 				{ moduleId: mod.id, collisions: collisions.join(", ") },
 			);
-			throw new ValidationError(`Registry collision: ${collisions.join(", ")}`, {
-				source: "registry",
-				retryable: false,
-				details: { moduleId: mod.id, collisions },
-			});
+			throw new ValidationError(
+				`Registry collision: ${collisions.join(", ")}`,
+				{
+					source: "registry",
+					retryable: false,
+					details: { moduleId: mod.id, collisions },
+				},
+			);
 		}
 	}
 

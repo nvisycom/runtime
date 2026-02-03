@@ -1,5 +1,5 @@
-import { RuntimeError } from "@nvisy/core";
 import { getLogger } from "@logtape/logtape";
+import { RuntimeError } from "@nvisy/core";
 import { type Operation, race, sleep } from "effection";
 import type { RetryPolicy } from "../schema.js";
 
@@ -40,7 +40,12 @@ export function* withRetry<T>(
 			});
 
 			if (attempt < maxRetries) {
-				const delay = computeDelay(backoff, initialDelayMs, maxDelayMs, attempt);
+				const delay = computeDelay(
+					backoff,
+					initialDelayMs,
+					maxDelayMs,
+					attempt,
+				);
 				yield* sleep(delay);
 			}
 		}
@@ -61,7 +66,9 @@ function computeDelay(
 		case "exponential":
 			return Math.min(initialDelayMs * 2 ** attempt, maxDelayMs);
 		case "jitter":
-			return Math.min(initialDelayMs * 2 ** attempt, maxDelayMs) * Math.random();
+			return (
+				Math.min(initialDelayMs * 2 ** attempt, maxDelayMs) * Math.random()
+			);
 	}
 }
 

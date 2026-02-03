@@ -1,4 +1,3 @@
-export { Engine } from "./engine/index.js";
 export type {
 	ActionDescriptor,
 	Connection,
@@ -11,6 +10,7 @@ export type {
 	RunResult,
 	ValidationResult,
 } from "./engine/index.js";
+export { Engine } from "./engine/index.js";
 export {
 	ActionNode,
 	BackoffStrategy,

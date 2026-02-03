@@ -1,12 +1,12 @@
 import { CancellationError, RuntimeError, ValidationError } from "@nvisy/core";
-import { describe, expect, it, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import type { Connections } from "../src/engine/types.js";
 import {
 	CRED_ID,
-	SOURCE_ID,
 	diamondGraph,
 	linearGraph,
 	makeTestEngine,
+	SOURCE_ID,
 	sourceRows,
 	testConnections,
 	writtenItems,
@@ -56,9 +56,9 @@ describe("validate", () => {
 		const result = engine.validate(linearGraph(), connections);
 
 		expect(result.valid).toBe(false);
-		expect(
-			result.errors.some((e) => e.includes("Invalid credentials")),
-		).toBe(true);
+		expect(result.errors.some((e) => e.includes("Invalid credentials"))).toBe(
+			true,
+		);
 	});
 });
 
@@ -156,6 +156,7 @@ describe("execute", () => {
 
 		const failSource = Stream.createSource("read", FailClient, {
 			types: [Row, z.object({}).default({}), z.record(z.string(), z.unknown())],
+			// biome-ignore lint/correctness/useYield: intentionally throws before yielding to test error handling
 			reader: async function* () {
 				throw new RuntimeError("Non-retryable failure", {
 					retryable: false,
@@ -237,8 +238,9 @@ describe("execute", () => {
 	});
 
 	it("retryable error triggers retry", async () => {
-		const { Action, Data, Module, Provider, Stream, Row } =
-			await import("@nvisy/core");
+		const { Action, Data, Module, Provider, Stream, Row } = await import(
+			"@nvisy/core"
+		);
 		const { z } = await import("zod");
 
 		let attempts = 0;
@@ -370,9 +372,9 @@ describe("credential validation", () => {
 			},
 		};
 
-		await expect(
-			engine.execute(linearGraph(), connections),
-		).rejects.toThrow(ValidationError);
+		await expect(engine.execute(linearGraph(), connections)).rejects.toThrow(
+			ValidationError,
+		);
 	});
 
 	it("rejects missing connection entry at execution time", async () => {
@@ -394,9 +396,9 @@ describe("credential validation", () => {
 			},
 		};
 
-		await expect(
-			engine.execute(linearGraph(), connections),
-		).rejects.toThrow(ValidationError);
+		await expect(engine.execute(linearGraph(), connections)).rejects.toThrow(
+			ValidationError,
+		);
 	});
 
 	it("accepts valid connections map with extra entries", async () => {

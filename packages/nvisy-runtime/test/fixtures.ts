@@ -1,12 +1,5 @@
-import {
-	Action,
-	Data,
-	Module,
-	Provider,
-	Row,
-	Stream,
-} from "@nvisy/core";
 import type { Resumable } from "@nvisy/core";
+import { Action, Data, Module, Provider, Row, Stream } from "@nvisy/core";
 import { z } from "zod";
 import { Engine } from "../src/engine/engine.js";
 import type { Connections } from "../src/engine/types.js";
@@ -56,21 +49,17 @@ export const sourceRows: Row[] = [
 	new Row({ name: "Carol", age: 35 }),
 ];
 
-export const testSourceStream = Stream.createSource(
-	"read",
-	TestClient,
-	{
-		types: [Row, TestContext, TestParams],
-		reader: async function* (_client, _ctx, _params) {
-			for (const row of sourceRows) {
-				yield { data: row, context: { cursor: row.id } } as Resumable<
-					Row,
-					z.infer<typeof TestContext>
-				>;
-			}
-		},
+export const testSourceStream = Stream.createSource("read", TestClient, {
+	types: [Row, TestContext, TestParams],
+	reader: async function* (_client, _ctx, _params) {
+		for (const row of sourceRows) {
+			yield { data: row, context: { cursor: row.id } } as Resumable<
+				Row,
+				z.infer<typeof TestContext>
+			>;
+		}
 	},
-);
+});
 
 /**
  * Items written to the mock target stream.
@@ -78,18 +67,14 @@ export const testSourceStream = Stream.createSource(
  */
 export const writtenItems: Data[] = [];
 
-export const testTargetStream = Stream.createTarget(
-	"write",
-	TestClient,
-	{
-		types: [Row, TestParams],
-		writer: (_client, _params) => {
-			return async (item: Row) => {
-				writtenItems.push(item);
-			};
-		},
+export const testTargetStream = Stream.createTarget("write", TestClient, {
+	types: [Row, TestParams],
+	writer: (_client, _params) => {
+		return async (item: Row) => {
+			writtenItems.push(item);
+		};
 	},
-);
+});
 
 // ── Module ────────────────────────────────────────────────────────
 

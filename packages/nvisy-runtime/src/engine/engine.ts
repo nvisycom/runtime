@@ -3,14 +3,13 @@ import { ValidationError } from "@nvisy/core";
 import { compile, type ExecutionPlan } from "../compiler/index.js";
 import { Registry, type RegistrySchema } from "../registry.js";
 import { execute } from "./runner.js";
-import { ConnectionsSchema } from "./types.js";
 import type {
 	Connections,
-	EngineConfig,
 	ExecuteOptions,
 	RunResult,
 	ValidationResult,
 } from "./types.js";
+import { ConnectionsSchema } from "./types.js";
 
 /**
  * Primary runtime entry point.
@@ -26,8 +25,6 @@ import type {
  */
 export class Engine {
 	readonly #registry = new Registry();
-
-	constructor(_config?: EngineConfig) {}
 
 	/** Snapshot of all registered actions and providers with their schemas. */
 	get schema(): RegistrySchema {
@@ -96,7 +93,10 @@ export class Engine {
 			}
 
 			const resolved = plan.resolved.get(node.id);
-			if (!resolved || (resolved.type !== "source" && resolved.type !== "target")) {
+			if (
+				!resolved ||
+				(resolved.type !== "source" && resolved.type !== "target")
+			) {
 				continue;
 			}
 

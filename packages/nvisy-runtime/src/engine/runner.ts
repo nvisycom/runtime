@@ -37,19 +37,23 @@ interface GraphExecutionContext {
 function getOrThrow<K, V>(map: ReadonlyMap<K, V>, key: K, label: string): V {
 	const value = map.get(key);
 	if (value === undefined) {
-		throw new RuntimeError(`Internal error: missing ${label} for key ${String(key)}`, {
-			source: "engine",
-			retryable: false,
-			details: { key: String(key), label },
-		});
+		throw new RuntimeError(
+			`Internal error: missing ${label} for key ${String(key)}`,
+			{
+				source: "engine",
+				retryable: false,
+				details: { key: String(key), label },
+			},
+		);
 	}
 	return value;
 }
 
 /** Build in/out edge maps from the plan's graph. */
-function buildEdgeMaps(
-	plan: ExecutionPlan,
-): { outEdges: Map<string, Edge[]>; inEdges: Map<string, Edge[]> } {
+function buildEdgeMaps(plan: ExecutionPlan): {
+	outEdges: Map<string, Edge[]>;
+	inEdges: Map<string, Edge[]>;
+} {
 	const outEdges = new Map<string, Edge[]>();
 	const inEdges = new Map<string, Edge[]>();
 
@@ -79,7 +83,10 @@ function buildCompletionMap(
 }
 
 /** Spawn a single node's execution task. */
-function* spawnNodeTask(ctx: GraphExecutionContext, nodeId: string): Operation<void> {
+function* spawnNodeTask(
+	ctx: GraphExecutionContext,
+	nodeId: string,
+): Operation<void> {
 	const node = ctx.plan.graph.getNodeAttributes(nodeId).schema;
 	const resolved = getOrThrow(ctx.plan.resolved, nodeId, "resolved node");
 	const nodeIn = getOrThrow(ctx.inEdges, nodeId, "inEdges");
@@ -90,7 +97,8 @@ function* spawnNodeTask(ctx: GraphExecutionContext, nodeId: string): Operation<v
 	yield* spawn(function* () {
 		// Wait for all upstream dependencies to complete
 		for (const dep of deps) {
-			yield* getOrThrow(ctx.completions, dep, "dependency completion").operation;
+			yield* getOrThrow(ctx.completions, dep, "dependency completion")
+				.operation;
 		}
 
 		try {
@@ -131,7 +139,9 @@ function* spawnNodeTask(ctx: GraphExecutionContext, nodeId: string): Operation<v
 function* collectResults(ctx: GraphExecutionContext): Operation<RunResult> {
 	const results: NodeResult[] = [];
 	for (const id of ctx.plan.order) {
-		results.push(yield* getOrThrow(ctx.completions, id, "completion").operation);
+		results.push(
+			yield* getOrThrow(ctx.completions, id, "completion").operation,
+		);
 	}
 
 	const hasFailure = results.some((r) => r.status === "failure");

@@ -1,9 +1,9 @@
-export { Engine } from "./engine.js";
 export type {
 	ActionDescriptor,
 	ProviderDescriptor,
 	RegistrySchema,
 } from "../registry.js";
+export { Engine } from "./engine.js";
 export type {
 	Connection,
 	Connections,

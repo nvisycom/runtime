@@ -65,11 +65,7 @@ export const ExampleSource = Stream.createSource("read", ExampleClient, {
 	reader: (client, ctx, params) => readStream(client, ctx, params),
 });
 
-export const ExampleTarget = Stream.createTarget(
-	"write",
-	ExampleClient,
-	{
-		types: [Row, Params],
-		writer: (_client, _params) => async (_item) => {},
-	},
-);
+export const ExampleTarget = Stream.createTarget("write", ExampleClient, {
+	types: [Row, Params],
+	writer: (_client, _params) => async (_item) => {},
+});

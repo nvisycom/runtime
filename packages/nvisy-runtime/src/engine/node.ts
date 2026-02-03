@@ -9,7 +9,7 @@ import type {
 	ResolvedTargetNode,
 } from "../compiler/plan.js";
 import type { GraphNode } from "../schema.js";
-import { edgesToIterable, type Edge } from "./edge.js";
+import { type Edge, edgesToIterable } from "./edge.js";
 import { withRetry, withTimeout } from "./policies.js";
 import type { Connections, ExecuteOptions, NodeResult } from "./types.js";
 import { validateParams } from "./validation.js";
@@ -103,7 +103,11 @@ function* executeAction(
 	);
 
 	const inputStream = yield* edgesToIterable(inEdges);
-	const outputStream = resolved.action.pipe(inputStream, actionParams, undefined);
+	const outputStream = resolved.action.pipe(
+		inputStream,
+		actionParams,
+		undefined,
+	);
 	let itemsProcessed = 0;
 
 	yield* call(async () => {
@@ -190,7 +194,12 @@ export function* executeNode(
 				);
 				break;
 			case "action":
-				itemsProcessed = yield* executeAction(node, resolved, inEdges, outEdges);
+				itemsProcessed = yield* executeAction(
+					node,
+					resolved,
+					inEdges,
+					outEdges,
+				);
 				break;
 			case "target":
 				itemsProcessed = yield* executeTarget(

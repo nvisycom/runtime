@@ -1,5 +1,11 @@
 import type { Data } from "@nvisy/core";
-import { call, createQueue, type Operation, type Queue, spawn } from "effection";
+import {
+	call,
+	createQueue,
+	type Operation,
+	type Queue,
+	spawn,
+} from "effection";
 
 export interface Edge {
 	readonly from: string;
