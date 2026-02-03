@@ -17,8 +17,8 @@ type DynamicDatabase = Record<string, Record<string, unknown>>;
 
 /**
  * Wrapper around a {@link Kysely} instance that serves as the concrete
- * class reference required by {@link StreamFactory.createSource} and
- * {@link StreamFactory.createTarget} for runtime client-type matching.
+ * class reference required by {@link Stream.createSource} and
+ * {@link Stream.createTarget} for runtime client-type matching.
  *
  * The underlying instance is schema-agnostic ({@link DynamicDatabase})
  * because table structures are not known at compile time.

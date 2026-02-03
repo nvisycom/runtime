@@ -6,6 +6,7 @@ import type {
 	AnyStreamTarget,
 	ModuleInstance,
 } from "@nvisy/core";
+import { ValidationError } from "@nvisy/core";
 
 const logger = getLogger(["nvisy", "registry"]);
 
@@ -83,7 +84,11 @@ export class Registry {
 
 	#ensureNotLoaded(moduleId: string): void {
 		if (this.#modules.has(moduleId)) {
-			throw new Error(`Module already loaded: ${moduleId}`);
+			throw new ValidationError(`Module already loaded: ${moduleId}`, {
+				source: "registry",
+				retryable: false,
+				details: { moduleId },
+			});
 		}
 	}
 
@@ -116,7 +121,11 @@ export class Registry {
 				"Registry collision loading module {moduleId}: {collisions}",
 				{ moduleId: mod.id, collisions: collisions.join(", ") },
 			);
-			throw new Error(`Registry collision: ${collisions.join(", ")}`);
+			throw new ValidationError(`Registry collision: ${collisions.join(", ")}`, {
+				source: "registry",
+				retryable: false,
+				details: { moduleId: mod.id, collisions },
+			});
 		}
 	}
 
@@ -152,7 +161,11 @@ export class Registry {
 		const action = this.#actions.get(name);
 		if (!action) {
 			logger.warn(`Action not found: ${name}`, { action: name });
-			throw new Error(`Unknown action: ${name}`);
+			throw new ValidationError(`Unknown action: ${name}`, {
+				source: "registry",
+				retryable: false,
+				details: { action: name },
+			});
 		}
 		return action;
 	}
@@ -162,7 +175,11 @@ export class Registry {
 		const factory = this.#providers.get(name);
 		if (!factory) {
 			logger.warn(`Provider not found: ${name}`, { provider: name });
-			throw new Error(`Unknown provider: ${name}`);
+			throw new ValidationError(`Unknown provider: ${name}`, {
+				source: "registry",
+				retryable: false,
+				details: { provider: name },
+			});
 		}
 		return factory;
 	}
@@ -172,7 +189,11 @@ export class Registry {
 		const stream = this.#streams.get(name);
 		if (!stream) {
 			logger.warn(`Stream not found: ${name}`, { stream: name });
-			throw new Error(`Unknown stream: ${name}`);
+			throw new ValidationError(`Unknown stream: ${name}`, {
+				source: "registry",
+				retryable: false,
+				details: { stream: name },
+			});
 		}
 		return stream;
 	}

@@ -18,19 +18,24 @@ import { Row } from "./record-datatype.js";
 /** Union of all concrete data types that flow through the pipeline. */
 export type DataType = Document | Embedding | Blob | Row;
 
+/** Factory methods for creating data type instances. */
 export const DataType = {
+	/** Create a structured document with JSON content. */
 	Document(content: JsonValue, options?: DocumentOptions): Document {
 		return new Document(content, options);
 	},
 
+	/** Create a dense vector embedding. */
 	Embedding(vector: Float32Array | number[], options?: DataOptions): Embedding {
 		return new Embedding(vector, options);
 	},
 
+	/** Create a binary blob from object storage. */
 	Blob(path: string, data: Buffer, options?: BlobOptions): Blob {
 		return new Blob(path, data, options);
 	},
 
+	/** Create a database row with column values. */
 	Row(columns: Record<string, JsonValue>, options?: DataOptions): Row {
 		return new Row(columns, options);
 	},

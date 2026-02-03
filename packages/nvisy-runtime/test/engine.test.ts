@@ -140,7 +140,7 @@ describe("execute", () => {
 	});
 
 	it("non-retryable error stops immediately", async () => {
-		const { Action, Data, Module, Provider, Row, StreamFactory } = await import(
+		const { Action, Data, Module, Provider, Row, Stream } = await import(
 			"@nvisy/core"
 		);
 		const { z } = await import("zod");
@@ -154,7 +154,7 @@ describe("execute", () => {
 			}),
 		});
 
-		const failSource = StreamFactory.createSource("read", FailClient, {
+		const failSource = Stream.createSource("read", FailClient, {
 			types: [Row, z.object({}).default({}), z.record(z.string(), z.unknown())],
 			reader: async function* () {
 				throw new RuntimeError("Non-retryable failure", {
@@ -163,7 +163,7 @@ describe("execute", () => {
 			},
 		});
 
-		const failTarget = StreamFactory.createTarget("write", FailClient, {
+		const failTarget = Stream.createTarget("write", FailClient, {
 			types: [Row, z.record(z.string(), z.unknown())],
 			writer: () => async () => {},
 		});
@@ -237,7 +237,7 @@ describe("execute", () => {
 	});
 
 	it("retryable error triggers retry", async () => {
-		const { Action, Data, Module, Provider, StreamFactory, Row } =
+		const { Action, Data, Module, Provider, Stream, Row } =
 			await import("@nvisy/core");
 		const { z } = await import("zod");
 
@@ -252,7 +252,7 @@ describe("execute", () => {
 			}),
 		});
 
-		const retrySource = StreamFactory.createSource("read", RetryClient, {
+		const retrySource = Stream.createSource("read", RetryClient, {
 			types: [Row, z.object({}).default({}), z.record(z.string(), z.unknown())],
 			reader: async function* () {
 				attempts++;
@@ -266,7 +266,7 @@ describe("execute", () => {
 			},
 		});
 
-		const retryTarget = StreamFactory.createTarget("write", RetryClient, {
+		const retryTarget = Stream.createTarget("write", RetryClient, {
 			types: [Row, z.record(z.string(), z.unknown())],
 			writer: () => async () => {},
 		});

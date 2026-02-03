@@ -1,5 +1,5 @@
 import { getLogger } from "@logtape/logtape";
-import { Row, RuntimeError, StreamFactory } from "@nvisy/core";
+import { Row, RuntimeError, Stream } from "@nvisy/core";
 import { KyselyClient } from "../providers/client.js";
 import { SqlParams } from "./schemas.js";
 
@@ -12,7 +12,7 @@ const logger = getLogger(["nvisy", "sql"]);
  * a Kysely INSERT. Each element piped through the writer triggers
  * an individual INSERT statement.
  */
-export const write = StreamFactory.createTarget("write", KyselyClient, {
+export const write = Stream.createTarget("write", KyselyClient, {
 	types: [Row, SqlParams],
 	writer: (client, params) => async (item: Row) => {
 		const record = item.columns as Record<string, unknown>;

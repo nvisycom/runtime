@@ -1,6 +1,6 @@
 import { getLogger } from "@logtape/logtape";
 import type { Data } from "@nvisy/core";
-import { ValidationError } from "@nvisy/core";
+import { RuntimeError, ValidationError } from "@nvisy/core";
 import { call, type Operation } from "effection";
 import type {
 	ResolvedActionNode,
@@ -218,7 +218,11 @@ export function* executeNode(
 	const timeoutFallback: NodeResult = {
 		nodeId: node.id,
 		status: "failure",
-		error: new Error(`Node ${node.id} timed out after ${timeoutMs}ms`),
+		error: new RuntimeError(`Node ${node.id} timed out after ${timeoutMs}ms`, {
+			source: "engine",
+			retryable: true,
+			details: { nodeId: node.id, timeoutMs },
+		}),
 		itemsProcessed: 0,
 	};
 

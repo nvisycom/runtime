@@ -1,5 +1,5 @@
 import { getLogger } from "@logtape/logtape";
-import { CancellationError } from "@nvisy/core";
+import { CancellationError, RuntimeError } from "@nvisy/core";
 import {
 	run as effectionRun,
 	type Operation,
@@ -37,7 +37,11 @@ interface GraphExecutionContext {
 function getOrThrow<K, V>(map: ReadonlyMap<K, V>, key: K, label: string): V {
 	const value = map.get(key);
 	if (value === undefined) {
-		throw new Error(`Internal error: missing ${label} for key ${String(key)}`);
+		throw new RuntimeError(`Internal error: missing ${label} for key ${String(key)}`, {
+			source: "engine",
+			retryable: false,
+			details: { key: String(key), label },
+		});
 	}
 	return value;
 }
@@ -107,7 +111,10 @@ function* spawnNodeTask(ctx: GraphExecutionContext, nodeId: string): Operation<v
 			const failResult: NodeResult = {
 				nodeId,
 				status: "failure",
-				error: error instanceof Error ? error : new Error(String(error)),
+				error:
+					error instanceof Error
+						? error
+						: new RuntimeError(String(error), { source: "engine" }),
 				itemsProcessed: 0,
 			};
 			nodeCompletion.resolve(failResult);

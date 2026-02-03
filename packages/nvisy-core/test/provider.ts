@@ -3,7 +3,7 @@ import type { JsonValue } from "../src/datatypes/base-datatype.js";
 import { Row } from "../src/datatypes/record-datatype.js";
 import { Provider } from "../src/providers.js";
 import type { Resumable } from "../src/streams.js";
-import { StreamFactory } from "../src/streams.js";
+import { Stream } from "../src/streams.js";
 
 export const Credentials = z.object({
 	host: z.string(),
@@ -60,12 +60,12 @@ export const ExampleProviderWithId = Provider.withAuthentication(
 	},
 );
 
-export const ExampleSource = StreamFactory.createSource("read", ExampleClient, {
+export const ExampleSource = Stream.createSource("read", ExampleClient, {
 	types: [Row, Cursor, Params],
 	reader: (client, ctx, params) => readStream(client, ctx, params),
 });
 
-export const ExampleTarget = StreamFactory.createTarget(
+export const ExampleTarget = Stream.createTarget(
 	"write",
 	ExampleClient,
 	{

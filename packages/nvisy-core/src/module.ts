@@ -14,10 +14,20 @@ export type AnyStreamSource = StreamSource<any, any, any, any>;
 // biome-ignore lint/suspicious/noExplicitAny: existential type alias
 export type AnyStreamTarget = StreamTarget<any, any, any>;
 
+/**
+ * A module bundles providers, streams, and actions under a namespace.
+ *
+ * Modules are the unit of registration with the engine. All entries
+ * are namespaced as `"moduleId/name"` to avoid collisions.
+ */
 export interface ModuleInstance {
+	/** Unique identifier for the module (e.g. "sql", "openai"). */
 	readonly id: string;
+	/** Provider factories keyed by their ID. */
 	readonly providers: Readonly<Record<string, AnyProviderFactory>>;
+	/** Stream sources and targets keyed by their ID. */
 	readonly streams: Readonly<Record<string, AnyStreamSource | AnyStreamTarget>>;
+	/** Actions keyed by their ID. */
 	readonly actions: Readonly<Record<string, AnyActionInstance>>;
 }
 
@@ -33,6 +43,7 @@ class ModuleBuilder implements ModuleInstance {
 		this.id = id;
 	}
 
+	/** Add providers to this module. */
 	withProviders(...providers: AnyProviderFactory[]): this {
 		const record = { ...this.providers };
 		for (const p of providers) record[p.id] = p;
@@ -40,6 +51,7 @@ class ModuleBuilder implements ModuleInstance {
 		return this;
 	}
 
+	/** Add streams to this module. */
 	withStreams(...streams: (AnyStreamSource | AnyStreamTarget)[]): this {
 		const record = { ...this.streams };
 		for (const s of streams) record[s.id] = s;
@@ -47,6 +59,7 @@ class ModuleBuilder implements ModuleInstance {
 		return this;
 	}
 
+	/** Add actions to this module. */
 	withActions(...actions: AnyActionInstance[]): this {
 		const record = { ...this.actions };
 		for (const a of actions) record[a.id] = a;
@@ -55,7 +68,9 @@ class ModuleBuilder implements ModuleInstance {
 	}
 }
 
+/** Factory for creating module definitions. */
 export const Module = {
+	/** Create a new module with the given ID. */
 	define(id: string): ModuleBuilder {
 		return new ModuleBuilder(id);
 	},

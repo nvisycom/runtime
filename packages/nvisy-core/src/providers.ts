@@ -10,29 +10,76 @@ import { ConnectionError } from "./errors/index.js";
 
 const logger = getLogger(["nvisy", "provider"]);
 
+/**
+ * Configuration for creating a provider that requires credentials.
+ *
+ * @template TCred - Credential type required for authentication.
+ * @template TClient - Client type returned after successful connection.
+ */
 export interface AuthenticatedProviderConfig<TCred, TClient> {
+	/** Zod schema for validating credentials. */
 	readonly credentials: z.ZodType<TCred>;
+	/** Factory function that establishes a connection using credentials. */
 	readonly connect: (credentials: TCred) => Promise<ProviderInstance<TClient>>;
 }
 
+/**
+ * Configuration for creating a provider that does not require credentials.
+ *
+ * @template TClient - Client type returned after successful connection.
+ */
 export interface UnauthenticatedProviderConfig<TClient> {
+	/** Factory function that establishes a connection. */
 	readonly connect: () => Promise<ProviderInstance<TClient>>;
 }
 
+/**
+ * Raw provider instance returned from a connect function.
+ *
+ * This is the internal representation before wrapping with lifecycle management.
+ *
+ * @template TClient - Client type provided by this instance.
+ */
 export interface ProviderInstance<TClient = void> {
+	/** The connected client ready for use. */
 	readonly client: TClient;
+	/** Optional cleanup function called when disconnecting. */
 	disconnect?(): Promise<void>;
 }
 
+/**
+ * A connected provider instance with lifecycle management.
+ *
+ * Wraps a raw {@link ProviderInstance} with idempotent disconnect handling
+ * and logging.
+ *
+ * @template TClient - Client type provided by this instance.
+ */
 export interface ConnectedInstance<TClient = void> {
+	/** Identifier of the provider that created this instance. */
 	readonly id: string;
+	/** The connected client ready for use. */
 	readonly client: TClient;
+	/** Disconnect and release resources (idempotent). */
 	disconnect(): Promise<void>;
 }
 
+/**
+ * Factory for creating provider connections.
+ *
+ * Providers manage the lifecycle of external clients (databases, APIs, etc.).
+ * Each provider defines a credential schema and a connect function that
+ * returns a managed {@link ConnectedInstance}.
+ *
+ * @template TCred - Credential type required for authentication.
+ * @template TClient - Client type returned after successful connection.
+ */
 export interface ProviderFactory<TCred = unknown, TClient = unknown> {
+	/** Unique identifier for this provider. */
 	readonly id: string;
+	/** Zod schema for validating credentials. */
 	readonly credentialSchema: z.ZodType<TCred>;
+	/** Create a new connection using the provided credentials. */
 	connect(credentials: TCred): Promise<ConnectedInstance<TClient>>;
 }
 
@@ -103,7 +150,14 @@ class ProviderFactoryImpl<TCred, TClient>
 	}
 }
 
+/** Factory for creating provider definitions. */
 export const Provider = {
+	/**
+	 * Create a provider that requires authentication credentials.
+	 *
+	 * @param id - Unique identifier for the provider.
+	 * @param config - Provider configuration including credential schema and connect function.
+	 */
 	withAuthentication<TClient, TCred>(
 		id: string,
 		config: AuthenticatedProviderConfig<TCred, TClient>,
@@ -111,6 +165,12 @@ export const Provider = {
 		return new ProviderFactoryImpl(id, config.credentials, config.connect);
 	},
 
+	/**
+	 * Create a provider that does not require authentication.
+	 *
+	 * @param id - Unique identifier for the provider.
+	 * @param config - Provider configuration including connect function.
+	 */
 	withoutAuthentication<TClient>(
 		id: string,
 		config: UnauthenticatedProviderConfig<TClient>,

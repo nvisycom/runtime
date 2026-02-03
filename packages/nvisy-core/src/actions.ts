@@ -9,14 +9,27 @@ import type { z } from "zod";
 import type { Data } from "./datatypes/base-datatype.js";
 import type { ClassRef } from "./types.js";
 
-/** Stream transform that operates without a provider client. */
+/**
+ * Stream transform that operates without a provider client.
+ *
+ * @template TIn - Input data type consumed by the transform.
+ * @template TOut - Output data type produced by the transform.
+ * @template TParam - Configuration parameters for the transform.
+ */
 export type ClientlessTransformFn<
 	TIn extends Data,
 	TOut extends Data,
 	TParam,
 > = (stream: AsyncIterable<TIn>, params: TParam) => AsyncIterable<TOut>;
 
-/** Stream transform that requires a provider client. */
+/**
+ * Stream transform that requires a provider client.
+ *
+ * @template TClient - Provider client type (e.g. database connection).
+ * @template TIn - Input data type consumed by the transform.
+ * @template TOut - Output data type produced by the transform.
+ * @template TParam - Configuration parameters for the transform.
+ */
 export type ClientTransformFn<
 	TClient,
 	TIn extends Data,
@@ -28,42 +41,80 @@ export type ClientTransformFn<
 	client: TClient,
 ) => AsyncIterable<TOut>;
 
+/**
+ * Configuration for creating an action that does not require a provider client.
+ *
+ * @template TIn - Input data type consumed by the action.
+ * @template TOut - Output data type produced by the action.
+ * @template TParam - Configuration parameters for the action.
+ */
 export interface ClientlessActionConfig<
 	TIn extends Data,
 	TOut extends Data,
 	TParam,
 > {
+	/** Input/output type classes. Single-element array means input equals output. */
 	readonly types:
 		| [inputClass: ClassRef<TIn>, outputClass: ClassRef<TOut>]
 		| [inputClass: ClassRef<TIn>];
+	/** Zod schema for validating action parameters. */
 	readonly params: z.ZodType<TParam>;
+	/** The transform function that processes the stream. */
 	readonly transform: ClientlessTransformFn<TIn, TOut, TParam>;
 }
 
+/**
+ * Configuration for creating an action that requires a provider client.
+ *
+ * @template TClient - Provider client type required by the action.
+ * @template TIn - Input data type consumed by the action.
+ * @template TOut - Output data type produced by the action.
+ * @template TParam - Configuration parameters for the action.
+ */
 export interface ClientActionConfig<
 	TClient,
 	TIn extends Data,
 	TOut extends Data,
 	TParam,
 > {
+	/** Input/output type classes. Single-element array means input equals output. */
 	readonly types:
 		| [inputClass: ClassRef<TIn>, outputClass: ClassRef<TOut>]
 		| [inputClass: ClassRef<TIn>];
+	/** Zod schema for validating action parameters. */
 	readonly params: z.ZodType<TParam>;
+	/** The transform function that processes the stream with client access. */
 	readonly transform: ClientTransformFn<TClient, TIn, TOut, TParam>;
 }
 
+/**
+ * A registered action instance that can transform data streams.
+ *
+ * Actions are the intermediate processing steps in a pipeline,
+ * transforming data between sources and targets.
+ *
+ * @template TClient - Provider client type (void if no client needed).
+ * @template TIn - Input data type consumed by the action.
+ * @template TOut - Output data type produced by the action.
+ * @template TParam - Configuration parameters for the action.
+ */
 export interface ActionInstance<
 	TClient = void,
 	TIn extends Data = Data,
 	TOut extends Data = Data,
 	TParam = unknown,
 > {
+	/** Unique identifier for this action. */
 	readonly id: string;
+	/** Client class required by this action (undefined if clientless). */
 	readonly clientClass?: ClassRef<TClient>;
+	/** Class reference for validating input data type. */
 	readonly inputClass: ClassRef<TIn>;
+	/** Class reference for validating output data type. */
 	readonly outputClass: ClassRef<TOut>;
+	/** Zod schema for validating action parameters. */
 	readonly schema: z.ZodType<TParam>;
+	/** Transform an input stream into an output stream. */
 	pipe(
 		stream: AsyncIterable<TIn>,
 		params: TParam,
@@ -106,7 +157,14 @@ class ActionImpl<TClient, TIn extends Data, TOut extends Data, TParam>
 	}
 }
 
+/** Factory for creating action instances. */
 export const Action: {
+	/**
+	 * Create an action that does not require a provider client.
+	 *
+	 * @param id - Unique identifier for the action.
+	 * @param config - Action configuration including types and transform.
+	 */
 	withoutClient<TIn extends Data, TOut extends Data, TParam>(
 		id: string,
 		config: ClientlessActionConfig<TIn, TOut, TParam>,
@@ -116,6 +174,13 @@ export const Action: {
 		config: ClientlessActionConfig<TIn, TIn, TParam>,
 	): ActionInstance<void, TIn, TIn, TParam>;
 
+	/**
+	 * Create an action that requires a provider client.
+	 *
+	 * @param id - Unique identifier for the action.
+	 * @param clientClass - Class reference for the required provider client.
+	 * @param config - Action configuration including types and transform.
+	 */
 	withClient<TClient, TIn extends Data, TOut extends Data, TParam>(
 		id: string,
 		clientClass: ClassRef<TClient>,

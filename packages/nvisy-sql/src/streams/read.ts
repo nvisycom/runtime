@@ -1,6 +1,6 @@
 import { getLogger } from "@logtape/logtape";
 import type { JsonValue, Resumable } from "@nvisy/core";
-import { Row, RuntimeError, StreamFactory } from "@nvisy/core";
+import { Row, RuntimeError, Stream } from "@nvisy/core";
 import { type SqlBool, sql } from "kysely";
 import { KyselyClient } from "../providers/client.js";
 import { SqlCursor, SqlParams } from "./schemas.js";
@@ -14,7 +14,7 @@ const logger = getLogger(["nvisy", "sql"]);
  * for stable ordering across batches. The stream terminates when a
  * batch returns fewer rows than `batchSize`.
  */
-export const read = StreamFactory.createSource("read", KyselyClient, {
+export const read = Stream.createSource("read", KyselyClient, {
 	types: [Row, SqlCursor, SqlParams],
 	reader: (client, cursor, params) => readStream(client, cursor, params),
 });

@@ -4,7 +4,7 @@ import {
 	Module,
 	Provider,
 	Row,
-	StreamFactory,
+	Stream,
 } from "@nvisy/core";
 import type { Resumable } from "@nvisy/core";
 import { z } from "zod";
@@ -56,7 +56,7 @@ export const sourceRows: Row[] = [
 	new Row({ name: "Carol", age: 35 }),
 ];
 
-export const testSourceStream = StreamFactory.createSource(
+export const testSourceStream = Stream.createSource(
 	"read",
 	TestClient,
 	{
@@ -78,7 +78,7 @@ export const testSourceStream = StreamFactory.createSource(
  */
 export const writtenItems: Data[] = [];
 
-export const testTargetStream = StreamFactory.createTarget(
+export const testTargetStream = Stream.createTarget(
 	"write",
 	TestClient,
 	{

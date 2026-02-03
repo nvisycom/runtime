@@ -48,5 +48,5 @@ export type {
 	StreamTarget,
 	WriterFn,
 } from "./streams.js";
-export { StreamFactory } from "./streams.js";
+export { Stream } from "./streams.js";
 export type { ClassRef } from "./types.js";
