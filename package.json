@@ -1,0 +1,33 @@
+{
+	"name": "@nvisy/monorepo",
+	"private": true,
+	"type": "module",
+	"engines": {
+		"node": ">=22.0.0"
+	},
+	"workspaces": [
+		"packages/*"
+	],
+	"scripts": {
+		"build": "npm run build --workspaces",
+		"test": "vitest",
+		"test:coverage": "vitest --coverage",
+		"lint": "biome lint .",
+		"lint:fix": "biome lint --write .",
+		"format": "biome format --write .",
+		"format:check": "biome format .",
+		"check": "biome check .",
+		"check:fix": "biome check --write .",
+		"typecheck": "npm run typecheck --workspaces",
+		"clean": "npm run clean --workspaces && rimraf node_modules"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.3.13",
+		"@types/node": "^25.1.0",
+		"@vitest/coverage-v8": "^4.0.18",
+		"rimraf": "^6.1.2",
+		"tsup": "^8.5.1",
+		"typescript": "^5.9.3",
+		"vitest": "^4.0.18"
+	}
+}
