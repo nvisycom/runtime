@@ -1,29 +1,31 @@
 import { getLogger } from "@logtape/logtape";
+import { ValidationError } from "@nvisy/core";
 import { DirectedGraph } from "graphology";
-import type { GraphNode } from "../schema/index.js";
-import { GraphDefinition } from "../schema/index.js";
-import type { ResolvedNode } from "./plan.js";
+import { Graph, type GraphNode } from "../schema.js";
 
 const logger = getLogger(["nvisy", "compiler"]);
 
+/** Node attributes stored in the runtime graph. */
 export interface RuntimeNodeAttrs {
 	readonly schema: GraphNode;
-	resolved?: ResolvedNode;
 }
 
+/** Edge attributes stored in the runtime graph. */
 export interface RuntimeEdgeAttrs {}
 
+/** Graphology directed graph with typed node and edge attributes. */
 export type RuntimeGraph = DirectedGraph<RuntimeNodeAttrs, RuntimeEdgeAttrs>;
 
+/** Result of parsing a graph definition. */
 export interface ParsedGraph {
-	readonly definition: GraphDefinition;
+	/** The validated graph definition. */
+	readonly definition: Graph;
+	/** The graphology graph built from the definition. */
 	readonly graph: RuntimeGraph;
 }
 
-/**
- * Convert a parsed `GraphDefinition` into a typed `DirectedGraph`.
- */
-export const buildRuntimeGraph = (def: GraphDefinition): RuntimeGraph => {
+/** Convert a parsed Graph into a graphology DirectedGraph. */
+export const buildRuntimeGraph = (def: Graph): RuntimeGraph => {
 	const graph: RuntimeGraph = new DirectedGraph();
 
 	for (const node of def.nodes) {
@@ -37,12 +39,17 @@ export const buildRuntimeGraph = (def: GraphDefinition): RuntimeGraph => {
 	return graph;
 };
 
+/** Parse and validate a graph definition from unknown input. */
 export const parseGraph = (input: unknown): ParsedGraph => {
-	const result = GraphDefinition.safeParse(input);
+	const result = Graph.safeParse(input);
 	if (!result.success) {
 		logger.warn("Graph parse failed: {error}", { error: result.error.message });
-		throw new Error(`Graph parse error: ${result.error.message}`);
+		throw new ValidationError(`Graph parse error: ${result.error.message}`, {
+			source: "compiler",
+			retryable: false,
+		});
 	}
+
 	const definition = result.data;
 	logger.debug(
 		"Graph parsed: {graphId} ({nodeCount} nodes, {edgeCount} edges)",

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildRuntimeGraph, parseGraph } from "../src/compiler/parse.js";
 import {
 	ACTION_ID,
+	CRED_ID,
 	GRAPH_ID,
 	linearGraph,
 	SOURCE_ID,
@@ -24,7 +25,6 @@ describe("parseGraph", () => {
 
 		const attrs = result.graph.getNodeAttributes(SOURCE_ID);
 		expect(attrs.schema.type).toBe("source");
-		expect(attrs.resolved).toBeUndefined();
 	});
 
 	it("creates edge keys in from->to format", () => {
@@ -66,6 +66,8 @@ describe("parseGraph", () => {
 					id: SOURCE_ID,
 					type: "source",
 					provider: "x",
+					stream: "x/read",
+					credentials: CRED_ID,
 					params: { key: "val" },
 				},
 			],
@@ -85,6 +87,63 @@ describe("parseGraph", () => {
 		const result = parseGraph(input);
 		expect(result.definition.metadata).toEqual({});
 	});
+
+	it("rejects duplicate node IDs (caught by graphology during parse)", () => {
+		const input = {
+			id: GRAPH_ID,
+			nodes: [
+				{
+					id: SOURCE_ID,
+					type: "source",
+					provider: "test/testdb",
+					stream: "test/read",
+					credentials: CRED_ID,
+					params: { table: "t" },
+				},
+				{ id: SOURCE_ID, type: "action", action: "test/noop", params: {} },
+			],
+		};
+
+		expect(() => parseGraph(input)).toThrow("already exist");
+	});
+
+	it("rejects dangling edge.from references (caught by graphology during parse)", () => {
+		const input = {
+			id: GRAPH_ID,
+			nodes: [
+				{
+					id: SOURCE_ID,
+					type: "source",
+					provider: "test/testdb",
+					stream: "test/read",
+					credentials: CRED_ID,
+					params: { table: "t" },
+				},
+			],
+			edges: [{ from: ACTION_ID, to: SOURCE_ID }],
+		};
+
+		expect(() => parseGraph(input)).toThrow("not found");
+	});
+
+	it("rejects dangling edge.to references (caught by graphology during parse)", () => {
+		const input = {
+			id: GRAPH_ID,
+			nodes: [
+				{
+					id: SOURCE_ID,
+					type: "source",
+					provider: "test/testdb",
+					stream: "test/read",
+					credentials: CRED_ID,
+					params: { table: "t" },
+				},
+			],
+			edges: [{ from: SOURCE_ID, to: ACTION_ID }],
+		};
+
+		expect(() => parseGraph(input)).toThrow("not found");
+	});
 });
 
 describe("buildRuntimeGraph", () => {
@@ -96,6 +155,7 @@ describe("buildRuntimeGraph", () => {
 					id: SOURCE_ID,
 					type: "source" as const,
 					provider: "x",
+					credentials: CRED_ID,
 					params: { k: "v" },
 				},
 				{ id: ACTION_ID, type: "action" as const, action: "y", params: {} },

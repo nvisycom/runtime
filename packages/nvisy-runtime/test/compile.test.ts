@@ -35,8 +35,7 @@ describe("compile", () => {
 		const plan = compile(linearGraph(), registry);
 
 		for (const id of plan.order) {
-			const attrs = plan.graph.getNodeAttributes(id);
-			expect(attrs.resolved).toBeDefined();
+			expect(plan.resolved.get(id)).toBeDefined();
 		}
 	});
 
@@ -85,5 +84,43 @@ describe("compile", () => {
 		const plan = compile(input, registry);
 
 		expect(plan.definition.concurrency?.maxGlobal).toBe(5);
+	});
+
+	it("rejects source node without credentials field", () => {
+		const registry = makeTestRegistry();
+		const input = {
+			id: GRAPH_ID,
+			nodes: [
+				{
+					id: SOURCE_ID,
+					type: "source",
+					provider: "test/testdb",
+					stream: "test/read",
+					// missing credentials
+					params: { table: "t" },
+				},
+			],
+		};
+
+		expect(() => compile(input, registry)).toThrow("Graph parse error");
+	});
+
+	it("rejects non-UUID credentials field", () => {
+		const registry = makeTestRegistry();
+		const input = {
+			id: GRAPH_ID,
+			nodes: [
+				{
+					id: SOURCE_ID,
+					type: "source",
+					provider: "test/testdb",
+					stream: "test/read",
+					credentials: "not-a-uuid",
+					params: { table: "t" },
+				},
+			],
+		};
+
+		expect(() => compile(input, registry)).toThrow("Graph parse error");
 	});
 });
