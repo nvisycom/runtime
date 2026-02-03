@@ -1,7 +1,7 @@
 import { type Dialect, MssqlDialect } from "kysely";
 import * as Tarn from "tarn";
 import * as Tedious from "tedious";
-import { makeSqlProvider } from "./base.js";
+import { makeSqlProvider } from "./client.js";
 import type { SqlCredentials } from "./schemas.js";
 
 /** Create a `tedious` {@link Tedious.Connection} from credentials. */

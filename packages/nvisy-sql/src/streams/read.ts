@@ -2,7 +2,7 @@ import { getLogger } from "@logtape/logtape";
 import type { JsonValue, Resumable } from "@nvisy/core";
 import { Row, RuntimeError, StreamFactory } from "@nvisy/core";
 import { type SqlBool, sql } from "kysely";
-import { KyselyClient } from "../providers/base.js";
+import { KyselyClient } from "../providers/client.js";
 import { SqlCursor, SqlParams } from "./schemas.js";
 
 const logger = getLogger(["nvisy", "sql"]);

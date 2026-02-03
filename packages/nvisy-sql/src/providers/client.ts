@@ -1,5 +1,10 @@
 import { getLogger } from "@logtape/logtape";
-import { ConnectionError, Provider, type ProviderFactory } from "@nvisy/core";
+import {
+	ConnectionError,
+	Provider,
+	type ProviderFactory,
+	type ProviderInstance,
+} from "@nvisy/core";
 import { type Dialect, Kysely, sql } from "kysely";
 import { SqlCredentials } from "./schemas.js";
 
@@ -19,15 +24,15 @@ type DynamicDatabase = Record<string, Record<string, unknown>>;
  * because table structures are not known at compile time.
  */
 export class KyselyClient {
-	#kysely: Kysely<DynamicDatabase>;
+	#db: Kysely<DynamicDatabase>;
 
 	constructor(db: Kysely<DynamicDatabase>) {
-		this.#kysely = db;
+		this.#db = db;
 	}
 
 	/** The underlying Kysely instance used for query building and execution. */
 	get db(): Kysely<DynamicDatabase> {
-		return this.#kysely;
+		return this.#db;
 	}
 }
 
@@ -37,6 +42,27 @@ export interface SqlProviderConfig {
 	readonly id: string;
 	/** Build a Kysely {@link Dialect} from validated connection credentials. */
 	readonly createDialect: (creds: SqlCredentials) => Dialect;
+}
+
+/**
+ * Connected SQL provider instance returned by {@link makeSqlProvider}.
+ *
+ * Holds a {@link KyselyClient} and manages teardown of the underlying
+ * Kysely connection pool on {@link disconnect}.
+ */
+export class SqlProvider implements ProviderInstance<KyselyClient> {
+	readonly client: KyselyClient;
+	#id: string;
+
+	constructor(client: KyselyClient, id: string) {
+		this.client = client;
+		this.#id = id;
+	}
+
+	async disconnect(): Promise<void> {
+		await this.client.db.destroy();
+		logger.debug("Disconnected from {provider}", { provider: this.#id });
+	}
 }
 
 /** Instantiate a Kysely dialect and wrap it in a {@link KyselyClient}. */
@@ -103,15 +129,7 @@ export const makeSqlProvider = (
 			try {
 				const client = createClient(config, credentials);
 				await verifyConnection(client, config, credentials);
-				return {
-					client,
-					disconnect: async () => {
-						await client.db.destroy();
-						logger.debug("Disconnected from {provider}", {
-							provider: config.id,
-						});
-					},
-				};
+				return new SqlProvider(client, config.id);
 			} catch (error) {
 				throw toConnectionError(error, config.id);
 			}

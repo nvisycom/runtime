@@ -1,6 +1,6 @@
 import { type Dialect, MysqlDialect } from "kysely";
 import { createPool } from "mysql2/promise";
-import { makeSqlProvider } from "./base.js";
+import { makeSqlProvider } from "./client.js";
 import type { SqlCredentials } from "./schemas.js";
 
 /** Create a MySQL dialect backed by a `mysql2` connection pool. */

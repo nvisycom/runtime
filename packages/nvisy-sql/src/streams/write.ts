@@ -1,6 +1,6 @@
 import { getLogger } from "@logtape/logtape";
 import { Row, RuntimeError, StreamFactory } from "@nvisy/core";
-import { KyselyClient } from "../providers/base.js";
+import { KyselyClient } from "../providers/client.js";
 import { SqlParams } from "./schemas.js";
 
 const logger = getLogger(["nvisy", "sql"]);
