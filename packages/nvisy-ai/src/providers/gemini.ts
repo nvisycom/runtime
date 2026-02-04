@@ -16,7 +16,7 @@ function makeGemini(credentials: ProviderConnection) {
 
 /** Gemini completion provider factory backed by the Vercel AI SDK. */
 export const geminiCompletion = makeProvider({
-	id: "gemini",
+	id: "gemini-completion",
 	createClient: (credentials) =>
 		new VercelCompletionClient({
 			languageModel: makeGemini(credentials)(credentials.model),

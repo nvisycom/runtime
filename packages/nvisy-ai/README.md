@@ -2,28 +2,33 @@
 
 [![Build](https://img.shields.io/github/actions/workflow/status/nvisycom/runtime/build.yml?branch=main&label=build%20%26%20test&style=flat-square)](https://github.com/nvisycom/runtime/actions/workflows/build.yml)
 
-AI provider module for the Nvisy runtime.
+AI provider module for the Nvisy runtime, backed by the [Vercel AI SDK](https://sdk.vercel.ai).
 
 ## Features
 
-- **OpenAI, Anthropic, and Gemini providers** with credential validation and connection lifecycle management
-- **Embedding generation** action for converting documents to vectors
-- **Chunking** actions (character, section, page, semantic similarity, contextual)
-- **Partitioning** actions for extracting text from blobs and documents
-- **Enrichment** action for AI-powered metadata extraction, NER, and content description
+- **Embedding generation** — batch-embed documents into vectors
+- **Chunking** — character, section, page, embedding-similarity, and LLM-contextual strategies
+- **Partitioning** — extract text from blobs and documents (auto-detect or regex rules)
+- **Enrichment** — metadata extraction, NER, image/table description, and table-to-HTML via LLM
 
 ## Overview
 
 Provides LLM and embedding model integrations for AI-powered data pipelines. The module exposes:
 
-- **Providers** (`ai/openai`, `ai/anthropic`, `ai/gemini`): connection lifecycle management with credential validation.
+- **Providers**:
+  - `ai/openai-completion` — OpenAI completion (language model)
+  - `ai/openai-embedding` — OpenAI embedding
+  - `ai/anthropic-completion` — Anthropic completion
+  - `ai/gemini-completion` — Gemini completion
+  - `ai/gemini-embedding` — Gemini embedding
 - **Actions**:
-  - `ai/embed`: generate embeddings from documents
-  - `ai/chunk`: split documents by character, section, or page boundaries
-  - `ai/chunk_semantic`: split documents using embedding similarity or LLM context
-  - `ai/partition`: extract text from blobs, split by regex rules
-  - `ai/partition_vlm`: VLM-based partitioning (stub)
-  - `ai/enrich`: extract metadata, entities, descriptions via LLM
+  - `ai/embed` — generate embeddings from documents (batched)
+  - `ai/chunk` — split documents by character, section, or page boundaries
+  - `ai/chunk_similarity` — split using embedding cosine-similarity thresholds
+  - `ai/chunk_contextual` — split using an LLM to find natural boundaries
+  - `ai/partition` — extract text from blobs/documents (auto or regex rules)
+  - `ai/partition_contextual` — AI-based contextual partitioning (stub, not yet implemented)
+  - `ai/enrich` — extract metadata, entities, image/table descriptions, or convert tables to HTML via LLM
 
 ## Usage
 

@@ -15,7 +15,7 @@ function makeAnthropic(credentials: ProviderConnection) {
 
 /** Anthropic completion provider factory backed by the Vercel AI SDK. */
 export const anthropicCompletion = makeProvider({
-	id: "anthropic",
+	id: "anthropic-completion",
 	createClient: (credentials) =>
 		new VercelCompletionClient({
 			languageModel: makeAnthropic(credentials)(credentials.model),

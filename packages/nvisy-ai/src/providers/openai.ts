@@ -16,7 +16,7 @@ function makeOpenAI(credentials: ProviderConnection) {
 
 /** OpenAI completion provider factory backed by the Vercel AI SDK. */
 export const openaiCompletion = makeProvider({
-	id: "openai",
+	id: "openai-completion",
 	createClient: (credentials) =>
 		new VercelCompletionClient({
 			languageModel: makeOpenAI(credentials)(credentials.model),
