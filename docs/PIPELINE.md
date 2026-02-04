@@ -13,7 +13,7 @@ Overview of all providers, streams, and actions across the nvisy platform.
 | Provider | `sql/mssql` | MSSQL connection via tedious |
 | Stream | `sql/read` | Keyset-paginated source stream |
 | Stream | `sql/write` | Batch-insert sink stream |
-| Action | `sql/filter` | Row-level filtering |
+| Action | `sql/filter` | Entry-level filtering |
 | Action | `sql/project` | Column projection |
 | Action | `sql/rename` | Column renaming |
 | Action | `sql/coerce` | Type coercion |

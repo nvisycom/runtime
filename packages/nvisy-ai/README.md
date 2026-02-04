@@ -6,25 +6,31 @@ AI provider module for the Nvisy runtime.
 
 ## Features
 
-- **OpenAI, Anthropic, and other LLM providers** with credential validation and connection lifecycle management
-- **Embedding generation** streams for converting text to vectors
-- **Completion streams** for LLM inference in pipelines
-- **Token counting and cost tracking** actions
+- **OpenAI, Anthropic, and Gemini providers** with credential validation and connection lifecycle management
+- **Embedding generation** action for converting documents to vectors
+- **Chunking** actions (character, section, page, semantic similarity, contextual)
+- **Partitioning** actions for extracting text from blobs and documents
+- **Enrichment** action for AI-powered metadata extraction, NER, and content description
 
 ## Overview
 
 Provides LLM and embedding model integrations for AI-powered data pipelines. The module exposes:
 
-- **Providers** (`ai/openai`, `ai/anthropic`): connection lifecycle management with credential validation.
-- **Streams** (`ai/embed`, `ai/complete`): embedding generation and LLM completion streams.
-- **Actions** (`ai/chunk`, `ai/tokenize`): text processing transforms for AI pipelines.
+- **Providers** (`ai/openai`, `ai/anthropic`, `ai/gemini`): connection lifecycle management with credential validation.
+- **Actions**:
+  - `ai/embed`: generate embeddings from documents
+  - `ai/chunk`: split documents by character, section, or page boundaries
+  - `ai/chunk_semantic`: split documents using embedding similarity or LLM context
+  - `ai/partition`: extract text from blobs, split by regex rules
+  - `ai/partition_vlm`: VLM-based partitioning (stub)
+  - `ai/enrich`: extract metadata, entities, descriptions via LLM
 
 ## Usage
 
 ```ts
 import { aiModule } from "@nvisy/ai";
 
-registry.load(aiModule);
+engine.register(aiModule);
 ```
 
 ## Changelog

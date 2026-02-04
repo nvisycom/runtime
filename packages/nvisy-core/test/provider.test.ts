@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { Row } from "../src/datatypes/record-datatype.js";
+import { Row } from "../src/datatypes/row-datatype.js";
 import {
 	Credentials,
 	Cursor,
@@ -111,7 +111,7 @@ describe("ExampleTarget", () => {
 		expect(ExampleTarget.paramSchema).toBe(Params);
 	});
 
-	it("accepts a batch of rows without throwing", async () => {
+	it("accepts a row without throwing", async () => {
 		const row = new Row({ id: "4", name: "Diana" });
 		const writer = ExampleTarget.write(client, { table: "users" });
 		await expect(writer(row)).resolves.toBeUndefined();

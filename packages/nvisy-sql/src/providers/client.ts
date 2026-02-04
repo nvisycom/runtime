@@ -83,17 +83,21 @@ function createClient(
 
 /** Run `SELECT 1` to verify the connection is live. */
 async function verifyConnection(
-	client: KyselyClient,
 	config: SqlProviderConfig,
 	credentials: SqlCredentials,
 ): Promise<void> {
-	await sql`SELECT 1`.execute(client.db);
-	logger.info("Connected to {provider} at {host}:{port}/{database}", {
-		provider: config.id,
-		host: credentials.host,
-		port: credentials.port,
-		database: credentials.database,
-	});
+	const client = createClient(config, credentials);
+	try {
+		await sql`SELECT 1`.execute(client.db);
+		logger.info("Verified {provider} at {host}:{port}/{database}", {
+			provider: config.id,
+			host: credentials.host,
+			port: credentials.port,
+			database: credentials.database,
+		});
+	} finally {
+		await client.db.destroy();
+	}
 }
 
 /** Normalise an unknown throw into a {@link ConnectionError}, re-throwing as-is if already one. */
@@ -125,10 +129,16 @@ export const makeSqlProvider = (
 ): ProviderFactory<SqlCredentials, KyselyClient> =>
 	Provider.withAuthentication(config.id, {
 		credentials: SqlCredentials,
+		verify: async (credentials) => {
+			try {
+				await verifyConnection(config, credentials);
+			} catch (error) {
+				throw toConnectionError(error, config.id);
+			}
+		},
 		connect: async (credentials) => {
 			try {
 				const client = createClient(config, credentials);
-				await verifyConnection(client, config, credentials);
 				return new SqlProvider(client, config.id);
 			} catch (error) {
 				throw toConnectionError(error, config.id);

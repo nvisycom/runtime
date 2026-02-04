@@ -1,5 +1,14 @@
-import { CancellationError, RuntimeError, ValidationError } from "@nvisy/core";
+import {
+	Action,
+	CancellationError,
+	Document,
+	Module,
+	Provider,
+	RuntimeError,
+	ValidationError,
+} from "@nvisy/core";
 import { beforeEach, describe, expect, it } from "vitest";
+import { z } from "zod";
 import type { Connections } from "../src/engine/types.js";
 import {
 	CRED_ID,
@@ -7,7 +16,7 @@ import {
 	linearGraph,
 	makeTestEngine,
 	SOURCE_ID,
-	sourceRows,
+	sourceEntries,
 	testConnections,
 	writtenItems,
 } from "./fixtures.js";
@@ -60,6 +69,67 @@ describe("validate", () => {
 			true,
 		);
 	});
+
+	it("incompatible provider client rejected at execution time", async () => {
+		// Action requires this client class
+		abstract class EmbeddingClient {
+			abstract embed(input: string[]): Promise<number[][]>;
+		}
+
+		// Provider produces a plain object — not an EmbeddingClient
+		class CompletionOnlyClient {}
+
+		const incompatProvider = Provider.withAuthentication("incompatdb", {
+			credentials: z.object({ key: z.string() }),
+			connect: async () => ({ client: new CompletionOnlyClient() }),
+		});
+
+		const embeddingAction = Action.withClient("needs_embed", EmbeddingClient, {
+			types: [Document],
+			params: z.object({}),
+			transform: (stream) => stream,
+		});
+
+		const mod = Module.define("cap")
+			.withProviders(incompatProvider)
+			.withActions(embeddingAction);
+
+		const engine = makeTestEngine();
+		engine.register(mod);
+
+		const credId = "00000000-0000-4000-8000-0000000000d0";
+		const graph = {
+			id: "00000000-0000-4000-8000-000000000030",
+			nodes: [
+				{
+					id: "00000000-0000-4000-8000-000000000031",
+					type: "action" as const,
+					action: "cap/needs_embed",
+					provider: "cap/incompatdb",
+					connection: credId,
+					params: {},
+				},
+			],
+			edges: [],
+		};
+
+		const connections: Connections = {
+			[credId]: {
+				type: "incompatdb",
+				credentials: { key: "test" },
+				context: {},
+			},
+		};
+
+		const result = await engine.execute(graph, connections);
+		expect(result.status).toBe("failure");
+		expect(
+			result.nodes.some(
+				(n) =>
+					n.status === "failure" && n.error?.message.includes("not compatible"),
+			),
+		).toBe(true);
+	});
 });
 
 describe("execute", () => {
@@ -72,9 +142,9 @@ describe("execute", () => {
 		for (const node of result.nodes) {
 			expect(node.status).toBe("success");
 		}
-		expect(writtenItems).toHaveLength(sourceRows.length);
-		for (let i = 0; i < sourceRows.length; i++) {
-			expect(writtenItems[i]!.id).toBe(sourceRows[i]!.id);
+		expect(writtenItems).toHaveLength(sourceEntries.length);
+		for (let i = 0; i < sourceEntries.length; i++) {
+			expect(writtenItems[i]!.id).toBe(sourceEntries[i]!.id);
 		}
 	});
 
@@ -89,14 +159,14 @@ describe("execute", () => {
 		}
 		// Source fans out to 2 actions, each forwards all items to target
 		// Target sees items from both action branches
-		expect(writtenItems).toHaveLength(sourceRows.length * 2);
+		expect(writtenItems).toHaveLength(sourceEntries.length * 2);
 	});
 
 	it("empty source: 0 items, all nodes succeed", async () => {
 		const engine = makeTestEngine();
-		// Override source rows to empty for this test
-		const original = [...sourceRows];
-		sourceRows.length = 0;
+		// Override source entries to empty for this test
+		const original = [...sourceEntries];
+		sourceEntries.length = 0;
 		try {
 			const result = await engine.execute(linearGraph(), testConnections());
 
@@ -106,7 +176,7 @@ describe("execute", () => {
 			}
 			expect(writtenItems).toHaveLength(0);
 		} finally {
-			sourceRows.push(...original);
+			sourceEntries.push(...original);
 		}
 	});
 
@@ -192,7 +262,7 @@ describe("execute", () => {
 					type: "source" as const,
 					provider: "fail/faildb",
 					stream: "fail/read",
-					credentials: failCredId,
+					connection: failCredId,
 					params: {},
 					retry: {
 						maxRetries: 3,
@@ -206,7 +276,7 @@ describe("execute", () => {
 					type: "target" as const,
 					provider: "fail/faildb",
 					stream: "fail/write",
-					credentials: failCredId,
+					connection: failCredId,
 					params: {},
 				},
 			],
@@ -296,7 +366,7 @@ describe("execute", () => {
 					type: "source" as const,
 					provider: "retry/retrydb",
 					stream: "retry/read",
-					credentials: retryCredId,
+					connection: retryCredId,
 					params: {},
 					retry: {
 						maxRetries: 5,
@@ -310,7 +380,7 @@ describe("execute", () => {
 					type: "target" as const,
 					provider: "retry/retrydb",
 					stream: "retry/write",
-					credentials: retryCredId,
+					connection: retryCredId,
 					params: {},
 				},
 			],
@@ -352,7 +422,7 @@ describe("execute", () => {
 		});
 
 		expect(result.status).toBe("success");
-		expect(updates).toHaveLength(sourceRows.length);
+		expect(updates).toHaveLength(sourceEntries.length);
 		for (const update of updates) {
 			expect(update.nodeId).toBe(SOURCE_ID);
 			expect(update.connectionId).toBe(CRED_ID);

@@ -43,7 +43,7 @@ const TestParams = z.record(z.string(), z.unknown());
  * Items produced by the mock source stream.
  * Exposed so tests can assert on them.
  */
-export const sourceRows: Row[] = [
+export const sourceEntries: Row[] = [
 	new Row({ name: "Alice", age: 30 }),
 	new Row({ name: "Bob", age: 25 }),
 	new Row({ name: "Carol", age: 35 }),
@@ -52,7 +52,7 @@ export const sourceRows: Row[] = [
 export const testSourceStream = Stream.createSource("read", TestClient, {
 	types: [Row, TestContext, TestParams],
 	reader: async function* (_client, _ctx, _params) {
-		for (const row of sourceRows) {
+		for (const row of sourceEntries) {
 			yield { data: row, context: { cursor: row.id } } as Resumable<
 				Row,
 				z.infer<typeof TestContext>
@@ -128,7 +128,7 @@ export function linearGraph() {
 				type: "source" as const,
 				provider: "test/testdb",
 				stream: "test/read",
-				credentials: CRED_ID,
+				connection: CRED_ID,
 				params: { table: "users" },
 			},
 			{
@@ -142,7 +142,7 @@ export function linearGraph() {
 				type: "target" as const,
 				provider: "test/testdb",
 				stream: "test/write",
-				credentials: CRED_ID,
+				connection: CRED_ID,
 				params: { table: "output" },
 			},
 		],
@@ -162,7 +162,7 @@ export function isolatedNodesGraph() {
 				type: "source" as const,
 				provider: "test/testdb",
 				stream: "test/read",
-				credentials: CRED_ID,
+				connection: CRED_ID,
 				params: { table: "users" },
 			},
 			{
@@ -185,7 +185,7 @@ export function diamondGraph() {
 				type: "source" as const,
 				provider: "test/testdb",
 				stream: "test/read",
-				credentials: CRED_ID,
+				connection: CRED_ID,
 				params: { table: "users" },
 			},
 			{
@@ -205,7 +205,7 @@ export function diamondGraph() {
 				type: "target" as const,
 				provider: "test/testdb",
 				stream: "test/write",
-				credentials: CRED_ID,
+				connection: CRED_ID,
 				params: { table: "output" },
 			},
 		],

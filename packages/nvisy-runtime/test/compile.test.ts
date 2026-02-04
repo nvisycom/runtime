@@ -86,7 +86,7 @@ describe("compile", () => {
 		expect(plan.definition.concurrency?.maxGlobal).toBe(5);
 	});
 
-	it("rejects source node without credentials field", () => {
+	it("rejects source node without connection field", () => {
 		const registry = makeTestRegistry();
 		const input = {
 			id: GRAPH_ID,
@@ -96,7 +96,7 @@ describe("compile", () => {
 					type: "source",
 					provider: "test/testdb",
 					stream: "test/read",
-					// missing credentials
+					// missing connection
 					params: { table: "t" },
 				},
 			],
@@ -105,7 +105,7 @@ describe("compile", () => {
 		expect(() => compile(input, registry)).toThrow("Graph parse error");
 	});
 
-	it("rejects non-UUID credentials field", () => {
+	it("rejects non-UUID connection field", () => {
 		const registry = makeTestRegistry();
 		const input = {
 			id: GRAPH_ID,
@@ -115,7 +115,7 @@ describe("compile", () => {
 					type: "source",
 					provider: "test/testdb",
 					stream: "test/read",
-					credentials: "not-a-uuid",
+					connection: "not-a-uuid",
 					params: { table: "t" },
 				},
 			],

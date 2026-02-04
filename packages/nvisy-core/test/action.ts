@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Action } from "../src/actions.js";
-import { Row } from "../src/datatypes/record-datatype.js";
+import { Row } from "../src/datatypes/row-datatype.js";
 
 export const FilterParams = z.object({
 	column: z.string(),

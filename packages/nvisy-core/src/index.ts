@@ -8,13 +8,19 @@ export type { ActionInstance } from "./actions.js";
 export { Action } from "./actions.js";
 export type {
 	BlobOptions,
+	ChunkOptions,
 	DataOptions,
+	DocumentElement,
 	DocumentOptions,
+	DocumentPage,
+	DocumentSection,
+	ElementType,
 	JsonValue,
 	Metadata,
 } from "./datatypes/index.js";
 export {
 	Blob,
+	Chunk,
 	Data,
 	DataType,
 	Document,

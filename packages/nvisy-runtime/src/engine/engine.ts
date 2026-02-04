@@ -53,7 +53,7 @@ export class Engine {
 			return { valid: false, errors };
 		}
 
-		this.#validateNodeCredentials(plan, connections, errors);
+		this.#validateNodeConnections(plan, connections, errors);
 
 		return { valid: errors.length === 0, errors };
 	}
@@ -74,38 +74,57 @@ export class Engine {
 		}
 	}
 
-	#validateNodeCredentials(
+	#validateNodeConnections(
 		plan: ExecutionPlan,
 		connections: Connections,
 		errors: string[],
 	): void {
 		for (const node of plan.definition.nodes) {
-			if (node.type !== "source" && node.type !== "target") {
-				continue;
-			}
+			if (node.type === "source" || node.type === "target") {
+				const conn = connections[node.connection];
+				if (!conn) {
+					errors.push(
+						`Missing connection "${node.connection}" for node ${node.id}`,
+					);
+					continue;
+				}
 
-			const conn = connections[node.credentials];
-			if (!conn) {
-				errors.push(
-					`Missing connection "${node.credentials}" for node ${node.id}`,
-				);
-				continue;
-			}
+				const resolved = plan.resolved.get(node.id);
+				if (
+					!resolved ||
+					(resolved.type !== "source" && resolved.type !== "target")
+				) {
+					continue;
+				}
 
-			const resolved = plan.resolved.get(node.id);
-			if (
-				!resolved ||
-				(resolved.type !== "source" && resolved.type !== "target")
-			) {
-				continue;
-			}
+				try {
+					resolved.provider.credentialSchema.parse(conn.credentials);
+				} catch (e) {
+					errors.push(
+						`Invalid credentials for node ${node.id}: ${e instanceof Error ? e.message : String(e)}`,
+					);
+				}
+			} else if (node.type === "action" && node.provider && node.connection) {
+				const conn = connections[node.connection];
+				if (!conn) {
+					errors.push(
+						`Missing connection "${node.connection}" for action node ${node.id}`,
+					);
+					continue;
+				}
 
-			try {
-				resolved.provider.credentialSchema.parse(conn.credentials);
-			} catch (e) {
-				errors.push(
-					`Invalid credentials for node ${node.id}: ${e instanceof Error ? e.message : String(e)}`,
-				);
+				const resolved = plan.resolved.get(node.id);
+				if (!resolved || resolved.type !== "action" || !resolved.provider) {
+					continue;
+				}
+
+				try {
+					resolved.provider.credentialSchema.parse(conn.credentials);
+				} catch (e) {
+					errors.push(
+						`Invalid credentials for action node ${node.id}: ${e instanceof Error ? e.message : String(e)}`,
+					);
+				}
 			}
 		}
 	}

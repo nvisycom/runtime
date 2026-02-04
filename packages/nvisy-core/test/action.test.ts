@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ActionInstance } from "../src/actions.js";
 import type { Data } from "../src/datatypes/base-datatype.js";
-import { Row } from "../src/datatypes/record-datatype.js";
+import { Row } from "../src/datatypes/row-datatype.js";
 import {
 	ExampleFilter,
 	ExampleMap,

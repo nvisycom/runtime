@@ -57,7 +57,7 @@ export const SourceNode = NodeBase.extend({
 	/** Stream identifier in "module/name" format. */
 	stream: z.string(),
 	/** UUID reference to a connection in the connections map. */
-	credentials: z.uuid(),
+	connection: z.uuid(),
 	/** Stream-specific configuration parameters. */
 	params: z.record(z.string(), z.unknown()),
 });
@@ -68,6 +68,10 @@ export const ActionNode = NodeBase.extend({
 	type: z.literal("action"),
 	/** Action identifier in "module/name" format. */
 	action: z.string(),
+	/** Provider identifier for client-bound actions (optional). */
+	provider: z.string().optional(),
+	/** UUID reference to a connection for client-bound actions (optional). */
+	connection: z.uuid().optional(),
 	/** Action-specific configuration parameters. */
 	params: z.record(z.string(), z.unknown()).default({}),
 });
@@ -81,7 +85,7 @@ export const TargetNode = NodeBase.extend({
 	/** Stream identifier in "module/name" format. */
 	stream: z.string(),
 	/** UUID reference to a connection in the connections map. */
-	credentials: z.uuid(),
+	connection: z.uuid(),
 	/** Stream-specific configuration parameters. */
 	params: z.record(z.string(), z.unknown()),
 });

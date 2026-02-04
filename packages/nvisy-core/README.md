@@ -6,7 +6,7 @@ Core primitives and abstractions for the Nvisy runtime platform.
 
 ## Features
 
-- **Data types**: `Document`, `Embedding`, `Blob`, and `Row` for pipeline data
+- **Data types**: `Document`, `Embedding`, `Blob`, and `Entry` for pipeline data
 - **Module system**: bundle providers, streams, and actions under a namespace
 - **Provider abstraction**: connection lifecycle management with credential validation
 - **Stream contracts**: resumable sources and sinks for external systems
@@ -17,7 +17,7 @@ Core primitives and abstractions for the Nvisy runtime platform.
 
 This package defines the foundational abstractions that all Nvisy modules implement:
 
-- **Data types** (`Data`, `Document`, `Embedding`, `Blob`, `Row`): immutable data containers that flow through pipelines.
+- **Data types** (`Data`, `Document`, `Embedding`, `Blob`, `Entry`): immutable data containers that flow through pipelines.
 - **Modules** (`Module.define`): namespace for grouping providers, streams, and actions.
 - **Providers** (`Provider.withAuthentication`, `Provider.withoutAuthentication`): external client lifecycle management.
 - **Streams** (`Stream.createSource`, `Stream.createTarget`): data I/O layer for reading from and writing to external systems.
@@ -49,14 +49,14 @@ const myProvider = Provider.withAuthentication("my-provider", {
 ### Defining a Stream Source
 
 ```ts
-import { Stream, Row } from "@nvisy/core";
+import { Stream, Entry } from "@nvisy/core";
 import { z } from "zod";
 
 const mySource = Stream.createSource("my-source", MyClient, {
-  types: [Row, z.object({ cursor: z.string().optional() }), z.object({ limit: z.number() })],
+  types: [Entry, z.object({ cursor: z.string().optional() }), z.object({ limit: z.number() })],
   reader: async function* (client, ctx, params) {
     for await (const item of client.list({ cursor: ctx.cursor, limit: params.limit })) {
-      yield { data: new Row(item), context: { cursor: item.id } };
+      yield { data: new Entry(item), context: { cursor: item.id } };
     }
   },
 });
@@ -65,13 +65,13 @@ const mySource = Stream.createSource("my-source", MyClient, {
 ### Defining a Stream Target
 
 ```ts
-import { Stream, Row } from "@nvisy/core";
+import { Stream, Entry } from "@nvisy/core";
 import { z } from "zod";
 
 const myTarget = Stream.createTarget("my-target", MyClient, {
-  types: [Row, z.object({ collection: z.string() })],
+  types: [Entry, z.object({ collection: z.string() })],
   writer: (client, params) => async (item) => {
-    await client.insert(params.collection, item.columns);
+    await client.insert(params.collection, item.fields);
   },
 });
 ```
@@ -79,16 +79,16 @@ const myTarget = Stream.createTarget("my-target", MyClient, {
 ### Defining an Action
 
 ```ts
-import { Action, Row } from "@nvisy/core";
+import { Action, Entry } from "@nvisy/core";
 import { z } from "zod";
 
 const myFilter = Action.withoutClient("my-filter", {
-  types: [Row],
+  types: [Entry],
   params: z.object({ minValue: z.number() }),
   transform: async function* (stream, params) {
-    for await (const row of stream) {
-      if ((row.get("value") as number) >= params.minValue) {
-        yield row;
+    for await (const entry of stream) {
+      if ((entry.get("value") as number) >= params.minValue) {
+        yield entry;
       }
     }
   },

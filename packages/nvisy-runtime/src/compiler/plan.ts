@@ -18,7 +18,7 @@ export interface ResolvedSourceNode {
 	readonly type: "source";
 	readonly provider: AnyProviderFactory;
 	readonly stream: AnyStreamSource;
-	readonly credentials: string;
+	readonly connection: string;
 	readonly params: Readonly<Record<string, unknown>>;
 }
 
@@ -26,6 +26,8 @@ export interface ResolvedSourceNode {
 export interface ResolvedActionNode {
 	readonly type: "action";
 	readonly action: AnyActionInstance;
+	readonly provider?: AnyProviderFactory;
+	readonly connection?: string;
 	readonly params: Readonly<Record<string, unknown>>;
 }
 
@@ -34,7 +36,7 @@ export interface ResolvedTargetNode {
 	readonly type: "target";
 	readonly provider: AnyProviderFactory;
 	readonly stream: AnyStreamTarget;
-	readonly credentials: string;
+	readonly connection: string;
 	readonly params: Readonly<Record<string, unknown>>;
 }
 
@@ -136,7 +138,7 @@ function resolveNode(
 					type: "source",
 					provider,
 					stream,
-					credentials: node.credentials,
+					connection: node.connection,
 					params: node.params as Readonly<Record<string, unknown>>,
 				};
 			}
@@ -158,7 +160,7 @@ function resolveNode(
 					type: "target",
 					provider,
 					stream,
-					credentials: node.credentials,
+					connection: node.connection,
 					params: node.params as Readonly<Record<string, unknown>>,
 				};
 			}
@@ -170,6 +172,23 @@ function resolveNode(
 				unresolved.push(`action "${node.action}" (node ${node.id})`);
 				return undefined;
 			}
+
+			if (node.provider) {
+				const provider = registry.findProvider(node.provider);
+				if (!provider) {
+					unresolved.push(`provider "${node.provider}" (node ${node.id})`);
+					return undefined;
+				}
+
+				return {
+					type: "action",
+					action,
+					provider,
+					...(node.connection != null ? { connection: node.connection } : {}),
+					params: node.params as Readonly<Record<string, unknown>>,
+				};
+			}
+
 			return {
 				type: "action",
 				action,

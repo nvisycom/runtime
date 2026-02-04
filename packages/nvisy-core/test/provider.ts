@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { JsonValue } from "../src/datatypes/base-datatype.js";
-import { Row } from "../src/datatypes/record-datatype.js";
+import { Row } from "../src/datatypes/row-datatype.js";
 import { Provider } from "../src/providers.js";
 import type { Resumable } from "../src/streams.js";
 import { Stream } from "../src/streams.js";

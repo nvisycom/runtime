@@ -20,8 +20,12 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
+		"@ai-sdk/anthropic": "^3.0.36",
+		"@ai-sdk/google": "^3.0.20",
+		"@ai-sdk/openai": "^3.0.25",
 		"@logtape/logtape": "^2.0.2",
 		"@nvisy/core": "*",
+		"ai": "^6.0.69",
 		"zod": "^4.3.6"
 	},
 	"engines": {

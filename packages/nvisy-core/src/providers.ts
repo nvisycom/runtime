@@ -19,6 +19,8 @@ const logger = getLogger(["nvisy", "provider"]);
 export interface AuthenticatedProviderConfig<TCred, TClient> {
 	/** Zod schema for validating credentials. */
 	readonly credentials: z.ZodType<TCred>;
+	/** Verify connectivity without establishing a persistent connection. */
+	readonly verify?: (credentials: TCred) => Promise<void>;
 	/** Factory function that establishes a connection using credentials. */
 	readonly connect: (credentials: TCred) => Promise<ProviderInstance<TClient>>;
 }
@@ -79,6 +81,8 @@ export interface ProviderFactory<TCred = unknown, TClient = unknown> {
 	readonly id: string;
 	/** Zod schema for validating credentials. */
 	readonly credentialSchema: z.ZodType<TCred>;
+	/** Verify connectivity without establishing a persistent connection. */
+	verify(credentials: TCred): Promise<void>;
 	/** Create a new connection using the provided credentials. */
 	connect(credentials: TCred): Promise<ConnectedInstance<TClient>>;
 }
@@ -120,15 +124,22 @@ class ProviderFactoryImpl<TCred, TClient>
 	readonly id: string;
 	readonly credentialSchema: z.ZodType<TCred>;
 	readonly #connect: (credentials: TCred) => Promise<ProviderInstance<TClient>>;
+	readonly #verify: (credentials: TCred) => Promise<void>;
 
 	constructor(
 		id: string,
 		credentialSchema: z.ZodType<TCred>,
 		connect: (credentials: TCred) => Promise<ProviderInstance<TClient>>,
+		verify?: (credentials: TCred) => Promise<void>,
 	) {
 		this.id = id;
 		this.credentialSchema = credentialSchema;
 		this.#connect = connect;
+		this.#verify = verify ?? noop;
+	}
+
+	async verify(credentials: TCred): Promise<void> {
+		await this.#verify(credentials);
 	}
 
 	async connect(credentials: TCred): Promise<ConnectedInstance<TClient>> {
@@ -162,7 +173,12 @@ export const Provider = {
 		id: string,
 		config: AuthenticatedProviderConfig<TCred, TClient>,
 	): ProviderFactory<TCred, TClient> {
-		return new ProviderFactoryImpl(id, config.credentials, config.connect);
+		return new ProviderFactoryImpl(
+			id,
+			config.credentials,
+			config.connect,
+			config.verify,
+		);
 	},
 
 	/**

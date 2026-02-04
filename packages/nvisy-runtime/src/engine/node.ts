@@ -1,5 +1,5 @@
 import { getLogger } from "@logtape/logtape";
-import type { Data } from "@nvisy/core";
+import type { AnyProviderFactory, Data } from "@nvisy/core";
 import { RuntimeError, ValidationError } from "@nvisy/core";
 import { call, type Operation } from "effection";
 import type {
@@ -17,20 +17,26 @@ import { validateParams } from "./validation.js";
 const logger = getLogger(["nvisy", "engine"]);
 
 /**
- * Resolve a connection for a source/target node from the connections map.
+ * Resolve a connection for a node from the connections map.
  * Validates the credential value against the provider's schema.
  * Returns the full Connection object (credentials + context).
  */
 function resolveConnection(
-	resolved: ResolvedSourceNode | ResolvedTargetNode,
+	resolved:
+		| ResolvedSourceNode
+		| ResolvedTargetNode
+		| (ResolvedActionNode & {
+				provider: AnyProviderFactory;
+				connection: string;
+		  }),
 	connections: Connections,
 	nodeId: string,
 ) {
-	const credId = resolved.credentials;
-	const connection = connections[credId];
+	const connId = resolved.connection;
+	const connection = connections[connId];
 	if (!connection) {
 		throw new ValidationError(
-			`Missing connection "${credId}" for node ${nodeId}`,
+			`Missing connection "${connId}" for node ${nodeId}`,
 			{ source: "engine", retryable: false },
 		);
 	}
@@ -80,7 +86,7 @@ function* executeSource(
 					edge.queue.add(resumable.data);
 				}
 				itemsProcessed++;
-				onContextUpdate?.(node.id, resolved.credentials, resumable.context);
+				onContextUpdate?.(node.id, resolved.connection, resumable.context);
 			}
 		});
 	} finally {
@@ -95,6 +101,7 @@ function* executeAction(
 	resolved: ResolvedActionNode,
 	inEdges: ReadonlyArray<Edge>,
 	outEdges: ReadonlyArray<Edge>,
+	connections: Connections,
 ): Operation<number> {
 	const actionParams = validateParams(
 		resolved.action.schema,
@@ -102,24 +109,58 @@ function* executeAction(
 		`action params for node ${node.id}`,
 	);
 
-	const inputStream = yield* edgesToIterable(inEdges);
-	const outputStream = resolved.action.pipe(
-		inputStream,
-		actionParams,
-		undefined,
-	);
-	let itemsProcessed = 0;
+	let client: unknown;
+	let disconnect: (() => Promise<void>) | undefined;
 
-	yield* call(async () => {
-		for await (const item of outputStream) {
-			for (const edge of outEdges) {
-				edge.queue.add(item as Data);
-			}
-			itemsProcessed++;
+	if (resolved.provider && resolved.connection) {
+		const connection = resolveConnection(
+			resolved as ResolvedActionNode & {
+				provider: AnyProviderFactory;
+				connection: string;
+			},
+			connections,
+			node.id,
+		);
+		const instance = yield* call(() =>
+			resolved.provider!.connect(connection.credentials),
+		);
+		client = instance.client;
+
+		if (
+			resolved.action.clientClass &&
+			!(client instanceof resolved.action.clientClass)
+		) {
+			throw new ValidationError(
+				`Provider "${resolved.provider!.id}" client is not compatible with action "${resolved.action.id}" (expected ${resolved.action.clientClass.name})`,
+				{ source: "engine", retryable: false },
+			);
 		}
-	});
 
-	return itemsProcessed;
+		disconnect = () => instance.disconnect();
+	}
+
+	try {
+		const inputStream = yield* edgesToIterable(inEdges);
+		const outputStream = resolved.action.pipe(
+			inputStream,
+			actionParams,
+			client,
+		);
+		let itemsProcessed = 0;
+
+		yield* call(async () => {
+			for await (const item of outputStream) {
+				for (const edge of outEdges) {
+					edge.queue.add(item as Data);
+				}
+				itemsProcessed++;
+			}
+		});
+
+		return itemsProcessed;
+	} finally {
+		if (disconnect) yield* call(disconnect);
+	}
 }
 
 function* executeTarget(
@@ -199,6 +240,7 @@ export function* executeNode(
 					resolved,
 					inEdges,
 					outEdges,
+					connections,
 				);
 				break;
 			case "target":
