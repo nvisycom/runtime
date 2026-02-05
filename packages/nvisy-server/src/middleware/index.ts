@@ -29,6 +29,8 @@ import type { ServerConfig } from "../config.js";
 import { createErrorHandler, createNotFoundHandler } from "./error-handler.js";
 import { createRequestLogger } from "./request-logger.js";
 
+export { engineMiddleware, getEngine } from "./engine.js";
+
 /** Register all global middleware on the given Hono app. */
 export function registerMiddleware(app: Hono, config: ServerConfig) {
 	app.onError(createErrorHandler({ isDevelopment: config.isDevelopment }));

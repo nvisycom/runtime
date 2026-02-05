@@ -14,7 +14,8 @@ import { getLogger } from "@logtape/logtape";
 import { Hono } from "hono";
 import type { ServerConfig } from "./config.js";
 import { registerHandlers } from "./handler/index.js";
-import { registerMiddleware } from "./middleware/index.js";
+import { engineMiddleware, registerMiddleware } from "./middleware/index.js";
+import { createEngine } from "./service/index.js";
 
 const logger = getLogger(["nvisy", "server"]);
 
@@ -22,6 +23,9 @@ const logger = getLogger(["nvisy", "server"]);
 export function createApp(config: ServerConfig) {
 	const app = new Hono();
 	const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
+
+	const engine = createEngine();
+	app.use("*", engineMiddleware(engine));
 
 	logger.debug("Registering middleware");
 	registerMiddleware(app, config);

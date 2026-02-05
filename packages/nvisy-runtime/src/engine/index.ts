@@ -9,7 +9,11 @@ export type {
 	Connections,
 	EngineConfig,
 	ExecuteOptions,
+	NodeProgress,
 	NodeResult,
 	RunResult,
+	RunState,
+	RunStatus,
+	RunSummary,
 	ValidationResult,
 } from "./types.js";

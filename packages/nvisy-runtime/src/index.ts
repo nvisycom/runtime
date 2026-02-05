@@ -13,10 +13,14 @@ export type {
 	Connections,
 	EngineConfig,
 	ExecuteOptions,
+	NodeProgress,
 	NodeResult,
 	ProviderDescriptor,
 	RegistrySchema,
 	RunResult,
+	RunState,
+	RunStatus,
+	RunSummary,
 	ValidationResult,
 } from "./engine/index.js";
 export { Engine } from "./engine/index.js";

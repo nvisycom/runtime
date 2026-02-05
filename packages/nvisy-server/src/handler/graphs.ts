@@ -1,6 +1,7 @@
 import { getLogger } from "@logtape/logtape";
 import type { Hono } from "hono";
 import { validator } from "hono-openapi";
+import { getEngine } from "../middleware/index.js";
 import {
 	cancelRunRoute,
 	executeRoute,
@@ -32,10 +33,12 @@ export function registerGraphHandler(app: Hono): void {
 		executeRoute,
 		validator("json", ExecuteRequest),
 		async (c) => {
-			c.req.valid("json");
-			// TODO: compile, submit to runtime, return immediately
-			const runId = crypto.randomUUID();
+			const { graph, connections } = c.req.valid("json");
+			const engine = getEngine(c);
+
+			const runId = engine.execute(graph, connections);
 			logger.info("Graph execution submitted: {runId}", { runId });
+
 			return c.json({ runId }, 202);
 		},
 	);
@@ -45,18 +48,23 @@ export function registerGraphHandler(app: Hono): void {
 		validateRoute,
 		validator("json", ValidateRequest),
 		async (c) => {
-			c.req.valid("json");
-			// TODO: parse graph JSON, compile DAG, check node references
-			//       and connector types, return validation result
+			const { graph, connections } = c.req.valid("json");
+			const engine = getEngine(c);
+
 			logger.debug("Graph validation requested");
-			return c.json({ valid: true, errors: [] });
+			const result = engine.validate(graph, connections);
+
+			return c.json(result);
 		},
 	);
 
 	app.get("/api/v1/graphs", listRunsRoute, async (c) => {
+		const engine = getEngine(c);
+
 		logger.debug("Listing runs");
-		// TODO: return list of currently executing runs
-		return c.json([]);
+		const runs = engine.listRuns();
+
+		return c.json(runs);
 	});
 
 	app.get(
@@ -65,15 +73,30 @@ export function registerGraphHandler(app: Hono): void {
 		validator("param", RunIdParam),
 		async (c) => {
 			const { runId } = c.req.valid("param");
+			const engine = getEngine(c);
+
 			logger.debug("Run status requested: {runId}", { runId });
-			// TODO: return detailed status for a single in-flight run
-			const requestId = c.get("requestId") as string | undefined;
-			const body: ErrorResponse = {
-				status: 404,
-				error: `Run not found: ${runId}`,
-				requestId,
-			};
-			return c.json(body, 404);
+			const run = engine.getRun(runId);
+
+			if (!run) {
+				const requestId = c.get("requestId") as string | undefined;
+				const body: ErrorResponse = {
+					status: 404,
+					error: `Run not found: ${runId}`,
+					requestId,
+				};
+				return c.json(body, 404);
+			}
+
+			return c.json({
+				runId: run.runId,
+				status: run.status,
+				startedAt: run.startedAt.toISOString(),
+				completedAt: run.completedAt?.toISOString(),
+				nodeProgress: Object.fromEntries(run.nodeProgress),
+				result: run.result,
+				error: run.error?.message,
+			});
 		},
 	);
 
@@ -83,15 +106,22 @@ export function registerGraphHandler(app: Hono): void {
 		validator("param", RunIdParam),
 		async (c) => {
 			const { runId } = c.req.valid("param");
-			// TODO: interrupt the running execution
+			const engine = getEngine(c);
+
 			logger.info("Run cancellation requested: {runId}", { runId });
-			const requestId = c.get("requestId") as string | undefined;
-			const body: ErrorResponse = {
-				status: 404,
-				error: `Run not found: ${runId}`,
-				requestId,
-			};
-			return c.json(body, 404);
+			const cancelled = engine.cancelRun(runId);
+
+			if (!cancelled) {
+				const requestId = c.get("requestId") as string | undefined;
+				const body: ErrorResponse = {
+					status: 404,
+					error: `Run not found or already completed: ${runId}`,
+					requestId,
+				};
+				return c.json(body, 404);
+			}
+
+			return c.json({ runId, cancelled: true });
 		},
 	);
 

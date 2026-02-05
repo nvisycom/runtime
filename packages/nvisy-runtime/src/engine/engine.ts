@@ -2,11 +2,16 @@ import type { PluginInstance } from "@nvisy/core";
 import { corePlugin, ValidationError } from "@nvisy/core";
 import { compile, type ExecutionPlan } from "../compiler/index.js";
 import { Registry, type RegistrySchema } from "../registry.js";
-import { execute } from "./runner.js";
+import { validateConnections } from "./context.js";
+import { execute } from "./executor.js";
+import { RunManager } from "./runs.js";
 import type {
 	Connections,
 	ExecuteOptions,
 	RunResult,
+	RunState,
+	RunStatus,
+	RunSummary,
 	ValidationResult,
 } from "./types.js";
 import { ConnectionsSchema } from "./types.js";
@@ -14,17 +19,20 @@ import { ConnectionsSchema } from "./types.js";
 /**
  * Primary runtime entry point.
  *
- * Owns the internal {@link Registry}, validates graphs and connections,
- * and executes pipelines.
+ * Coordinates plugin registration, graph validation, and execution.
+ * Delegates actual graph execution to the executor module and run
+ * tracking to the RunManager.
  *
  * ```ts
  * const engine = new Engine();
  * engine.register(sqlPlugin);
- * const result = await engine.execute(graphDefinition, connections);
+ * const runId = engine.execute(graph, connections);
+ * const state = engine.getRun(runId);
  * ```
  */
 export class Engine {
 	readonly #registry = new Registry();
+	readonly #runs = new RunManager();
 
 	constructor() {
 		this.#registry.load(corePlugin);
@@ -50,101 +58,82 @@ export class Engine {
 	validate(graph: unknown, connections: Connections): ValidationResult {
 		const errors: string[] = [];
 
-		this.#validateConnectionsShape(connections, errors);
-
-		const plan = this.#tryCompile(graph, errors);
-		if (!plan) {
-			return { valid: false, errors };
+		// Validate connections shape
+		const shapeResult = ConnectionsSchema.safeParse(connections);
+		if (!shapeResult.success) {
+			errors.push(...shapeResult.error.issues.map((i) => i.message));
 		}
 
-		this.#validateNodeConnections(plan, connections, errors);
+		// Compile graph (validates structure)
+		let plan: ExecutionPlan | null = null;
+		try {
+			plan = compile(graph, this.#registry);
+		} catch (e) {
+			errors.push(e instanceof Error ? e.message : String(e));
+		}
+
+		// Validate connections against providers
+		if (plan) {
+			try {
+				validateConnections(plan, connections);
+			} catch (e) {
+				if (e instanceof ValidationError && e.details?.["errors"]) {
+					errors.push(...(e.details["errors"] as string[]));
+				} else {
+					errors.push(e instanceof Error ? e.message : String(e));
+				}
+			}
+		}
 
 		return { valid: errors.length === 0, errors };
 	}
 
-	#validateConnectionsShape(connections: Connections, errors: string[]): void {
-		const result = ConnectionsSchema.safeParse(connections);
-		if (!result.success) {
-			errors.push(...result.error.issues.map((i) => i.message));
-		}
-	}
-
-	#tryCompile(graph: unknown, errors: string[]): ExecutionPlan | null {
-		try {
-			return compile(graph, this.#registry);
-		} catch (e) {
-			errors.push(e instanceof Error ? e.message : String(e));
-			return null;
-		}
-	}
-
-	#validateNodeConnections(
-		plan: ExecutionPlan,
+	/**
+	 * Execute a graph in the background.
+	 *
+	 * Returns immediately with a runId for tracking progress,
+	 * retrieving results, or cancelling execution.
+	 */
+	execute(
+		graph: unknown,
 		connections: Connections,
-		errors: string[],
-	): void {
-		for (const node of plan.definition.nodes) {
-			if (node.type === "source" || node.type === "target") {
-				const conn = connections[node.connection];
-				if (!conn) {
-					errors.push(
-						`Missing connection "${node.connection}" for node ${node.id}`,
-					);
-					continue;
-				}
-
-				const resolved = plan.resolved.get(node.id);
-				if (
-					!resolved ||
-					(resolved.type !== "source" && resolved.type !== "target")
-				) {
-					continue;
-				}
-
-				try {
-					resolved.provider.credentialSchema.parse(conn.credentials);
-				} catch (e) {
-					errors.push(
-						`Invalid credentials for node ${node.id}: ${e instanceof Error ? e.message : String(e)}`,
-					);
-				}
-			} else if (node.type === "action" && node.provider && node.connection) {
-				const conn = connections[node.connection];
-				if (!conn) {
-					errors.push(
-						`Missing connection "${node.connection}" for action node ${node.id}`,
-					);
-					continue;
-				}
-
-				const resolved = plan.resolved.get(node.id);
-				if (!resolved || resolved.type !== "action" || !resolved.provider) {
-					continue;
-				}
-
-				try {
-					resolved.provider.credentialSchema.parse(conn.credentials);
-				} catch (e) {
-					errors.push(
-						`Invalid credentials for action node ${node.id}: ${e instanceof Error ? e.message : String(e)}`,
-					);
-				}
-			}
-		}
+		options?: ExecuteOptions,
+	): string {
+		const plan = this.#compile(graph, connections);
+		const runId = crypto.randomUUID();
+		return this.#runs.submit(runId, plan, connections, execute, options);
 	}
 
 	/**
-	 * Validate, compile, and execute a graph definition.
+	 * Execute a graph synchronously.
 	 *
-	 * @param graph - Raw graph definition (parsed and validated internally).
-	 * @param connections - Connection map keyed by UUID.
-	 * @param options - Abort signal, context update callback, etc.
+	 * Blocks until execution completes. For background execution, use {@link execute}.
 	 */
-	async execute(
+	async executeSync(
 		graph: unknown,
 		connections: Connections,
 		options?: ExecuteOptions,
 	): Promise<RunResult> {
+		const plan = this.#compile(graph, connections);
+		return execute(plan, connections, options);
+	}
+
+	/** Get the current state of a run by its ID. */
+	getRun(runId: string): RunState | undefined {
+		return this.#runs.get(runId);
+	}
+
+	/** List all runs, optionally filtered by status. */
+	listRuns(status?: RunStatus): RunSummary[] {
+		return this.#runs.list(status);
+	}
+
+	/** Cancel a running execution. Returns true if cancelled, false if not found or already completed. */
+	cancelRun(runId: string): boolean {
+		return this.#runs.cancel(runId);
+	}
+
+	#compile(graph: unknown, connections: Connections): ExecutionPlan {
 		const validation = this.validate(graph, connections);
 		if (!validation.valid) {
 			throw new ValidationError(
@@ -156,8 +145,6 @@ export class Engine {
 				},
 			);
 		}
-
-		const plan = compile(graph, this.#registry);
-		return execute(plan, connections, options);
+		return compile(graph, this.#registry);
 	}
 }
