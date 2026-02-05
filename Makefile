@@ -34,7 +34,7 @@ clean: ## Removes all build artifacts and node_modules.
 	@npx tsc -b --clean packages/*/tsconfig.json
 	@rm -rf packages/*/dist
 	@$(call log,Removing node_modules...)
-	@rm -rf node_modules packages/*/node_modules
+	@rm -rf node_modules packages/*/node_modules package-lock.json
 	@$(call log,Clean complete.)
 
 .PHONY: docker
