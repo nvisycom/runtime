@@ -1,13 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { ActionInstance } from "../src/actions.js";
-import type { Data } from "../src/datatypes/base-datatype.js";
-import { Row } from "../src/datatypes/record-datatype.js";
-import {
-	ExampleFilter,
-	ExampleMap,
-	FilterParams,
-	MapParams,
-} from "./action.js";
+import type { ActionInstance } from "../src/action.js";
+import type { Data } from "../src/datatypes/data.js";
+import { ExampleFilter, ExampleMap, TestRow } from "./action.fixtures.js";
 
 async function collect<T>(iter: AsyncIterable<T>): Promise<T[]> {
 	const result: T[] = [];
@@ -30,19 +24,12 @@ async function runAction<TIn extends Data, TOut extends Data>(
 }
 
 const rows = [
-	new Row({ id: "1", name: "Alice" }),
-	new Row({ id: "2", name: "Bob" }),
-	new Row({ id: "3", name: "Charlie" }),
+	new TestRow({ id: "1", name: "Alice" }),
+	new TestRow({ id: "2", name: "Bob" }),
+	new TestRow({ id: "3", name: "Charlie" }),
 ];
 
 describe("ExampleFilter", () => {
-	it("exposes id, classes, and schema", () => {
-		expect(ExampleFilter.id).toBe("filter");
-		expect(ExampleFilter.inputClass).toBe(Row);
-		expect(ExampleFilter.outputClass).toBe(Row);
-		expect(ExampleFilter.schema).toBe(FilterParams);
-	});
-
 	it("keeps rows matching the predicate", async () => {
 		const result = await runAction(ExampleFilter, rows, {
 			column: "name",
@@ -64,13 +51,6 @@ describe("ExampleFilter", () => {
 });
 
 describe("ExampleMap", () => {
-	it("exposes id, classes, and schema", () => {
-		expect(ExampleMap.id).toBe("map");
-		expect(ExampleMap.inputClass).toBe(Row);
-		expect(ExampleMap.outputClass).toBe(Row);
-		expect(ExampleMap.schema).toBe(MapParams);
-	});
-
 	it("transforms column values to uppercase", async () => {
 		const result = await runAction(ExampleMap, rows, {
 			column: "name",

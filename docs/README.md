@@ -48,9 +48,9 @@ Graphs are directed acyclic graphs of nodes. The runtime resolves dependencies, 
 
 Common operations (extract, map, filter, chunk, embed, deduplicate, load) are expressed declaratively in JSON graph definitions. For operations that require custom logic, users drop into TypeScript functions that receive and return typed primitives. The declarative layer compiles down to the same execution graph as hand-written code. Because graphs are plain JSON, they are trivially serializable, storable, versionable, and transmittable over the wire.
 
-### Effect-driven runtime
+### Idiomatic modern JavaScript with structured concurrency
 
-The platform is built on Effect, a TypeScript library for typed, composable, and observable functional programming. Effect provides the foundation for error handling, concurrency, dependency injection, retries, scheduling, and resource management. This choice eliminates ad-hoc error propagation, makes side effects explicit and testable, and gives every operation in the system a uniform composition model.
+The platform is built on idiomatic modern JavaScript — `async`/`await`, `AsyncIterable`, and generator functions — with Effection providing structured concurrency for the runtime's DAG executor. This keeps the plugin interface simple (standard async code) while giving the execution engine automatic task cancellation, timeout handling, and resource cleanup.
 
 ### Broad, pluggable connectors
 
@@ -58,7 +58,7 @@ Connectors are organized into domain-specific packages — SQL, object storage, 
 
 ### Library and server modes
 
-Nvisy Runtime can be embedded as an npm package for programmatic use, run as a CLI for scripting and CI/CD, or deployed as a long-lived server with a REST API, scheduler, and dashboard. The same graph definition works in all three modes.
+Nvisy Runtime can be embedded as an npm package for programmatic use or deployed as a long-lived server with a REST API, scheduler, and dashboard. The same graph definition works in both modes.
 
 ---
 
@@ -82,7 +82,7 @@ Graphs are defined as JSON structures. This makes them inherently serializable �
 
 ### Connectors
 
-A **connector** is an adapter that knows how to read from or write to an external system. All connectors implement the source and sink interfaces defined in `nvisy-core`, and declare their capabilities (batch size, rate limits, supported primitive types). Connectors are organized into domain-specific packages: `nvisy-sql` for relational databases, `nvisy-object` for object stores and file formats, and `nvisy-vector` for vector databases.
+A **connector** is an adapter that knows how to read from or write to an external system. All connectors implement the source and sink interfaces defined in `nvisy-core`, and declare their capabilities (batch size, rate limits, supported primitive types). Connectors are organized into domain-specific packages: `nvisy-plugin-sql` for relational databases, `nvisy-plugin-object` for object stores and file formats, and `nvisy-plugin-vector` for vector databases.
 
 ### Runtime
 
@@ -94,9 +94,8 @@ The **runtime** is responsible for compiling and executing graphs. It parses JSO
 
 | Mode | Use Case | Entry Point |
 |------|----------|-------------|
-| **Library** | Embedded in application code | `import { graph } from "@nvisy/runtime"` |
-| **CLI** | Scripts, CI/CD, one-off jobs | `nvisy run graph.json` |
-| **Server** | Production scheduling, monitoring | `nvisy serve --port 8080` |
+| **Library** | Embedded in application code | `import { Engine } from "@nvisy/runtime"` |
+| **Server** | Production scheduling, monitoring | `@nvisy/server` |
 
 The server mode exposes a REST API for graph management, a scheduler for cron and event-triggered execution, and a web dashboard for monitoring runs, inspecting lineage, and debugging failures.
 

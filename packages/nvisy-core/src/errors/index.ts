@@ -1,5 +1,11 @@
-export { CancellationError } from "./cancellation-error.js";
-export { ConnectionError } from "./connection-error.js";
-export type { ErrorContext } from "./runtime-error.js";
-export { RuntimeError } from "./runtime-error.js";
-export { ValidationError } from "./validation-error.js";
+/**
+ * @module errors
+ *
+ * Structured error hierarchy for the Nvisy runtime.
+ */
+
+export { CancellationError } from "./cancellation.js";
+export { ConnectionError } from "./connection.js";
+export type { ErrorContext } from "./runtime.js";
+export { RuntimeError } from "./runtime.js";
+export { ValidationError } from "./validation.js";

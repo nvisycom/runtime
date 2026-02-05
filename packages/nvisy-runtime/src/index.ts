@@ -1,36 +1,34 @@
-export { builtinModule } from "./actions/index.js";
-export type {
-	ExecutionPlan,
-	ParsedGraph,
-	ResolvedNode,
-	RuntimeEdgeAttrs,
-	RuntimeGraph,
-	RuntimeNodeAttrs,
-} from "./compiler/index.js";
-export {
-	buildPlan,
-	buildRuntimeGraph,
-	compile,
-	parseGraph,
-	validateGraph,
-} from "./compiler/index.js";
-export type { Edge, NodeResult, RunResult } from "./engine/index.js";
-export { execute, run } from "./engine/index.js";
+/**
+ * @module @nvisy/runtime
+ *
+ * Pipeline execution engine for the Nvisy runtime.
+ *
+ * Compiles graph definitions into execution plans, validates connections,
+ * and runs pipelines with retry, timeout, and cancellation support.
+ */
+
 export type {
 	ActionDescriptor,
+	Connection,
+	Connections,
+	EngineConfig,
+	ExecuteOptions,
+	NodeResult,
 	ProviderDescriptor,
 	RegistrySchema,
-} from "./registry/index.js";
-export { Registry } from "./registry/index.js";
+	RunResult,
+	ValidationResult,
+} from "./engine/index.js";
+export { Engine } from "./engine/index.js";
 export {
 	ActionNode,
 	BackoffStrategy,
 	ConcurrencyPolicy,
-	GraphDefinition,
+	Graph,
 	GraphEdge,
 	GraphNode,
 	RetryPolicy,
 	SourceNode,
 	TargetNode,
 	TimeoutPolicy,
-} from "./schema/index.js";
+} from "./schema.js";

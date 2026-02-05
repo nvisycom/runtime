@@ -4,23 +4,19 @@
  * Public API surface for the nvisy core library.
  */
 
-export type { ActionInstance } from "./actions.js";
-export { Action } from "./actions.js";
+export type { ActionInstance } from "./action.js";
+export { Action } from "./action.js";
 export type {
-	BlobOptions,
-	DataOptions,
+	Datatype,
+	DocumentElement,
 	DocumentOptions,
+	DocumentPage,
+	DocumentSection,
+	ElementType,
 	JsonValue,
 	Metadata,
 } from "./datatypes/index.js";
-export {
-	Blob,
-	Data,
-	DataType,
-	Document,
-	Embedding,
-	Row,
-} from "./datatypes/index.js";
+export { Data, Datatypes, Document } from "./datatypes/index.js";
 export type { ErrorContext } from "./errors/index.js";
 export {
 	CancellationError,
@@ -33,20 +29,28 @@ export type {
 	AnyProviderFactory,
 	AnyStreamSource,
 	AnyStreamTarget,
-	ModuleInstance,
-} from "./module.js";
-export { Module } from "./module.js";
+	PluginInstance,
+} from "./plugin.js";
+export { Plugin } from "./plugin.js";
 export type {
 	ConnectedInstance,
 	ProviderFactory,
 	ProviderInstance,
-} from "./providers.js";
-export { Provider } from "./providers.js";
+} from "./provider.js";
+export { Provider } from "./provider.js";
 export type {
 	Resumable,
 	StreamSource,
 	StreamTarget,
 	WriterFn,
-} from "./streams.js";
-export { StreamFactory } from "./streams.js";
+} from "./stream.js";
+export { Stream } from "./stream.js";
 export type { ClassRef } from "./types.js";
+
+import { Datatypes, Document } from "./datatypes/index.js";
+import { Plugin } from "./plugin.js";
+
+/** Built-in core plugin that registers the Document datatype. */
+export const corePlugin = Plugin.define("core").withDatatypes(
+	Datatypes.define("document", Document),
+);

@@ -1,37 +1,40 @@
-export type { DataOptions, JsonValue, Metadata } from "./base-datatype.js";
-export { Data } from "./base-datatype.js";
-export type { DocumentOptions } from "./document-datatype.js";
-export { Document } from "./document-datatype.js";
-export { Embedding } from "./embeddings-datatype.js";
-export type { BlobOptions } from "./object-datatype.js";
-export { Blob } from "./object-datatype.js";
-export { Row } from "./record-datatype.js";
+/**
+ * @module datatypes
+ *
+ * Base data model and built-in document type for the Nvisy pipeline.
+ */
 
-import type { DataOptions, JsonValue } from "./base-datatype.js";
-import type { DocumentOptions } from "./document-datatype.js";
-import { Document } from "./document-datatype.js";
-import { Embedding } from "./embeddings-datatype.js";
-import type { BlobOptions } from "./object-datatype.js";
-import { Blob } from "./object-datatype.js";
-import { Row } from "./record-datatype.js";
+export type { JsonValue, Metadata } from "./data.js";
+export { Data } from "./data.js";
+export type {
+	DocumentElement,
+	DocumentOptions,
+	DocumentPage,
+	DocumentSection,
+	ElementType,
+} from "./document.js";
+export { Document } from "./document.js";
 
-/** Union of all concrete data types that flow through the pipeline. */
-export type DataType = Document | Embedding | Blob | Row;
+import type { ClassRef } from "../types.js";
+import type { Data } from "./data.js";
 
-export const DataType = {
-	Document(content: JsonValue, options?: DocumentOptions): Document {
-		return new Document(content, options);
-	},
+/**
+ * A custom data type registered by a plugin.
+ *
+ * Plugins use this to extend the type system with new {@link Data}
+ * subclasses without modifying nvisy-core.
+ */
+export interface Datatype {
+	/** Unique identifier for this data type (e.g. "audio", "image"). */
+	readonly id: string;
+	/** Class reference for the custom data type. */
+	readonly dataClass: ClassRef<Data>;
+}
 
-	Embedding(vector: Float32Array | number[], options?: DataOptions): Embedding {
-		return new Embedding(vector, options);
-	},
-
-	Blob(path: string, data: Buffer, options?: BlobOptions): Blob {
-		return new Blob(path, data, options);
-	},
-
-	Row(columns: Record<string, JsonValue>, options?: DataOptions): Row {
-		return new Row(columns, options);
+/** Factory for creating data type entries. */
+export const Datatypes = {
+	/** Create a Datatype for registering a custom data type with a plugin. */
+	define(id: string, dataClass: ClassRef<Data>): Datatype {
+		return { id, dataClass };
 	},
 } as const;

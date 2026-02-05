@@ -1,6 +1,15 @@
-export type { Edge } from "./edge.js";
-export { createEdge } from "./edge.js";
-export type { NodeResult } from "./node.js";
-export { executeNode } from "./node.js";
-export type { RunResult } from "./runner.js";
-export { execute, run } from "./runner.js";
+export type {
+	ActionDescriptor,
+	ProviderDescriptor,
+	RegistrySchema,
+} from "../registry.js";
+export { Engine } from "./engine.js";
+export type {
+	Connection,
+	Connections,
+	EngineConfig,
+	ExecuteOptions,
+	NodeResult,
+	RunResult,
+	ValidationResult,
+} from "./types.js";

@@ -3,9 +3,17 @@
 	"compilerOptions": {
 		/* Emit */
 		"outDir": "./dist",
-		"rootDir": "./src"
+		"rootDir": "./src",
+		"composite": true
 	},
 	/* Scope */
 	"include": ["src/**/*"],
-	"exclude": ["node_modules", "dist"]
+	"exclude": ["node_modules", "dist"],
+	"references": [
+		{ "path": "../nvisy-core" },
+		{ "path": "../nvisy-runtime" },
+		{ "path": "../nvisy-plugin-ai" },
+		{ "path": "../nvisy-plugin-sql" },
+		{ "path": "../nvisy-plugin-vector" }
+	]
 }

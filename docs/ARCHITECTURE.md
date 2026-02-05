@@ -6,7 +6,7 @@
 
 ## 1. Overview
 
-Nvisy Runtime is a TypeScript-native, DAG-based ETL platform for AI data workloads. It is structured as a set of composable packages that can be consumed as a library, driven by a CLI, or deployed as a long-lived server.
+Nvisy Runtime is a TypeScript-native, DAG-based ETL platform for AI data workloads. It is structured as a set of composable packages that can be consumed as a library or deployed as a long-lived server.
 
 This document defines the system architecture: package boundaries, data flow, execution model, connector interface, graph compilation, scheduling, error handling, and observability. It is intended as the authoritative reference for implementation.
 
@@ -21,33 +21,29 @@ packages/
   nvisy-core/           Primitives, type system, validation, errors,
                         base interfaces for sources, sinks, and actions,
                         and core observability (structured logging, metrics, tracing)
-  nvisy-sql/            SQL connectors (PostgreSQL, MySQL)
-  nvisy-object/         Object store and file format connectors (S3, GCS, Parquet, JSONL, CSV)
-  nvisy-vector/         Vector database connectors (Pinecone, Qdrant, Milvus, Weaviate, pgvector)
+  nvisy-plugin-sql/     SQL connectors (PostgreSQL, MySQL)
+  nvisy-plugin-object/  Object store and file format connectors (S3, GCS, Parquet, JSONL, CSV)
+  nvisy-plugin-vector/  Vector database connectors (Pinecone, Qdrant, Milvus, Weaviate, pgvector)
   nvisy-runtime/        Graph definition, JSON parser, DAG compiler, execution engine,
                         task runner, retry logic, concurrency control,
                         runtime-level observability (run metrics, node tracing)
   nvisy-server/         HTTP server (Hono), REST API, cron scheduler, dashboard backend,
                         server-level observability (request logging, health endpoints)
-  nvisy-cli/            Command-line interface
 ```
 
 ### Dependency graph
 
 ```
-nvisy-cli ──────────┐
-nvisy-server ───────┤
-                    ▼
-              nvisy-runtime
-                    │
-                    ▼
-          nvisy-{sql,object,vector}
-                    │
-                    ▼
-               nvisy-core
+                nvisy-server
+                /          \
+               ▼            ▼
+      nvisy-runtime    nvisy-plugin-{sql,ai,object,vector}
+               \            /
+                ▼          ▼
+                nvisy-core
 ```
 
-Every package depends on `nvisy-core`. The three connector packages (`nvisy-sql`, `nvisy-object`, `nvisy-vector`) are siblings — they depend on `nvisy-core` for the base source, sink, and action interfaces, but are independent of each other. Users install only the connector packages relevant to their workload. `nvisy-runtime` is the central package that owns graph definition, compilation, and execution. No circular dependencies are permitted. Packages communicate through typed interfaces, never through implementation details.
+Every package depends on `nvisy-core`. The plugin packages (`nvisy-plugin-sql`, `nvisy-plugin-ai`, `nvisy-plugin-object`, `nvisy-plugin-vector`) are siblings — they depend on `nvisy-core` for the base source, sink, and action interfaces, but are independent of each other and independent of `nvisy-runtime`. The server (or any application) imports both the runtime and the desired plugins, then registers each plugin with the engine at startup. `nvisy-runtime` is the central package that owns graph definition, compilation, and execution — but has no compile-time dependency on any plugin. No circular dependencies are permitted. Packages communicate through typed interfaces, never through implementation details.
 
 ### Observability distribution
 
@@ -59,24 +55,23 @@ There is no dedicated observability package. Instead, observability is distribut
 
 ---
 
-## 3. Effect as the Foundation
+## 3. Idiomatic Modern JavaScript with Effection
 
-The entire platform is built on **Effect**, a TypeScript library for typed, composable functional programming. Effect is not an incidental dependency — it is the architectural foundation.
+The platform is built on idiomatic modern JavaScript — `async`/`await`, `AsyncIterable`, native `Promise`, and generator functions — with **Effection** providing structured concurrency for the runtime's DAG executor.
 
-### 3.1 Why Effect
+### 3.1 Design philosophy
 
-Traditional TypeScript ETL code suffers from scattered try/catch blocks, untyped error propagation, manual resource cleanup, ad-hoc retry logic, and opaque concurrency. Effect solves all of these structurally:
+Traditional TypeScript ETL code suffers from scattered try/catch blocks, manual resource cleanup, ad-hoc retry logic, and opaque concurrency. Nvisy addresses these problems with standard language features and a minimal set of libraries:
 
-- **Typed errors.** Every operation declares its possible failure modes in the type signature. The compiler enforces that all errors are handled. This replaces the error taxonomy in earlier iterations of this spec with a mechanism that is checked at compile time, not just documented.
-- **Resource safety.** Connector lifecycle (connect, use, disconnect) is modeled as Effect scoped resources. Cleanup is guaranteed regardless of success, failure, or interruption.
-- **Concurrency.** Effect provides structured concurrency with fibers, semaphores, and queues. The runtime's concurrency control, rate limiting, and backpressure are implemented using these primitives rather than hand-rolled state machines.
-- **Dependency injection.** Connectors, configuration, logging, and metrics are modeled as Effect services, injected via layers. This makes every component testable in isolation without mocks or stubs.
-- **Composition.** Sources, sinks, actions, and graph nodes compose using Effect's pipe and flatMap combinators. A graph is ultimately a composed Effect program.
-- **Retries and scheduling.** Effect provides built-in retry policies with configurable backoff, jitter, and error filtering — replacing custom retry implementations.
+- **Typed errors.** A structured error hierarchy with machine-readable tags enables programmatic error handling. TypeScript discriminated unions and Zod schemas enforce correctness at both compile time and runtime.
+- **Resource safety.** Connector lifecycle (connect, use, disconnect) is managed with explicit `try`/`finally` blocks in the node executor. Cleanup runs regardless of success, failure, or cancellation.
+- **Structured concurrency.** The runtime's DAG executor uses Effection — a structured concurrency library built on generators. Spawned tasks are scoped to their parent, so halting a graph run automatically cancels all in-flight nodes without manual bookkeeping.
+- **Streaming.** Data flows between nodes via the native `AsyncIterable` protocol. Plugin interfaces (sources, sinks, actions) accept and return `AsyncIterable` — no special streaming library required.
+- **Validation.** Zod schemas provide runtime validation, TypeScript type derivation, and structured parse errors in a single definition.
 
-### 3.2 Effect in practice
+### 3.2 Effection in the runtime
 
-Every Source, Sink, and Action interface returns an `Effect` value rather than a raw `Promise`. Error channels are typed — a connector that can fail with a rate limit error or a connection error declares both in its type. The runtime executes the compiled graph as a single Effect program, gaining automatic resource management, structured concurrency, and typed error propagation without additional plumbing.
+Effection is used exclusively in `nvisy-runtime` for DAG execution. It provides `spawn` (launch concurrent tasks), `race` (timeout handling), `sleep` (backoff delays), and `call` (bridge async functions into generator-based operations). The runtime wraps graph execution in an Effection task; each node runs as a spawned child operation. Plugin code never touches Effection — sources, sinks, and actions are plain `async` functions and `AsyncIterable` generators.
 
 ---
 
@@ -104,15 +99,15 @@ Each transformation appends a lineage record to the primitive: the node ID that 
 
 `nvisy-core` exports the abstract interfaces that all connectors and actions must implement. This is the extension contract of the platform:
 
-- **Source** — reads primitives from an external system. Declares supported primitive types. Returns an Effect-based stream of primitives.
-- **Sink** — writes primitives to an external system. Declares capabilities (batch size, upsert support, rate limits). Returns an Effect with a result summary.
-- **Action** — transforms primitives. Receives one or more primitives and returns zero or more primitives. Actions may be stateless (map, filter) or stateful (deduplicate, aggregate).
+- **Source** — reads primitives from an external system. Declares supported primitive types. Returns an `AsyncIterable` stream of primitives with resumption context.
+- **Sink** — writes primitives to an external system. Declares capabilities (batch size, upsert support, rate limits). Returns a write function that accepts individual primitives.
+- **Action** — transforms primitives via the `pipe` method: receives an `AsyncIterable` of input primitives and returns an `AsyncIterable` of output primitives. Actions may be stateless (map, filter) or stateful (deduplicate, aggregate).
 
-All three interfaces include lifecycle methods (connect, disconnect, health check) and capability declarations. By housing these interfaces in `nvisy-core`, the connector packages and any community-contributed connectors share a single, versioned contract. All methods return Effect values with typed error channels.
+All three interfaces include lifecycle methods (connect, disconnect) and capability declarations. By housing these interfaces in `nvisy-core`, the connector packages and any community-contributed connectors share a single, versioned contract. All methods use standard `async`/`await` and `AsyncIterable` — no special runtime library is required.
 
 ### 4.5 Error taxonomy
 
-The core package defines a structured error hierarchy using Effect's tagged error pattern. All errors carry a machine-readable tag, and the type system ensures exhaustive handling. The hierarchy distinguishes connector errors, validation errors, rate limit errors, timeout errors, graph compilation errors, and node execution errors. Because errors are in the Effect type channel, the compiler enforces that callers handle them — there are no uncaught exceptions by design.
+The core package defines a structured error hierarchy with machine-readable tags. The hierarchy distinguishes connector errors, validation errors, rate limit errors, timeout errors, graph compilation errors, and node execution errors. Each error class carries a `retryable` flag so the runtime can distinguish transient failures from terminal ones without string matching.
 
 ### 4.6 Observability primitives
 
@@ -134,82 +129,41 @@ Connectors are split into three domain-specific packages rather than a single mo
 
 2. **Release independence.** A breaking change in a vector database client library should not force a release of the SQL connector package. Domain-specific packages can be versioned and released independently.
 
-### 5.2 `nvisy-sql`
+### 5.2 `nvisy-plugin-sql`
 
 Implements the Source and Sink interfaces for relational databases. Initial targets: PostgreSQL and MySQL. Connectors handle connection pooling, query generation, type mapping between SQL types and primitive payloads, and batch insert/upsert operations.
 
-### 5.3 `nvisy-object`
+### 5.3 `nvisy-plugin-object`
 
 Implements the Source and Sink interfaces for object stores and file formats. Initial targets: S3, GCS, Parquet, JSONL, and CSV. Object store connectors handle multipart uploads, streaming reads, and prefix-based listing. File format connectors handle serialization, deserialization, schema inference, and chunked reading for large files.
 
-### 5.4 `nvisy-vector`
+### 5.4 `nvisy-plugin-vector`
 
 Implements the Source and Sink interfaces for vector databases. Initial targets: Pinecone, Qdrant, Milvus, Weaviate, and pgvector. Vector connectors handle collection/index management, upsert with metadata, batch operations, and dimensionality validation.
 
-### 5.5 Connector registry
+### 5.5 Plugin registration
 
-Connectors are registered by name in a global registry. The graph compiler resolves connector references at compilation time. Community connectors install as npm packages and self-register via the standard interface exported by `nvisy-core`.
+Plugins are registered with the `Engine` at startup via `engine.register(plugin)`. Each plugin bundles providers, streams, and actions under a namespace (e.g. `"sql"`, `"ai"`). The graph compiler resolves references like `"sql/postgres"` or `"ai/embed"` against the registry at compilation time. Community plugins install as npm packages and export a `PluginInstance` implementing the standard interface from `nvisy-core`.
 
 ---
 
 ## 6. Runtime (`nvisy-runtime`)
 
-The runtime package owns the full lifecycle of a graph: definition, compilation, and execution. It is the central package — everything upstream (connector packages, action providers) registers into it, and everything downstream (server, CLI) invokes it.
+The runtime package owns the full lifecycle of a graph: definition, compilation, and execution. It is the central package — plugin packages register their providers, streams, and actions into the runtime's `Engine`, and the server orchestrates this wiring at startup.
 
-### 6.1 Package structure
-
-```
-src/
-  schema/          Effect Schema definitions for graph JSON
-    node.ts          Node schemas (Source, Action, Sink, Branch, FanOut, FanIn)
-    graph.ts         Top-level Graph schema (nodes, edges, exec config)
-    policy.ts        RetryPolicy, TimeoutPolicy, ConcurrencyPolicy schemas
-    index.ts
-
-  compiler/        JSON → ExecutionPlan
-    parse.ts         Decode raw JSON via Effect Schema
-    validate.ts      DAG validation (cycles, dangling refs, type compatibility)
-    plan.ts          Build ExecutionPlan from validated graph
-    index.ts
-
-  engine/          DAG execution
-    runner.ts        Top-level run(): ExecutionPlan → Effect<RunResult>
-    pool.ts          Fiber pool, semaphore-based concurrency control
-    edge.ts          Queue-based edge wiring between nodes
-    node.ts          Single node executor (wrap source/action/sink in fiber)
-    index.ts
-
-  registry/        Effect Services for name → implementation resolution
-    source.ts        SourceRegistry service
-    sink.ts          SinkRegistry service
-    action.ts        ActionRegistry service (pre-loaded with built-in actions)
-    index.ts
-
-  actions/         Built-in generic actions (data-plane, no external deps)
-    filter.ts
-    map.ts
-    batch.ts
-    deduplicate.ts
-    validate.ts
-    convert.ts
-    index.ts
-
-  index.ts         Public API
-```
-
-### 6.2 Graph definition and JSON serializability
+### 6.1 Graph definition and JSON serializability
 
 The central design constraint is that every graph must be representable as a plain JSON document. This means graphs can be stored in a database, versioned in source control, transmitted over an API, diffed, and reconstructed without loss. The programmatic TypeScript API is a convenience layer that produces the same JSON structure.
 
 A graph is a directed acyclic graph of **nodes**. Each node declares its type (source, action, sink, branch, fanout, fanin), its configuration, its upstream dependencies, and optional execution policies (retry, timeout, concurrency). Nodes are connected by edges derived from the dependency declarations.
 
-The graph JSON schema is defined using **Effect Schema**. This provides runtime validation, TypeScript type derivation, and encode/decode in a single definition. Effect Schema integrates with `@hono/effect-validator` for request validation in the server package.
+The graph JSON schema is defined using **Zod**. This provides runtime validation, TypeScript type derivation, and structured parse errors in a single definition.
 
-### 6.3 Node types
+### 6.2 Node types
 
 **Source** — References a registered source connector by name and provides connection and extraction configuration.
 
-**Action** — Applies a transformation to primitives. Actions are resolved by name from the ActionRegistry. The runtime provides built-in generic actions (filter, map, batch, deduplicate, validate, convert). Domain-specific actions (embed, chunk, complete) are provided by external packages (`nvisy-ai`, etc.) and registered into the ActionRegistry via Layer composition.
+**Action** — Applies a transformation to primitives. Actions are resolved by name from the registry. The runtime provides built-in generic actions (filter, map, batch, deduplicate, validate, convert). Domain-specific actions (embed, chunk, complete) are provided by plugin packages (`nvisy-plugin-ai`, etc.) and registered into the engine by the application at startup.
 
 **Sink** — References a registered sink connector by name and provides connection and load configuration.
 
@@ -219,17 +173,17 @@ The graph JSON schema is defined using **Effect Schema**. This provides runtime 
 
 **FanIn** — Collects primitives from multiple upstream nodes and merges them into a single stream.
 
-### 6.4 Registries
+### 6.3 Registries
 
-The runtime uses three separate Effect Services for resolving node references to implementations:
+The runtime uses three registries for resolving node references to implementations:
 
-- **SourceRegistry** — Maps source names to `DataSource` factories. Populated by connector packages (`nvisy-sql`, `nvisy-vector`, etc.) via Layer composition.
+- **SourceRegistry** — Maps source names to `DataSource` factories. Populated by plugin packages (`nvisy-plugin-sql`, `nvisy-plugin-vector`, etc.) via `engine.register()`.
 - **SinkRegistry** — Maps sink names to `DataSink` factories. Same population model.
-- **ActionRegistry** — Maps action names to `Action` factories. Pre-loaded with the runtime's built-in generic actions. Extended by domain packages (`nvisy-ai`, etc.).
+- **ActionRegistry** — Maps action names to `Action` factories. Pre-loaded with the runtime's built-in generic actions. Extended by plugin packages (`nvisy-plugin-ai`, etc.).
 
-Separation ensures type safety (each registry returns the correct interface without narrowing), independent testability (mock only what you need), and clear error messages ("unknown source: xyz" vs "unknown action: xyz"). Connector packages register their capabilities into the appropriate registries via Effect Layers. At the app boundary, all layers compose into a single program.
+Separation ensures type safety (each registry returns the correct interface without narrowing), independent testability (mock only what you need), and clear error messages ("unknown source: xyz" vs "unknown action: xyz"). Plugin packages export a `PluginInstance` that the application registers with the engine at startup — the runtime itself has no compile-time dependency on any plugin.
 
-### 6.5 Built-in actions
+### 6.4 Built-in actions
 
 The runtime owns a set of generic, data-plane actions that operate on primitives without external dependencies:
 
@@ -242,43 +196,43 @@ The runtime owns a set of generic, data-plane actions that operate on primitives
 
 These are pre-registered in the ActionRegistry. Domain-specific actions (embed, chunk, complete, extract) live in their respective packages.
 
-### 6.6 Graph compilation
+### 6.5 Graph compilation
 
 The compiler pipeline transforms raw JSON into an executable plan in three stages:
 
-1. **Parse** (`compiler/parse.ts`) — Decode the raw JSON against the Effect Schema graph definition. This produces a typed, validated graph structure or structured errors with JSON paths.
+1. **Parse** (`compiler/parse.ts`) — Decode the raw JSON against the Zod graph schema. This produces a typed, validated graph structure or structured errors with JSON paths.
 
 2. **Validate** (`compiler/validate.ts`) — Structural DAG validation: cycle detection via topological sort, dangling node references, type compatibility between connected nodes (source output types match downstream action input types), and connector/action name resolution against the registries.
 
-3. **Plan** (`compiler/plan.ts`) — Build the `ExecutionPlan`: resolve all names to concrete implementations via the registries, compute the topological execution order, aggregate concurrency constraints, and wire rate limit policies. The `ExecutionPlan` is an immutable data structure. Compilation itself is an Effect, producing typed errors on failure.
+3. **Plan** (`compiler/plan.ts`) — Build the `ExecutionPlan`: resolve all names to concrete implementations via the registries, compute the topological execution order, aggregate concurrency constraints, and wire rate limit policies. The `ExecutionPlan` is an immutable data structure. Compilation throws structured errors on failure.
 
-### 6.7 Execution model
+### 6.6 Execution model
 
-The engine executes an `ExecutionPlan` as a composed Effect program. It walks the DAG in topological order, maintaining four internal structures: a **ready queue** (nodes whose dependencies are all satisfied), a **running pool** (nodes currently executing, bounded by max concurrency via Effect semaphores), a **retry queue** (nodes awaiting retry via Effect's built-in retry policies), and a **done store** (completed results, both successes and terminal failures).
+The engine executes an `ExecutionPlan` as an Effection task. It spawns each node as a child operation, with dependency tracking ensuring nodes wait for their upstream inputs before executing. Effection's structured concurrency guarantees that halting the top-level task automatically cancels all in-flight nodes. The executor maintains a **done store** of completed results (both successes and terminal failures) and coordinates data flow via inter-node queues.
 
-### 6.8 Data flow between nodes
+### 6.7 Data flow between nodes
 
-Each edge in the DAG is backed by an **Effect Queue**. Producer nodes push primitives into the queue; consumer nodes pull from it. Backpressure is automatic — when a downstream node processes slower than its upstream, the queue suspends the upstream fiber until the downstream is ready. This prevents memory exhaustion in unbalanced graphs without manual flow control.
+Each edge in the DAG is backed by an Effection queue. Producer nodes push primitives into the queue; consumer nodes pull from it. For action nodes that expect an `AsyncIterable` input, the runtime bridges Effection queues into a `ReadableStream` via a `TransformStream`, allowing actions to consume data with standard `for await...of` iteration.
 
-Internally, the runtime uses **Effect Stream** for node-level data processing. Core's `AsyncIterable`-based `DataSource` and `DataSink` interfaces are adapted to Effect Streams at the source/sink boundaries. This gives the execution engine full access to the Effect ecosystem: interruption, resource safety, typed errors, and structured concurrency.
+Data flows through the system using the native `AsyncIterable` protocol. Sources yield items, actions pipe one `AsyncIterable` to another, and sinks consume items via a write function. No special streaming library is required — the platform relies entirely on JavaScript's built-in async iteration.
 
 For nodes that require all upstream data before starting (e.g., deduplication across the full dataset), a **materialization barrier** can be configured. The barrier drains the upstream queue into an array before forwarding to the node.
 
 Fan-out nodes push each primitive to multiple downstream queues. Fan-in nodes pull from multiple upstream queues and merge into a single stream.
 
-### 6.9 Retry policy
+### 6.8 Retry policy
 
-Each node can define a retry policy specifying maximum retries, backoff strategy (fixed, exponential, or jitter), initial and maximum delay, and an optional allowlist of retryable error codes. Effect's `Schedule` module provides the implementation. The runtime distinguishes between retryable errors (network timeouts, rate limits, transient API failures) and terminal errors (authentication failures, schema violations, invalid configuration). Terminal errors fail the node immediately.
+Each node can define a retry policy specifying maximum retries, backoff strategy (fixed, exponential, or jitter), initial and maximum delay, and an optional allowlist of retryable error codes. The runtime implements retries as a generator-based loop using Effection's `sleep` for backoff delays. It distinguishes between retryable errors (network timeouts, rate limits, transient API failures) and terminal errors (authentication failures, schema violations, invalid configuration). Terminal errors fail the node immediately.
 
-### 6.10 Rate limiting
+### 6.9 Rate limiting
 
-Rate limits are enforced per-connector using Effect's `RateLimiter`. When a node issues a request that would exceed the rate limit, the fiber is suspended until tokens are available. Rate limits are declared in connector capabilities and can be overridden in graph configuration.
+Rate limits are enforced per-connector. When a node issues a request that would exceed the rate limit, the operation is suspended until tokens are available. Rate limits are declared in connector capabilities and can be overridden in graph configuration.
 
-### 6.11 Concurrency control
+### 6.10 Concurrency control
 
-Global concurrency is bounded by a configurable Effect semaphore (default: 10 permits). Per-node concurrency can be set individually. The runtime respects both limits simultaneously. The fiber pool (`engine/pool.ts`) manages this.
+Global concurrency is bounded by a configurable limit (default: 10 permits). Per-node concurrency can be set individually. The runtime respects both limits simultaneously. The concurrency pool (`engine/pool.ts`) manages this.
 
-### 6.12 Runtime observability
+### 6.11 Runtime observability
 
 The runtime emits structured metrics and trace spans for every graph run. Each run is an OpenTelemetry trace; each node execution is a span within that trace. Metrics include run duration, run status (success, partial failure, failure), per-node execution time, primitives processed and failed, connector calls issued, and rate limit wait time.
 
@@ -321,63 +275,57 @@ The server layer emits HTTP request logs (structured JSON with method, path, sta
 
 ---
 
-## 8. CLI (`nvisy-cli`)
+## 8. Error Handling
 
-The CLI provides commands for development, testing, and operations: initializing a new graph project, validating a graph definition, executing a graph locally, simulating execution without external calls (dry-run), listing available connectors, checking connector health, and starting the server.
+### 8.1 Error propagation
 
----
+When a node encounters an error, the runtime first checks retryability via the error's `retryable` flag. If the error is retryable and retries remain, the node is re-attempted with backoff. If the error is terminal or retries are exhausted, the node is marked as failed. Downstream nodes that depend on the failed node are marked as skipped. Independent branches of the DAG continue executing. The graph run is marked as `partial_failure` or `failure` depending on whether any terminal sink node succeeded.
 
-## 9. Error Handling
+Errors are caught at the node executor boundary and recorded in the run result. The structured error hierarchy ensures consistent, machine-readable failure information at every layer.
 
-### 9.1 Error propagation
-
-Errors propagate through the DAG via Effect's typed error channel. When a node encounters an error, the runtime first checks retryability. If the error is retryable and retries remain, the node is re-queued with backoff. If the error is terminal or retries are exhausted, the node is marked as failed. Downstream nodes that depend on the failed node are marked as skipped. Independent branches of the DAG continue executing. The graph run is marked as `partial_failure` or `failure` depending on whether any terminal sink node succeeded.
-
-Because errors are typed in the Effect channel, the compiler ensures exhaustive handling at every layer — from connector to runtime to server. There are no unhandled promise rejections or silent swallowed errors.
-
-### 9.2 Dead letter queue
+### 8.2 Dead letter queue
 
 Primitives that fail processing can be routed to a dead letter queue (DLQ) instead of failing the entire node. This allows the graph to continue processing valid data while capturing failures for later inspection and replay.
 
 ---
 
-## 10. Security
+## 9. Security
 
-### 10.1 Secret management
+### 9.1 Secret management
 
-Connector credentials are never stored in graph definitions. They are resolved at runtime from environment variables, a pluggable secret provider interface (supporting AWS Secrets Manager, HashiCorp Vault, and similar systems), or `.env` files in development. Secret providers are modeled as Effect services, injected via layers.
+Connector credentials are never stored in graph definitions. They are resolved at runtime from environment variables, a pluggable secret provider interface (supporting AWS Secrets Manager, HashiCorp Vault, and similar systems), or `.env` files in development.
 
-### 10.2 Network and access control
+### 9.2 Network and access control
 
 In server mode, the REST API supports TLS termination, bearer token authentication, IP allowlisting, and CORS configuration via Hono middleware.
 
-### 10.3 Data handling
+### 9.3 Data handling
 
 Primitives may contain sensitive data (PII in completions, proprietary embeddings). The platform provides configurable data retention policies per graph, primitive redaction hooks for logging, and encryption at rest for server-mode persistence.
 
 ---
 
-## 11. Performance Considerations
+## 10. Performance Considerations
 
-### 11.1 Memory management
+### 10.1 Memory management
 
-Primitives are processed in streaming fashion wherever possible using Effect streams. Nodes that must materialize full datasets (deduplication, sorting) use configurable memory limits and spill to disk when exceeded.
+Primitives are processed in streaming fashion wherever possible using `AsyncIterable`. Nodes that must materialize full datasets (deduplication, sorting) use configurable memory limits and spill to disk when exceeded.
 
-### 11.2 Embedding vectors
+### 10.2 Embedding vectors
 
 Embedding vectors use `Float32Array` for memory efficiency — a 1536-dimensional embedding occupies 6 KB vs. approximately 24 KB as a JSON number array. For large-scale embedding workloads, this 4x reduction is significant.
 
-### 11.3 Batching
+### 10.3 Batching
 
 Connectors declare their optimal batch size. The runtime automatically batches primitives to match, reducing round trips to external systems. Batching respects rate limits — a batch that would exceed the rate limit is delayed, not split.
 
-### 11.4 Backpressure
+### 10.4 Backpressure
 
-Effect streams provide built-in backpressure. When a downstream node processes slower than its upstream, the connecting stream suspends the upstream fiber until the downstream is ready. This prevents memory exhaustion in unbalanced graphs without manual flow control.
+Effection queues between nodes provide natural backpressure. When a downstream node processes slower than its upstream, the connecting queue suspends the upstream operation until the downstream is ready. This prevents memory exhaustion in unbalanced graphs without manual flow control.
 
 ---
 
-## 12. Extension Points
+## 11. Extension Points
 
 The platform is designed for extension at multiple levels:
 
@@ -386,55 +334,6 @@ The platform is designed for extension at multiple levels:
 | Custom primitive types | Extend the primitive type union and implement a payload interface | Graph embedding type |
 | Custom connectors | Implement Source or Sink from `nvisy-core` | Elasticsearch connector |
 | Custom actions | Implement Action from `nvisy-core`, or provide an inline function | Custom chunking strategy |
-| Custom secret providers | Implement the SecretProvider Effect service | Azure Key Vault integration |
-| Custom metric exporters | Implement the MetricExporter Effect service | StatsD exporter |
-| Custom storage backends | Implement the StorageBackend Effect service (server mode) | MongoDB storage |
-
----
-
-## 13. Technology Choices
-
-| Concern | Choice | Rationale |
-|---------|--------|-----------|
-| Language | TypeScript | Type safety for the primitive system, broad ecosystem |
-| Runtime | Node.js | Async I/O suited for connector-heavy workloads, npm ecosystem |
-| Foundation | Effect | Typed errors, resource safety, structured concurrency, dependency injection, composition |
-| Package manager | npm workspaces | Monorepo management without additional tooling |
-| Build | tsup or tsc | Fast TypeScript compilation, ESM + CJS output |
-| Testing | Vitest | Fast, TypeScript-native, ESM-compatible |
-| Linting | Biome | Unified formatter and linter, high performance |
-| HTTP framework | Hono | Lightweight, edge-compatible, fast routing, middleware composition |
-| CLI framework | Commander | Lightweight, well-maintained |
-| Cron | croner | Lightweight, timezone-aware scheduling |
-
----
-
-## 14. Development Roadmap
-
-### Phase 1 — Foundation
-- `nvisy-core`: Primitive type system, validation, error taxonomy, base Source/Sink/Action interfaces, observability primitives
-- `nvisy-object`: S3 and JSONL connectors as initial proof of concept
-- `nvisy-vector`: Qdrant connector as initial vector target
-- `nvisy-runtime`: Graph definition model, JSON parser, DAG compiler, execution engine with retry and concurrency control, runtime metrics and tracing
-- `nvisy-cli`: `init`, `validate`, `run` commands
-
-### Phase 2 — Breadth
-- `nvisy-vector`: Pinecone, Milvus, Weaviate, pgvector
-- `nvisy-sql`: PostgreSQL, MySQL
-- `nvisy-object`: GCS, Parquet, CSV
-- Built-in actions: chunk, embed, deduplicate, filter, map, validate, convert
-- DLQ support
-- Dry-run mode
-
-### Phase 3 — Server
-- `nvisy-server`: REST API (Hono), cron scheduler, event triggers, server-level observability
-- Storage backends (SQLite, PostgreSQL)
-- Web dashboard
-
-### Phase 4 — Production hardening
-- Backpressure and memory management
-- Disk spill for materialization nodes
-- Secret provider integrations
-- TLS, auth, and security hardening
-- Performance benchmarks and optimization
-- Community connector SDK and documentation
+| Custom secret providers | Implement the SecretProvider interface | Azure Key Vault integration |
+| Custom metric exporters | Implement the MetricExporter interface | StatsD exporter |
+| Custom storage backends | Implement the StorageBackend interface (server mode) | MongoDB storage |

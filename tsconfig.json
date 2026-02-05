@@ -7,7 +7,6 @@
 		/* Modules */
 		"module": "NodeNext",
 		"moduleResolution": "nodenext",
-		"customConditions": ["source"],
 		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"verbatimModuleSyntax": true,
