@@ -14,8 +14,8 @@
  */
 
 import { httpInstrumentationMiddleware } from "@hono/otel";
+import type { OpenAPIHono } from "@hono/zod-openapi";
 import { withContext } from "@logtape/logtape";
-import type { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { compress } from "hono/compress";
 import { cors } from "hono/cors";
@@ -29,10 +29,10 @@ import type { ServerConfig } from "../config.js";
 import { createErrorHandler, createNotFoundHandler } from "./error-handler.js";
 import { createRequestLogger } from "./request-logger.js";
 
-export { engineMiddleware, getEngine } from "./engine.js";
+export { engineMiddleware, getEngine } from "./hono-context.js";
 
-/** Register all global middleware on the given Hono app. */
-export function registerMiddleware(app: Hono, config: ServerConfig) {
+/** Register all global middleware on the given OpenAPIHono app. */
+export function registerMiddleware(app: OpenAPIHono, config: ServerConfig) {
 	app.onError(createErrorHandler({ isDevelopment: config.isDevelopment }));
 	app.notFound(createNotFoundHandler({ isDevelopment: config.isDevelopment }));
 

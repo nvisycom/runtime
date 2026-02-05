@@ -77,8 +77,10 @@ export class Engine {
 			try {
 				validateConnections(plan, connections);
 			} catch (e) {
-				if (e instanceof ValidationError && e.details?.errors) {
-					errors.push(...(e.details.errors as string[]));
+				// biome-ignore lint/complexity/useLiteralKeys: index signature requires bracket notation
+				if (e instanceof ValidationError && e.details?.["errors"]) {
+					// biome-ignore lint/complexity/useLiteralKeys: index signature requires bracket notation
+					errors.push(...(e.details["errors"] as string[]));
 				} else {
 					errors.push(e instanceof Error ? e.message : String(e));
 				}

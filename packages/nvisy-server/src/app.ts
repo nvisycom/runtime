@@ -10,8 +10,8 @@
 
 import { serve } from "@hono/node-server";
 import { createNodeWebSocket } from "@hono/node-ws";
+import { OpenAPIHono } from "@hono/zod-openapi";
 import { getLogger } from "@logtape/logtape";
-import { Hono } from "hono";
 import type { ServerConfig } from "./config.js";
 import { registerHandlers } from "./handler/index.js";
 import { engineMiddleware, registerMiddleware } from "./middleware/index.js";
@@ -19,9 +19,9 @@ import { createEngine } from "./service/index.js";
 
 const logger = getLogger(["nvisy", "server"]);
 
-/** Build a fully configured Hono application with middleware and routes. */
+/** Build a fully configured OpenAPIHono application with middleware and routes. */
 export function createApp(config: ServerConfig) {
-	const app = new Hono();
+	const app = new OpenAPIHono();
 	const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
 
 	const engine = createEngine();
@@ -40,7 +40,7 @@ export function createApp(config: ServerConfig) {
 }
 
 export interface StartServerOptions {
-	app: Hono;
+	app: OpenAPIHono;
 	host: string;
 	port: number;
 	injectWebSocket: (server: ReturnType<typeof serve>) => void;

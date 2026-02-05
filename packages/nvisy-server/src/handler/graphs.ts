@@ -1,6 +1,5 @@
+import type { OpenAPIHono } from "@hono/zod-openapi";
 import { getLogger } from "@logtape/logtape";
-import type { Hono } from "hono";
-import { validator } from "hono-openapi";
 import { getEngine } from "../middleware/index.js";
 import {
 	cancelRunRoute,
@@ -8,13 +7,7 @@ import {
 	getRunRoute,
 	listRunsRoute,
 	validateRoute,
-} from "./description/index.js";
-import {
-	ExecuteRequest,
-	RunIdParam,
-	ValidateRequest,
-} from "./request/index.js";
-import type { ErrorResponse } from "./response/error.js";
+} from "./graphs-routes.js";
 
 const logger = getLogger(["nvisy", "server"]);
 
@@ -27,103 +20,123 @@ const logger = getLogger(["nvisy", "server"]);
  * GET    /api/v1/graphs/:runId     — Get detailed status of a single in-flight run
  * DELETE /api/v1/graphs/:runId     — Cancel a running execution
  */
-export function registerGraphHandler(app: Hono): void {
-	app.post(
-		"/api/v1/graphs/execute",
-		executeRoute,
-		validator("json", ExecuteRequest),
-		async (c) => {
-			const { graph, connections } = c.req.valid("json");
-			const engine = getEngine(c);
+export function registerGraphHandler(app: OpenAPIHono): void {
+	app.openapi(executeRoute, async (c) => {
+		const { graph, connections } = c.req.valid("json");
+		const engine = getEngine(c);
 
-			const runId = engine.execute(graph, connections);
-			logger.info("Graph execution submitted: {runId}", { runId });
+		const runId = engine.execute(graph, connections);
+		logger.info("Graph execution submitted: {runId}", { runId });
 
-			return c.json({ runId }, 202);
-		},
-	);
+		return c.json({ runId }, 202);
+	});
 
-	app.post(
-		"/api/v1/graphs/validate",
-		validateRoute,
-		validator("json", ValidateRequest),
-		async (c) => {
-			const { graph, connections } = c.req.valid("json");
-			const engine = getEngine(c);
+	app.openapi(validateRoute, async (c) => {
+		const { graph, connections } = c.req.valid("json");
+		const engine = getEngine(c);
 
-			logger.debug("Graph validation requested");
-			const result = engine.validate(graph, connections);
+		logger.debug("Graph validation requested");
+		const result = engine.validate(graph, connections);
 
-			return c.json(result);
-		},
-	);
+		return c.json({ valid: result.valid, errors: [...result.errors] }, 200);
+	});
 
-	app.get("/api/v1/graphs", listRunsRoute, async (c) => {
+	app.openapi(listRunsRoute, async (c) => {
 		const engine = getEngine(c);
 
 		logger.debug("Listing runs");
 		const runs = engine.listRuns();
 
-		return c.json(runs);
-	});
-
-	app.get(
-		"/api/v1/graphs/:runId",
-		getRunRoute,
-		validator("param", RunIdParam),
-		async (c) => {
-			const { runId } = c.req.valid("param");
-			const engine = getEngine(c);
-
-			logger.debug("Run status requested: {runId}", { runId });
-			const run = engine.getRun(runId);
-
-			if (!run) {
-				const requestId = c.get("requestId") as string | undefined;
-				const body: ErrorResponse = {
-					status: 404,
-					error: `Run not found: ${runId}`,
-					requestId,
-				};
-				return c.json(body, 404);
-			}
-
-			return c.json({
+		return c.json(
+			runs.map((run) => ({
 				runId: run.runId,
 				status: run.status,
 				startedAt: run.startedAt.toISOString(),
 				completedAt: run.completedAt?.toISOString(),
-				nodeProgress: Object.fromEntries(run.nodeProgress),
-				result: run.result,
+			})),
+			200,
+		);
+	});
+
+	app.openapi(getRunRoute, async (c) => {
+		const { runId } = c.req.valid("param");
+		const engine = getEngine(c);
+
+		logger.debug("Run status requested: {runId}", { runId });
+		const run = engine.getRun(runId);
+
+		if (!run) {
+			const requestId = c.get("requestId") as string | undefined;
+			return c.json(
+				{ status: 404, error: `Run not found: ${runId}`, requestId },
+				404,
+			);
+		}
+
+		const nodeProgress: Record<
+			string,
+			{
+				nodeId: string;
+				status: "pending" | "running" | "completed" | "failed";
+				itemsProcessed: number;
+				error?: string;
+			}
+		> = {};
+		for (const [nodeId, progress] of run.nodeProgress) {
+			nodeProgress[nodeId] = {
+				nodeId: progress.nodeId,
+				status: progress.status,
+				itemsProcessed: progress.itemsProcessed,
+				...(progress.error && { error: progress.error.message }),
+			};
+		}
+
+		return c.json(
+			{
+				runId: run.runId,
+				status: run.status,
+				startedAt: run.startedAt.toISOString(),
+				completedAt: run.completedAt?.toISOString(),
+				nodeProgress,
+				result: run.result
+					? {
+							runId: run.result.runId,
+							status: run.result.status,
+							nodes: run.result.nodes.map((n) => ({
+								nodeId: n.nodeId,
+								status: n.status,
+								itemsProcessed: n.itemsProcessed,
+								...(n.error && { error: n.error.message }),
+							})),
+						}
+					: undefined,
 				error: run.error?.message,
-			});
-		},
-	);
+			},
+			200,
+		);
+	});
 
-	app.delete(
-		"/api/v1/graphs/:runId",
-		cancelRunRoute,
-		validator("param", RunIdParam),
-		async (c) => {
-			const { runId } = c.req.valid("param");
-			const engine = getEngine(c);
+	app.openapi(cancelRunRoute, async (c) => {
+		const { runId } = c.req.valid("param");
+		const engine = getEngine(c);
 
-			logger.info("Run cancellation requested: {runId}", { runId });
-			const cancelled = engine.cancelRun(runId);
+		logger.info("Run cancellation requested: {runId}", { runId });
+		const cancelled = engine.cancelRun(runId);
 
-			if (!cancelled) {
-				const requestId = c.get("requestId") as string | undefined;
-				const body: ErrorResponse = {
+		if (!cancelled) {
+			const requestId = c.get("requestId") as string | undefined;
+			return c.json(
+				{
 					status: 404,
 					error: `Run not found or already completed: ${runId}`,
 					requestId,
-				};
-				return c.json(body, 404);
-			}
+				},
+				404,
+			);
+		}
 
-			return c.json({ runId, cancelled: true });
-		},
-	);
+		return c.json({ runId, cancelled: true }, 200);
+	});
 
 	logger.debug("  POST {route}", { route: "/api/v1/graphs/execute" });
 	logger.debug("  POST {route}", { route: "/api/v1/graphs/validate" });
