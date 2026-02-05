@@ -25,6 +25,8 @@
 		"@logtape/redaction": "^2.0.2",
 		"@nvisy/core": "*",
 		"@nvisy/plugin-ai": "*",
+		"@nvisy/plugin-object": "*",
+		"@nvisy/plugin-pandoc": "*",
 		"@nvisy/plugin-sql": "*",
 		"@nvisy/plugin-vector": "*",
 		"@nvisy/runtime": "*",

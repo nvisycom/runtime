@@ -1,7 +1,9 @@
 import { getLogger } from "@logtape/logtape";
 import { aiPlugin } from "@nvisy/plugin-ai";
 import { objectPlugin } from "@nvisy/plugin-object";
+import { pandocPlugin } from "@nvisy/plugin-pandoc";
 import { sqlPlugin } from "@nvisy/plugin-sql";
+import { vectorPlugin } from "@nvisy/plugin-vector";
 import { Engine } from "@nvisy/runtime";
 
 const logger = getLogger(["nvisy", "engine"]);
@@ -14,7 +16,9 @@ export function createEngine(): Engine {
 		const engine = new Engine()
 			.register(aiPlugin)
 			.register(objectPlugin)
-			.register(sqlPlugin);
+			.register(pandocPlugin)
+			.register(sqlPlugin)
+			.register(vectorPlugin);
 
 		const { actions, providers } = engine.schema;
 		logger.info(

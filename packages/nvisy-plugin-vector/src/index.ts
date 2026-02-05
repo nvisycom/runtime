@@ -7,4 +7,7 @@
  * embedding streams, and vector search actions for the pipeline.
  */
 
-export {};
+import { Plugin } from "@nvisy/core";
+
+/** Vector database plugin instance. */
+export const vectorPlugin = Plugin.define("vector");
