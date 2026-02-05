@@ -85,11 +85,11 @@ async function* transformEnrich(
 		}
 
 		yield new Document(doc.content, {
-			id: doc.id,
-			metadata: { ...(doc.metadata ?? {}), ...enrichedMeta },
 			...(doc.sourceType != null ? { sourceType: doc.sourceType } : {}),
 			...(doc.pages != null ? { pages: doc.pages } : {}),
-		});
+		})
+			.deriveFrom(doc)
+			.withMetadata({ ...(doc.metadata ?? {}), ...enrichedMeta });
 	}
 }
 

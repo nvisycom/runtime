@@ -1,4 +1,4 @@
-import { RuntimeError } from "./runtime-error.js";
+import { RuntimeError } from "./runtime.js";
 
 /**
  * Input did not pass schema or business rules.

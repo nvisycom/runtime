@@ -1,12 +1,5 @@
-/**
- * @module streams
- *
- * The Stream concept — the data I/O layer that reads from and writes
- * to external systems.
- */
-
 import type { z } from "zod";
-import type { DataType } from "./datatypes/index.js";
+import type { Data } from "./datatypes/index.js";
 import type { ClassRef } from "./types.js";
 
 /**
@@ -18,7 +11,7 @@ import type { ClassRef } from "./types.js";
  * @template TData - The data type being streamed.
  * @template TCtx - Context type for resumption (e.g. cursor, offset).
  */
-export interface Resumable<TData extends DataType = DataType, TCtx = void> {
+export interface Resumable<TData extends Data = Data, TCtx = void> {
 	/** The data item being streamed. */
 	readonly data: TData;
 	/** Context for resuming from this point. */
@@ -33,7 +26,7 @@ export interface Resumable<TData extends DataType = DataType, TCtx = void> {
  * @template TCtx - Context type for resumption (e.g. cursor, offset).
  * @template TParam - Configuration parameters for the reader.
  */
-export type ReaderFn<TClient, TData extends DataType, TCtx, TParam> = (
+export type ReaderFn<TClient, TData extends Data, TCtx, TParam> = (
 	client: TClient,
 	ctx: TCtx,
 	params: TParam,
@@ -46,7 +39,7 @@ export type ReaderFn<TClient, TData extends DataType, TCtx, TParam> = (
  * @template TData - Data type consumed by the writer.
  * @template TParam - Configuration parameters for the writer.
  */
-export type WriterFn<TClient, TData extends DataType, TParam> = (
+export type WriterFn<TClient, TData extends Data, TParam> = (
 	client: TClient,
 	params: TParam,
 ) => (item: TData) => Promise<void>;
@@ -59,7 +52,7 @@ export type WriterFn<TClient, TData extends DataType, TParam> = (
  * @template TCtx - Context type for resumption.
  * @template TParam - Configuration parameters for the source.
  */
-export interface SourceConfig<TClient, TData extends DataType, TCtx, TParam> {
+export interface SourceConfig<TClient, TData extends Data, TCtx, TParam> {
 	/** Type information: data class, context schema, and param schema. */
 	readonly types: [
 		dataClass: ClassRef<TData>,
@@ -77,7 +70,7 @@ export interface SourceConfig<TClient, TData extends DataType, TCtx, TParam> {
  * @template TData - Data type consumed by the target.
  * @template TParam - Configuration parameters for the target.
  */
-export interface TargetConfig<TClient, TData extends DataType, TParam> {
+export interface TargetConfig<TClient, TData extends Data, TParam> {
 	/** Type information: data class and param schema. */
 	readonly types: [dataClass: ClassRef<TData>, paramSchema: z.ZodType<TParam>];
 	/** The writer function that persists data items. */
@@ -97,7 +90,7 @@ export interface TargetConfig<TClient, TData extends DataType, TParam> {
  */
 export interface StreamSource<
 	TClient,
-	TData extends DataType,
+	TData extends Data,
 	TCtx,
 	TParam = void,
 > {
@@ -129,7 +122,7 @@ export interface StreamSource<
  * @template TData - Data type consumed by the target.
  * @template TParam - Configuration parameters for the target.
  */
-export interface StreamTarget<TClient, TData extends DataType, TParam = void> {
+export interface StreamTarget<TClient, TData extends Data, TParam = void> {
 	/** Unique identifier for this stream target. */
 	readonly id: string;
 	/** Class reference for the required provider client. */
@@ -142,7 +135,7 @@ export interface StreamTarget<TClient, TData extends DataType, TParam = void> {
 	write(client: TClient, params: TParam): (item: TData) => Promise<void>;
 }
 
-class StreamSourceImpl<TClient, TData extends DataType, TCtx, TParam>
+class StreamSourceImpl<TClient, TData extends Data, TCtx, TParam>
 	implements StreamSource<TClient, TData, TCtx, TParam>
 {
 	readonly id: string;
@@ -177,7 +170,7 @@ class StreamSourceImpl<TClient, TData extends DataType, TCtx, TParam>
 	}
 }
 
-class StreamTargetImpl<TClient, TData extends DataType, TParam>
+class StreamTargetImpl<TClient, TData extends Data, TParam>
 	implements StreamTarget<TClient, TData, TParam>
 {
 	readonly id: string;
@@ -214,7 +207,7 @@ export const Stream = {
 	 * @param clientClass - Class reference for the required provider client.
 	 * @param config - Source configuration including types and reader function.
 	 */
-	createSource<TClient, TData extends DataType, TCtx, TParam>(
+	createSource<TClient, TData extends Data, TCtx, TParam>(
 		id: string,
 		clientClass: ClassRef<TClient>,
 		config: SourceConfig<TClient, TData, TCtx, TParam>,
@@ -237,7 +230,7 @@ export const Stream = {
 	 * @param clientClass - Class reference for the required provider client.
 	 * @param config - Target configuration including types and writer function.
 	 */
-	createTarget<TClient, TData extends DataType, TParam>(
+	createTarget<TClient, TData extends Data, TParam>(
 		id: string,
 		clientClass: ClassRef<TClient>,
 		config: TargetConfig<TClient, TData, TParam>,

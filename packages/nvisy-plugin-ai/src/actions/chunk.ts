@@ -1,6 +1,7 @@
 import type { DocumentPage, DocumentSection } from "@nvisy/core";
-import { Action, Chunk, Document } from "@nvisy/core";
+import { Action, Document } from "@nvisy/core";
 import { z } from "zod";
+import { Chunk } from "../datatypes/index.js";
 
 const CharacterStrategy = z.object({
 	strategy: z.literal("character"),
@@ -49,12 +50,10 @@ async function* transformChunk(
 				if (doc.pages != null && doc.pages.length > 0) {
 					for (let i = 0; i < doc.pages.length; i++) {
 						const page = doc.pages[i]!;
-						yield new Chunk(Document.fromPages([page], {}).content, {
-							metadata: doc.metadata,
-							sourceId: doc.id,
+						yield new Chunk(Document.fromPages([page]).content, {
 							chunkIndex: i,
 							chunkTotal: doc.pages.length,
-						});
+						}).deriveFrom(doc);
 					}
 					continue;
 				}
@@ -66,15 +65,9 @@ async function* transformChunk(
 					for (let i = 0; i < sections.length; i++) {
 						const sec = sections[i]!;
 						yield new Chunk(
-							Document.fromPages([{ pageNumber: 1, sections: [sec] }], {})
-								.content,
-							{
-								metadata: doc.metadata,
-								sourceId: doc.id,
-								chunkIndex: i,
-								chunkTotal: sections.length,
-							},
-						);
+							Document.fromPages([{ pageNumber: 1, sections: [sec] }]).content,
+							{ chunkIndex: i, chunkTotal: sections.length },
+						).deriveFrom(doc);
 					}
 					continue;
 				}
@@ -98,11 +91,9 @@ async function* transformChunk(
 
 		for (let i = 0; i < texts.length; i++) {
 			yield new Chunk(texts[i]!, {
-				metadata: doc.metadata,
-				sourceId: doc.id,
 				chunkIndex: i,
 				chunkTotal: texts.length,
-			});
+			}).deriveFrom(doc);
 		}
 	}
 }
@@ -150,7 +141,7 @@ function chunkByPage(text: string): string[] {
 	return chunks.length > 0 ? chunks : [text];
 }
 
-/** Walk the page→section tree, collecting sections at the target depth level. */
+/** Walk the page->section tree, collecting sections at the target depth level. */
 function chunkSectionsByLevel(
 	pages: readonly DocumentPage[],
 	targetLevel: number,

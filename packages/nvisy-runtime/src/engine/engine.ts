@@ -1,5 +1,5 @@
 import type { PluginInstance } from "@nvisy/core";
-import { ValidationError } from "@nvisy/core";
+import { corePlugin, ValidationError } from "@nvisy/core";
 import { compile, type ExecutionPlan } from "../compiler/index.js";
 import { Registry, type RegistrySchema } from "../registry.js";
 import { execute } from "./runner.js";
@@ -25,6 +25,10 @@ import { ConnectionsSchema } from "./types.js";
  */
 export class Engine {
 	readonly #registry = new Registry();
+
+	constructor() {
+		this.#registry.load(corePlugin);
+	}
 
 	/** Snapshot of all registered actions and providers with their schemas. */
 	get schema(): RegistrySchema {

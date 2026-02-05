@@ -1,6 +1,7 @@
 import type { JsonValue } from "@nvisy/core";
-import { Action, Row } from "@nvisy/core";
+import { Action } from "@nvisy/core";
 import { z } from "zod";
+import { Row } from "../datatypes/index.js";
 
 /** Supported comparison operators for a single filter condition. */
 const Operator = z.enum([

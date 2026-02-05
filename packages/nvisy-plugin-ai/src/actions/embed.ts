@@ -1,5 +1,6 @@
-import { Action, Document, Embedding } from "@nvisy/core";
+import { Action, Document } from "@nvisy/core";
 import { z } from "zod";
+import { Embedding } from "../datatypes/index.js";
 import { EmbeddingClient } from "../providers/client.js";
 
 const EmbedParams = z.object({
@@ -55,9 +56,6 @@ async function* emitBatch(
 	for (let i = 0; i < batch.length; i++) {
 		const doc = batch[i]!;
 		const vector = vectors[i]!;
-		yield new Embedding(vector, {
-			id: doc.id,
-			metadata: doc.metadata,
-		});
+		yield new Embedding(vector).deriveFrom(doc);
 	}
 }

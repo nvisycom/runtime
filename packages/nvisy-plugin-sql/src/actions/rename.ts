@@ -1,6 +1,7 @@
 import type { JsonValue } from "@nvisy/core";
-import { Action, Row } from "@nvisy/core";
+import { Action } from "@nvisy/core";
 import { z } from "zod";
+import { Row } from "../datatypes/index.js";
 
 /**
  * Parameters for the `sql/rename` action.
@@ -30,7 +31,7 @@ export const rename = Action.withoutClient("rename", {
 				result[newKey] = val;
 			}
 
-			yield new Row(result, { id: row.id, metadata: row.metadata });
+			yield new Row(result).deriveFrom(row);
 		}
 	},
 });

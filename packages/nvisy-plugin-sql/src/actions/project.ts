@@ -1,6 +1,7 @@
 import type { JsonValue } from "@nvisy/core";
-import { Action, Row } from "@nvisy/core";
+import { Action } from "@nvisy/core";
 import { z } from "zod";
+import { Row } from "../datatypes/index.js";
 
 /**
  * Parameters for the `sql/project` action.
@@ -45,7 +46,7 @@ export const project = Action.withoutClient("project", {
 				}
 			}
 
-			yield new Row(projected, { id: row.id, metadata: row.metadata });
+			yield new Row(projected).deriveFrom(row);
 		}
 	},
 });

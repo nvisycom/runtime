@@ -1,57 +1,40 @@
-export type { DataOptions, JsonValue, Metadata } from "./base-datatype.js";
-export { Data } from "./base-datatype.js";
-export type { ChunkOptions } from "./chunk-datatype.js";
-export { Chunk } from "./chunk-datatype.js";
+/**
+ * @module datatypes
+ *
+ * Base data model and built-in document type for the Nvisy pipeline.
+ */
+
+export type { JsonValue, Metadata } from "./data.js";
+export { Data } from "./data.js";
 export type {
 	DocumentElement,
 	DocumentOptions,
 	DocumentPage,
 	DocumentSection,
 	ElementType,
-} from "./document-datatype.js";
-export { Document } from "./document-datatype.js";
-export { Embedding } from "./embedding-datatype.js";
-export type { BlobOptions } from "./object-datatype.js";
-export { Blob } from "./object-datatype.js";
-export { Row } from "./row-datatype.js";
+} from "./document.js";
+export { Document } from "./document.js";
 
-import type { DataOptions, JsonValue } from "./base-datatype.js";
-import type { ChunkOptions } from "./chunk-datatype.js";
-import { Chunk } from "./chunk-datatype.js";
-import type { DocumentOptions } from "./document-datatype.js";
-import { Document } from "./document-datatype.js";
-import { Embedding } from "./embedding-datatype.js";
-import type { BlobOptions } from "./object-datatype.js";
-import { Blob } from "./object-datatype.js";
-import { Row } from "./row-datatype.js";
+import type { ClassRef } from "../types.js";
+import type { Data } from "./data.js";
 
-/** Union of all concrete data types that flow through the pipeline. */
-export type DataType = Document | Embedding | Blob | Chunk | Row;
+/**
+ * A custom data type registered by a plugin.
+ *
+ * Plugins use this to extend the type system with new {@link Data}
+ * subclasses without modifying nvisy-core.
+ */
+export interface Datatype {
+	/** Unique identifier for this data type (e.g. "audio", "image"). */
+	readonly id: string;
+	/** Class reference for the custom data type. */
+	readonly dataClass: ClassRef<Data>;
+}
 
-/** Factory methods for creating data type instances. */
-export const DataType = {
-	/** Create a structured document with text content. */
-	Document(content: string, options?: DocumentOptions): Document {
-		return new Document(content, options);
-	},
-
-	/** Create a dense vector embedding. */
-	Embedding(vector: Float32Array | number[], options?: DataOptions): Embedding {
-		return new Embedding(vector, options);
-	},
-
-	/** Create a binary blob from object storage. */
-	Blob(path: string, data: Buffer, options?: BlobOptions): Blob {
-		return new Blob(path, data, options);
-	},
-
-	/** Create a text chunk from a chunking step. */
-	Chunk(content: string, options?: ChunkOptions): Chunk {
-		return new Chunk(content, options);
-	},
-
-	/** Create a database row with column values. */
-	Row(columns: Record<string, JsonValue>, options?: DataOptions): Row {
-		return new Row(columns, options);
+/** Factory for creating data type entries. */
+export const Datatypes = {
+	/** Create a Datatype for registering a custom data type with a plugin. */
+	define(id: string, dataClass: ClassRef<Data>): Datatype {
+		return { id, dataClass };
 	},
 } as const;

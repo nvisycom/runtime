@@ -1,5 +1,4 @@
-import type { DataOptions } from "./base-datatype.js";
-import { Data } from "./base-datatype.js";
+import { Data } from "@nvisy/core";
 
 /**
  * A dense vector embedding produced by an embedding model.
@@ -17,8 +16,8 @@ import { Data } from "./base-datatype.js";
 export class Embedding extends Data {
 	readonly #vector: Float32Array;
 
-	constructor(vector: Float32Array | number[], options?: DataOptions) {
-		super(options);
+	constructor(vector: Float32Array | number[]) {
+		super();
 		this.#vector =
 			vector instanceof Float32Array ? vector : new Float32Array(vector);
 	}

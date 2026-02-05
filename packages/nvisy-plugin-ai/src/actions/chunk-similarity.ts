@@ -1,5 +1,6 @@
-import { Action, Chunk, Document } from "@nvisy/core";
+import { Action, Document } from "@nvisy/core";
 import { z } from "zod";
+import { Chunk } from "../datatypes/index.js";
 import { EmbeddingClient } from "../providers/client.js";
 
 const ChunkSimilarityParams = z.object({
@@ -33,11 +34,9 @@ async function* transformChunkSimilarity(
 
 		for (let i = 0; i < texts.length; i++) {
 			yield new Chunk(texts[i]!, {
-				metadata: doc.metadata,
-				sourceId: doc.id,
 				chunkIndex: i,
 				chunkTotal: texts.length,
-			});
+			}).deriveFrom(doc);
 		}
 	}
 }

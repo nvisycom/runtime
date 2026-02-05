@@ -1,12 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type {
-	DocumentPage,
-	DocumentSection,
-} from "../src/datatypes/document-datatype.js";
-import { Document } from "../src/datatypes/document-datatype.js";
+import type { DocumentPage, DocumentSection } from "./document.js";
+import { Document } from "./document.js";
 
 describe("Document", () => {
-	it("basic backward compat: new Document('text') works without pages", () => {
+	it("stores content and has no pages by default", () => {
 		const doc = new Document("hello world");
 		expect(doc.content).toBe("hello world");
 		expect(doc.pages).toBeUndefined();
@@ -30,7 +27,7 @@ describe("Document", () => {
 		expect(doc.pages).toEqual(pages);
 	});
 
-	describe("Document.fromPages()", () => {
+	describe("fromPages", () => {
 		it("derives content from element texts joined with \\n\\n", () => {
 			const pages: DocumentPage[] = [
 				{
@@ -67,7 +64,7 @@ describe("Document", () => {
 			expect(doc.pages).toEqual([]);
 		});
 
-		it("preserves sourceType and metadata through fromPages()", () => {
+		it("preserves sourceType", () => {
 			const pages: DocumentPage[] = [
 				{
 					pageNumber: 1,
@@ -78,18 +75,14 @@ describe("Document", () => {
 					],
 				},
 			];
-			const doc = Document.fromPages(pages, {
-				sourceType: "pdf",
-				metadata: { key: "value" },
-			});
+			const doc = Document.fromPages(pages, { sourceType: "pdf" });
 			expect(doc.sourceType).toBe("pdf");
-			expect(doc.metadata).toEqual({ key: "value" });
 			expect(doc.pages).toHaveLength(1);
 		});
 	});
 
 	describe("flatElements", () => {
-		it("traverses pages → sections recursively in document order", () => {
+		it("traverses pages -> sections recursively in document order", () => {
 			const pages: DocumentPage[] = [
 				{
 					pageNumber: 1,
@@ -120,8 +113,12 @@ describe("Document", () => {
 			];
 
 			const doc = new Document("ignored", { pages });
-			const flat = doc.flatElements;
-			expect(flat.map((e) => e.text)).toEqual(["H1", "P1", "P1.1", "T1"]);
+			expect(doc.flatElements.map((e) => e.text)).toEqual([
+				"H1",
+				"P1",
+				"P1.1",
+				"T1",
+			]);
 		});
 
 		it("handles deeply nested sections (3+ levels)", () => {

@@ -1,10 +1,4 @@
-import type { DataOptions } from "./base-datatype.js";
-import { Data } from "./base-datatype.js";
-
-/** Options for constructing a {@link Blob}. */
-export interface BlobOptions extends DataOptions {
-	readonly contentType?: string;
-}
+import { Data } from "@nvisy/core";
 
 /**
  * A file or binary blob retrieved from object storage (S3, GCS, Dropbox, etc.).
@@ -23,11 +17,11 @@ export class Blob extends Data {
 	readonly #data: Buffer;
 	readonly #contentType?: string | undefined;
 
-	constructor(path: string, data: Buffer, options?: BlobOptions) {
-		super(options);
+	constructor(path: string, data: Buffer, contentType?: string) {
+		super();
 		this.#path = path;
 		this.#data = data;
-		this.#contentType = options?.contentType;
+		this.#contentType = contentType;
 	}
 
 	/** Storage path or key (e.g. `"s3://bucket/file.pdf"`). */

@@ -1,9 +1,27 @@
-import type { Resumable } from "@nvisy/core";
-import { Action, Data, Plugin, Provider, Row, Stream } from "@nvisy/core";
+import type { JsonValue, Resumable } from "@nvisy/core";
+import { Action, Data, Plugin, Provider, Stream } from "@nvisy/core";
 import { z } from "zod";
 import { Engine } from "../src/engine/engine.js";
 import type { Connections } from "../src/engine/types.js";
 import { Registry } from "../src/registry.js";
+
+/** Minimal row-like data type for testing. */
+export class TestRow extends Data {
+	readonly #columns: Readonly<Record<string, JsonValue>>;
+
+	constructor(columns: Record<string, JsonValue>) {
+		super();
+		this.#columns = columns;
+	}
+
+	get columns(): Readonly<Record<string, JsonValue>> {
+		return this.#columns;
+	}
+
+	get(column: string): JsonValue | undefined {
+		return this.#columns[column];
+	}
+}
 
 export const GRAPH_ID = "00000000-0000-4000-8000-000000000000";
 export const SOURCE_ID = "00000000-0000-4000-8000-000000000001";
@@ -15,7 +33,7 @@ export const CRED_ID = "00000000-0000-4000-8000-0000000000c0";
 const NoopParams = z.object({});
 
 export const noopAction = Action.withoutClient("noop", {
-	types: [Data],
+	types: [TestRow],
 	params: NoopParams,
 	transform: (stream, _params) => stream,
 });
@@ -31,8 +49,6 @@ export const testProvider = Provider.withAuthentication("testdb", {
 	}),
 });
 
-// ── Mock streams ──────────────────────────────────────────────────
-
 const TestContext = z.object({
 	cursor: z.string().nullable().default(null),
 });
@@ -43,18 +59,18 @@ const TestParams = z.record(z.string(), z.unknown());
  * Items produced by the mock source stream.
  * Exposed so tests can assert on them.
  */
-export const sourceEntries: Row[] = [
-	new Row({ name: "Alice", age: 30 }),
-	new Row({ name: "Bob", age: 25 }),
-	new Row({ name: "Carol", age: 35 }),
+export const sourceEntries: TestRow[] = [
+	new TestRow({ name: "Alice", age: 30 }),
+	new TestRow({ name: "Bob", age: 25 }),
+	new TestRow({ name: "Carol", age: 35 }),
 ];
 
 export const testSourceStream = Stream.createSource("read", TestClient, {
-	types: [Row, TestContext, TestParams],
+	types: [TestRow, TestContext, TestParams],
 	reader: async function* (_client, _ctx, _params) {
 		for (const row of sourceEntries) {
 			yield { data: row, context: { cursor: row.id } } as Resumable<
-				Row,
+				TestRow,
 				z.infer<typeof TestContext>
 			>;
 		}
@@ -68,15 +84,13 @@ export const testSourceStream = Stream.createSource("read", TestClient, {
 export const writtenItems: Data[] = [];
 
 export const testTargetStream = Stream.createTarget("write", TestClient, {
-	types: [Row, TestParams],
+	types: [TestRow, TestParams],
 	writer: (_client, _params) => {
-		return async (item: Row) => {
+		return async (item: TestRow) => {
 			writtenItems.push(item);
 		};
 	},
 });
-
-// ── Plugin ────────────────────────────────────────────────────────
 
 export const testPlugin = Plugin.define("test")
 	.withActions(noopAction)

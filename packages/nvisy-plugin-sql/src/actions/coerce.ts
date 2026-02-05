@@ -1,6 +1,7 @@
 import type { JsonValue } from "@nvisy/core";
-import { Action, Row } from "@nvisy/core";
+import { Action } from "@nvisy/core";
 import { z } from "zod";
+import { Row } from "../datatypes/index.js";
 
 /** Allowed target types for column coercion. */
 const CoerceTarget = z.enum(["string", "number", "boolean"]);
@@ -56,7 +57,7 @@ export const coerce = Action.withoutClient("coerce", {
 				result[column] = coerceValue(result[column], target);
 			}
 
-			yield new Row(result, { id: row.id, metadata: row.metadata });
+			yield new Row(result).deriveFrom(row);
 		}
 	},
 });

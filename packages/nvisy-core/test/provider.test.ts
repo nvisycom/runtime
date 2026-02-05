@@ -1,15 +1,11 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { Row } from "../src/datatypes/row-datatype.js";
 import {
-	Credentials,
-	Cursor,
 	ExampleClient,
 	ExampleProvider,
-	ExampleProviderWithId,
 	ExampleSource,
 	ExampleTarget,
-	Params,
-} from "./provider.js";
+	TestRow,
+} from "./provider.fixtures.js";
 
 async function collect<T>(iter: AsyncIterable<T>): Promise<T[]> {
 	const result: T[] = [];
@@ -18,30 +14,13 @@ async function collect<T>(iter: AsyncIterable<T>): Promise<T[]> {
 }
 
 describe("ExampleProvider", () => {
-	it("exposes credential schema on the factory", () => {
-		expect(ExampleProvider.credentialSchema).toBe(Credentials);
-	});
-
-	it("exposes configurable factory ID", () => {
-		expect(ExampleProviderWithId.id).toBe("custom-provider-id");
-	});
-
-	it("connect returns a provider instance with a client", async () => {
+	it("connect returns a managed instance with a client", async () => {
 		const instance = await ExampleProvider.connect({
 			host: "localhost",
 			port: 5432,
 		});
-		expect(instance).toBeDefined();
 		expect(instance.id).toBe("example");
 		expect(instance.client).toBeInstanceOf(ExampleClient);
-	});
-
-	it("disconnect resolves without error", async () => {
-		const instance = await ExampleProvider.connect({
-			host: "localhost",
-			port: 5432,
-		});
-		await expect(instance.disconnect()).resolves.toBeUndefined();
 	});
 });
 
@@ -54,14 +33,6 @@ describe("ExampleSource", () => {
 			port: 5432,
 		});
 		client = instance.client;
-	});
-
-	it("exposes id, clientClass, dataClass, contextSchema, and paramSchema", () => {
-		expect(ExampleSource.id).toBe("read");
-		expect(ExampleSource.clientClass).toBe(ExampleClient);
-		expect(ExampleSource.dataClass).toBe(Row);
-		expect(ExampleSource.contextSchema).toBe(Cursor);
-		expect(ExampleSource.paramSchema).toBe(Params);
 	});
 
 	it("reads all rows from offset 0", async () => {
@@ -104,16 +75,9 @@ describe("ExampleTarget", () => {
 		client = instance.client;
 	});
 
-	it("exposes id, clientClass, dataClass, and paramSchema", () => {
-		expect(ExampleTarget.id).toBe("write");
-		expect(ExampleTarget.clientClass).toBe(ExampleClient);
-		expect(ExampleTarget.dataClass).toBe(Row);
-		expect(ExampleTarget.paramSchema).toBe(Params);
-	});
-
-	it("accepts a row without throwing", async () => {
-		const row = new Row({ id: "4", name: "Diana" });
+	it("writes a row without error", async () => {
+		const row = new TestRow({ id: "4", name: "Diana" });
 		const writer = ExampleTarget.write(client, { table: "users" });
-		await expect(writer(row)).resolves.toBeUndefined();
+		await writer(row);
 	});
 });

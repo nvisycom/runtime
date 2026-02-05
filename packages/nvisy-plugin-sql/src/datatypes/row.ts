@@ -1,5 +1,5 @@
-import type { DataOptions, JsonValue } from "./base-datatype.js";
-import { Data } from "./base-datatype.js";
+import type { JsonValue } from "@nvisy/core";
+import { Data } from "@nvisy/core";
 
 /**
  * A row from a relational database.
@@ -18,12 +18,12 @@ import { Data } from "./base-datatype.js";
 export class Row extends Data {
 	readonly #columns: Readonly<Record<string, JsonValue>>;
 
-	constructor(columns: Record<string, JsonValue>, options?: DataOptions) {
-		super(options);
+	constructor(columns: Record<string, JsonValue>) {
+		super();
 		this.#columns = columns;
 	}
 
-	/** Column name → value mapping. */
+	/** Column name -> value mapping. */
 	get columns(): Readonly<Record<string, JsonValue>> {
 		return this.#columns;
 	}

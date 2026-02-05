@@ -1,3 +1,12 @@
+/**
+ * @module @nvisy/runtime
+ *
+ * Pipeline execution engine for the Nvisy runtime.
+ *
+ * Compiles graph definitions into execution plans, validates connections,
+ * and runs pipelines with retry, timeout, and cancellation support.
+ */
+
 export type {
 	ActionDescriptor,
 	Connection,

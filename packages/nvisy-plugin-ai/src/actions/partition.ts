@@ -1,5 +1,5 @@
-import type { Data, Metadata } from "@nvisy/core";
-import { Action, Blob, Document } from "@nvisy/core";
+import type { Metadata } from "@nvisy/core";
+import { Action, Document } from "@nvisy/core";
 import { z } from "zod";
 
 const AutoStrategy = z.object({
@@ -20,29 +20,27 @@ const PartitionParams = z.discriminatedUnion("strategy", [
 ]);
 
 /**
- * Partition blobs or documents into structured documents.
+ * Partition documents into structured documents.
  *
- * - `"auto"`: detect content type from {@link Blob} and extract text
+ * - `"auto"`: pass through document content as-is
  * - `"rule"`: split content using a regex pattern
  */
 export const partition = Action.withoutClient("partition", {
-	types: [Document, Document] as [typeof Data, typeof Document],
+	types: [Document, Document],
 	params: PartitionParams,
 	transform: transformPartition,
 });
 
 async function* transformPartition(
-	stream: AsyncIterable<Data>,
+	stream: AsyncIterable<Document>,
 	params: z.infer<typeof PartitionParams>,
 ) {
 	for await (const item of stream) {
-		const text = extractText(item);
+		const text = item.content;
 		const sourceId = item.id;
 		const baseMeta = item.metadata;
 
 		let parts: string[];
-
-		const inputDoc = item instanceof Document ? item : undefined;
 
 		switch (params.strategy) {
 			case "auto":
@@ -62,26 +60,16 @@ async function* transformPartition(
 		for (let i = 0; i < parts.length; i++) {
 			const metadata: Metadata = {
 				...(baseMeta ?? {}),
-				sourceId,
 				partIndex: i,
 				partTotal: parts.length,
 			};
 			yield new Document(parts[i]!, {
-				metadata,
-				...(params.strategy === "auto" && inputDoc?.pages != null
-					? { pages: inputDoc.pages }
+				...(params.strategy === "auto" && item.pages != null
+					? { pages: item.pages }
 					: {}),
-			});
+			})
+				.withParent(sourceId)
+				.withMetadata(metadata);
 		}
 	}
-}
-
-function extractText(item: Data): string {
-	if (item instanceof Blob) {
-		return item.data.toString("utf-8");
-	}
-	if (item instanceof Document) {
-		return item.content;
-	}
-	return String(item);
 }

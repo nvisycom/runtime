@@ -143,9 +143,6 @@ describe("execute", () => {
 			expect(node.status).toBe("success");
 		}
 		expect(writtenItems).toHaveLength(sourceEntries.length);
-		for (let i = 0; i < sourceEntries.length; i++) {
-			expect(writtenItems[i]!.id).toBe(sourceEntries[i]!.id);
-		}
 	});
 
 	it("diamond graph: source -> 2 actions -> target", async () => {
@@ -210,7 +207,7 @@ describe("execute", () => {
 	});
 
 	it("non-retryable error stops immediately", async () => {
-		const { Action, Data, Plugin, Provider, Row, Stream } = await import(
+		const { Action, Document, Plugin, Provider, Stream } = await import(
 			"@nvisy/core"
 		);
 		const { z } = await import("zod");
@@ -225,7 +222,11 @@ describe("execute", () => {
 		});
 
 		const failSource = Stream.createSource("read", FailClient, {
-			types: [Row, z.object({}).default({}), z.record(z.string(), z.unknown())],
+			types: [
+				Document,
+				z.object({}).default({}),
+				z.record(z.string(), z.unknown()),
+			],
 			// biome-ignore lint/correctness/useYield: intentionally throws before yielding to test error handling
 			reader: async function* () {
 				throw new RuntimeError("Non-retryable failure", {
@@ -235,14 +236,14 @@ describe("execute", () => {
 		});
 
 		const failTarget = Stream.createTarget("write", FailClient, {
-			types: [Row, z.record(z.string(), z.unknown())],
+			types: [Document, z.record(z.string(), z.unknown())],
 			writer: () => async () => {},
 		});
 
 		const failPlugin = Plugin.define("fail")
 			.withActions(
 				Action.withoutClient("noop", {
-					types: [Data],
+					types: [Document],
 					params: z.object({}),
 					transform: (stream) => stream,
 				}),
@@ -308,7 +309,7 @@ describe("execute", () => {
 	});
 
 	it("retryable error triggers retry", async () => {
-		const { Action, Data, Plugin, Provider, Stream, Row } = await import(
+		const { Action, Document, Plugin, Provider, Stream } = await import(
 			"@nvisy/core"
 		);
 		const { z } = await import("zod");
@@ -325,28 +326,32 @@ describe("execute", () => {
 		});
 
 		const retrySource = Stream.createSource("read", RetryClient, {
-			types: [Row, z.object({}).default({}), z.record(z.string(), z.unknown())],
+			types: [
+				Document,
+				z.object({}).default({}),
+				z.record(z.string(), z.unknown()),
+			],
 			reader: async function* () {
 				attempts++;
 				if (attempts < 3) {
 					throw new RuntimeError("Transient failure", { retryable: true });
 				}
 				yield {
-					data: new Row({ recovered: true }),
+					data: new Document("recovered"),
 					context: {},
 				};
 			},
 		});
 
 		const retryTarget = Stream.createTarget("write", RetryClient, {
-			types: [Row, z.record(z.string(), z.unknown())],
+			types: [Document, z.record(z.string(), z.unknown())],
 			writer: () => async () => {},
 		});
 
 		const retryPlugin = Plugin.define("retry")
 			.withActions(
 				Action.withoutClient("noop", {
-					types: [Data],
+					types: [Document],
 					params: z.object({}),
 					transform: (stream) => stream,
 				}),

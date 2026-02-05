@@ -1,12 +1,5 @@
-/**
- * @module actions
- *
- * The Action concept — the contract for a stream transformation step
- * in the pipeline.
- */
-
 import type { z } from "zod";
-import type { Data } from "./datatypes/base-datatype.js";
+import type { Data } from "./datatypes/data.js";
 import type { ClassRef } from "./types.js";
 
 /**

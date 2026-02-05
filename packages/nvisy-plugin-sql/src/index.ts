@@ -16,8 +16,9 @@
  * ```
  */
 
-import { Plugin } from "@nvisy/core";
+import { Datatypes, Plugin } from "@nvisy/core";
 import { coerce, filter, project, rename } from "./actions/index.js";
+import { Row } from "./datatypes/index.js";
 import { mssql, mysql, postgres } from "./providers/index.js";
 import { read, write } from "./streams/index.js";
 
@@ -25,4 +26,7 @@ import { read, write } from "./streams/index.js";
 export const sqlPlugin = Plugin.define("sql")
 	.withProviders(postgres, mysql, mssql)
 	.withStreams(read, write)
-	.withActions(filter, project, rename, coerce);
+	.withActions(filter, project, rename, coerce)
+	.withDatatypes(Datatypes.define("row", Row));
+
+export { Row } from "./datatypes/index.js";

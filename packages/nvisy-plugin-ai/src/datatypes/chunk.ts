@@ -1,9 +1,7 @@
-import type { DataOptions } from "./base-datatype.js";
-import { Data } from "./base-datatype.js";
+import { Data } from "@nvisy/core";
 
 /** Options for constructing a {@link Chunk}. */
-export interface ChunkOptions extends DataOptions {
-	readonly sourceId?: string;
+export interface ChunkOptions {
 	readonly chunkIndex?: number;
 	readonly chunkTotal?: number;
 }
@@ -12,29 +10,26 @@ export interface ChunkOptions extends DataOptions {
  * A text segment produced by a chunking step.
  *
  * Represents a portion of a larger {@link Document} after splitting.
- * Carries optional provenance fields ({@link sourceId}, {@link chunkIndex},
+ * Carries optional provenance fields ({@link chunkIndex},
  * {@link chunkTotal}) so downstream steps can trace chunks back to their
- * origin.
+ * origin. Use {@link Data.withParent | withParent} to set the source document ID.
  *
  * @example
  * ```ts
  * const chunk = new Chunk("First paragraph…", {
- *   sourceId: doc.id,
  *   chunkIndex: 0,
  *   chunkTotal: 5,
- * });
+ * }).deriveFrom(doc);
  * ```
  */
 export class Chunk extends Data {
 	readonly #content: string;
-	readonly #sourceId?: string | undefined;
 	readonly #chunkIndex?: number | undefined;
 	readonly #chunkTotal?: number | undefined;
 
 	constructor(content: string, options?: ChunkOptions) {
-		super(options);
+		super();
 		this.#content = content;
-		this.#sourceId = options?.sourceId;
 		this.#chunkIndex = options?.chunkIndex;
 		this.#chunkTotal = options?.chunkTotal;
 	}
@@ -42,11 +37,6 @@ export class Chunk extends Data {
 	/** Text content of this chunk. */
 	get content(): string {
 		return this.#content;
-	}
-
-	/** ID of the source document this chunk was derived from. */
-	get sourceId(): string | undefined {
-		return this.#sourceId;
 	}
 
 	/** Zero-based index of this chunk within the source document. */

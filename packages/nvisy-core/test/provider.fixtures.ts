@@ -1,9 +1,27 @@
 import { z } from "zod";
-import type { JsonValue } from "../src/datatypes/base-datatype.js";
-import { Row } from "../src/datatypes/row-datatype.js";
-import { Provider } from "../src/providers.js";
-import type { Resumable } from "../src/streams.js";
-import { Stream } from "../src/streams.js";
+import type { JsonValue } from "../src/datatypes/data.js";
+import { Data } from "../src/datatypes/data.js";
+import { Provider } from "../src/provider.js";
+import type { Resumable } from "../src/stream.js";
+import { Stream } from "../src/stream.js";
+
+/** Minimal row-like data type for testing. */
+export class TestRow extends Data {
+	readonly #columns: Readonly<Record<string, JsonValue>>;
+
+	constructor(columns: Record<string, JsonValue>) {
+		super();
+		this.#columns = columns;
+	}
+
+	get columns(): Readonly<Record<string, JsonValue>> {
+		return this.#columns;
+	}
+
+	get(column: string): JsonValue | undefined {
+		return this.#columns[column];
+	}
+}
 
 export const Credentials = z.object({
 	host: z.string(),
@@ -33,9 +51,9 @@ async function* readStream(
 	client: ExampleClient,
 	ctx: Cursor,
 	_params: Params,
-): AsyncIterable<Resumable<Row, Cursor>> {
+): AsyncIterable<Resumable<TestRow, Cursor>> {
 	const items = client.rows.slice(ctx.offset).map((row, i) => ({
-		data: new Row(row),
+		data: new TestRow(row),
 		context: { offset: ctx.offset + i + 1 },
 	}));
 	yield* items;
@@ -49,23 +67,12 @@ export const ExampleProvider = Provider.withAuthentication("example", {
 	}),
 });
 
-export const ExampleProviderWithId = Provider.withAuthentication(
-	"custom-provider-id",
-	{
-		credentials: Credentials,
-		connect: async (_credentials) => ({
-			client: new ExampleClient(),
-			disconnect: async () => {},
-		}),
-	},
-);
-
 export const ExampleSource = Stream.createSource("read", ExampleClient, {
-	types: [Row, Cursor, Params],
+	types: [TestRow, Cursor, Params],
 	reader: (client, ctx, params) => readStream(client, ctx, params),
 });
 
 export const ExampleTarget = Stream.createTarget("write", ExampleClient, {
-	types: [Row, Params],
+	types: [TestRow, Params],
 	writer: (_client, _params) => async (_item) => {},
 });

@@ -1,6 +1,7 @@
-import type { ActionInstance } from "./actions.js";
-import type { ProviderFactory } from "./providers.js";
-import type { StreamSource, StreamTarget } from "./streams.js";
+import type { ActionInstance } from "./action.js";
+import type { Datatype } from "./datatypes/index.js";
+import type { ProviderFactory } from "./provider.js";
+import type { StreamSource, StreamTarget } from "./stream.js";
 
 // biome-ignore lint/suspicious/noExplicitAny: existential type alias
 export type AnyProviderFactory = ProviderFactory<any, any>;
@@ -29,6 +30,8 @@ export interface PluginInstance {
 	readonly streams: Readonly<Record<string, AnyStreamSource | AnyStreamTarget>>;
 	/** Actions keyed by their ID. */
 	readonly actions: Readonly<Record<string, AnyActionInstance>>;
+	/** Custom data types keyed by their ID. */
+	readonly datatypes: Readonly<Record<string, Datatype>>;
 }
 
 class PluginBuilder implements PluginInstance {
@@ -38,6 +41,7 @@ class PluginBuilder implements PluginInstance {
 		Record<string, AnyStreamSource | AnyStreamTarget>
 	> = {};
 	readonly actions: Readonly<Record<string, AnyActionInstance>> = {};
+	readonly datatypes: Readonly<Record<string, Datatype>> = {};
 
 	constructor(id: string) {
 		this.id = id;
@@ -64,6 +68,14 @@ class PluginBuilder implements PluginInstance {
 		const record = { ...this.actions };
 		for (const a of actions) record[a.id] = a;
 		(this as { actions: typeof record }).actions = record;
+		return this;
+	}
+
+	/** Add custom data types to this plugin. */
+	withDatatypes(...datatypes: Datatype[]): this {
+		const record = { ...this.datatypes };
+		for (const d of datatypes) record[d.id] = d;
+		(this as { datatypes: typeof record }).datatypes = record;
 		return this;
 	}
 }

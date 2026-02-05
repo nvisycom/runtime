@@ -1,5 +1,6 @@
 import { getLogger } from "@logtape/logtape";
-import { Row, RuntimeError, Stream } from "@nvisy/core";
+import { RuntimeError, Stream } from "@nvisy/core";
+import { Row } from "../datatypes/index.js";
 import { KyselyClient } from "../providers/client.js";
 import { SqlParams } from "./schemas.js";
 

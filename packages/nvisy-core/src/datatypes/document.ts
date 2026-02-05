@@ -1,5 +1,5 @@
-import type { DataOptions, Metadata } from "./base-datatype.js";
-import { Data } from "./base-datatype.js";
+import type { Metadata } from "./data.js";
+import { Data } from "./data.js";
 
 /** The kind of structural element within a document. */
 export type ElementType =
@@ -35,7 +35,7 @@ export interface DocumentPage {
 }
 
 /** Options for constructing a {@link Document}. */
-export interface DocumentOptions extends DataOptions {
+export interface DocumentOptions {
 	readonly sourceType?: string;
 	readonly pages?: readonly DocumentPage[];
 }
@@ -60,7 +60,7 @@ export class Document extends Data {
 	readonly #pages?: readonly DocumentPage[] | undefined;
 
 	constructor(content: string, options?: DocumentOptions) {
-		super(options);
+		super();
 		this.#content = content;
 		this.#sourceType = options?.sourceType;
 		this.#pages = options?.pages;

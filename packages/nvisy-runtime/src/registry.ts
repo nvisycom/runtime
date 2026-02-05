@@ -4,6 +4,7 @@ import type {
 	AnyProviderFactory,
 	AnyStreamSource,
 	AnyStreamTarget,
+	Datatype,
 	PluginInstance,
 } from "@nvisy/core";
 import { ValidationError } from "@nvisy/core";
@@ -46,6 +47,7 @@ export class Registry {
 	readonly #actions = new Map<string, AnyActionInstance>();
 	readonly #providers = new Map<string, AnyProviderFactory>();
 	readonly #streams = new Map<string, AnyStreamSource | AnyStreamTarget>();
+	readonly #datatypes = new Map<string, Datatype>();
 	readonly #plugins = new Set<string>();
 
 	/** Snapshot of all registered actions and providers with their schemas. */
@@ -73,12 +75,14 @@ export class Registry {
 		const providerNames = this.#loadProviders(plugin);
 		const actionNames = this.#loadActions(plugin);
 		const streamNames = this.#loadStreams(plugin);
+		const datatypeNames = this.#loadDatatypes(plugin);
 
 		logger.info(`Plugin loaded: ${plugin.id}`, {
 			pluginId: plugin.id,
 			providers: providerNames.join(", "),
 			actions: actionNames.join(", "),
 			streams: streamNames.join(", "),
+			datatypes: datatypeNames.join(", "),
 		});
 	}
 
@@ -113,6 +117,13 @@ export class Registry {
 			const key = `${plugin.id}/${name}`;
 			if (this.#streams.has(key)) {
 				collisions.push(`stream "${key}"`);
+			}
+		}
+
+		for (const name of Object.keys(plugin.datatypes)) {
+			const key = `${plugin.id}/${name}`;
+			if (this.#datatypes.has(key)) {
+				collisions.push(`datatype "${key}"`);
 			}
 		}
 
@@ -154,6 +165,15 @@ export class Registry {
 		const names: string[] = [];
 		for (const [name, stream] of Object.entries(plugin.streams)) {
 			this.#streams.set(`${plugin.id}/${name}`, stream);
+			names.push(name);
+		}
+		return names;
+	}
+
+	#loadDatatypes(plugin: PluginInstance): string[] {
+		const names: string[] = [];
+		for (const [name, entry] of Object.entries(plugin.datatypes)) {
+			this.#datatypes.set(`${plugin.id}/${name}`, entry);
 			names.push(name);
 		}
 		return names;
@@ -214,5 +234,24 @@ export class Registry {
 	/** Look up a stream by name, returning undefined if not found. */
 	findStream(name: string): (AnyStreamSource | AnyStreamTarget) | undefined {
 		return this.#streams.get(name);
+	}
+
+	/** Look up a data type by name. */
+	getDataType(name: string): Datatype {
+		const entry = this.#datatypes.get(name);
+		if (!entry) {
+			logger.warn(`Data type not found: ${name}`, { datatype: name });
+			throw new ValidationError(`Unknown data type: ${name}`, {
+				source: "registry",
+				retryable: false,
+				details: { datatype: name },
+			});
+		}
+		return entry;
+	}
+
+	/** Look up a data type by name, returning undefined if not found. */
+	findDataType(name: string): Datatype | undefined {
+		return this.#datatypes.get(name);
 	}
 }

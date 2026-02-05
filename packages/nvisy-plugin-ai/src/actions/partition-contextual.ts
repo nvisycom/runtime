@@ -1,4 +1,3 @@
-import type { Data } from "@nvisy/core";
 import { Action, Document, RuntimeError } from "@nvisy/core";
 import { z } from "zod";
 import { AICompletionClient } from "../providers/client.js";
@@ -15,7 +14,7 @@ export const partitionContextual = Action.withClient(
 	"partition_contextual",
 	AICompletionClient,
 	{
-		types: [Document, Document] as [typeof Data, typeof Document],
+		types: [Document],
 		params: PartitionContextualParams,
 		transform: transformPartitionContextual,
 	},
@@ -23,7 +22,7 @@ export const partitionContextual = Action.withClient(
 
 // biome-ignore lint/correctness/useYield: stub action throws before yielding
 async function* transformPartitionContextual(
-	_stream: AsyncIterable<Data>,
+	_stream: AsyncIterable<Document>,
 	_params: z.infer<typeof PartitionContextualParams>,
 	_client: AICompletionClient,
 ) {

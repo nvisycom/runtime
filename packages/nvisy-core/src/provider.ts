@@ -1,9 +1,3 @@
-/**
- * @module providers
- *
- * The Provider concept — the external client/connection lifecycle layer.
- */
-
 import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
 import { ConnectionError } from "./errors/index.js";

@@ -1,4 +1,4 @@
-import { RuntimeError } from "./runtime-error.js";
+import { RuntimeError } from "./runtime.js";
 
 /**
  * Could not reach an external service, storage backend, or database.

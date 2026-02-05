@@ -20,7 +20,7 @@ all flow through typed, validated primitives with full lineage tracking.
 | [`nvisy-plugin-vector`](packages/nvisy-plugin-vector/) | Vector database integrations (Qdrant, Milvus, Weaviate, Pinecone) |
 | [`nvisy-server`](packages/nvisy-server/) | HTTP execution worker |
 
-See [packages/](packages/readme.md) for detailed descriptions.
+See [packages/](packages/README.md) for detailed descriptions.
 
 ## Quick Start
 
