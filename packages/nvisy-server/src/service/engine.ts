@@ -17,10 +17,13 @@ export function createEngine(): Engine {
 			.register(sqlPlugin);
 
 		const { actions, providers } = engine.schema;
-		logger.info("Engine initialized (actions={actions}, providers={providers})", {
-			actions: actions.length,
-			providers: providers.length,
-		});
+		logger.info(
+			"Engine initialized (actions={actions}, providers={providers})",
+			{
+				actions: actions.length,
+				providers: providers.length,
+			},
+		);
 
 		return engine;
 	} catch (error) {

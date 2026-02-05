@@ -447,9 +447,9 @@ describe("credential validation", () => {
 			},
 		};
 
-		await expect(engine.executeSync(linearGraph(), connections)).rejects.toThrow(
-			ValidationError,
-		);
+		await expect(
+			engine.executeSync(linearGraph(), connections),
+		).rejects.toThrow(ValidationError);
 	});
 
 	it("rejects missing connection entry at execution time", async () => {
@@ -471,9 +471,9 @@ describe("credential validation", () => {
 			},
 		};
 
-		await expect(engine.executeSync(linearGraph(), connections)).rejects.toThrow(
-			ValidationError,
-		);
+		await expect(
+			engine.executeSync(linearGraph(), connections),
+		).rejects.toThrow(ValidationError);
 	});
 
 	it("accepts valid connections map with extra entries", async () => {
