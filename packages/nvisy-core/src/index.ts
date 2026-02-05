@@ -39,9 +39,9 @@ export type {
 	AnyProviderFactory,
 	AnyStreamSource,
 	AnyStreamTarget,
-	ModuleInstance,
-} from "./module.js";
-export { Module } from "./module.js";
+	PluginInstance,
+} from "./plugin.js";
+export { Plugin } from "./plugin.js";
 export type {
 	ConnectedInstance,
 	ProviderFactory,

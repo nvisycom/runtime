@@ -10,7 +10,7 @@
 		"clean": "rimraf dist",
 		"dev": "node --watch dist/main.js",
 		"start": "node dist/main.js",
-		"typecheck": "tsc --noEmit"
+		"typecheck": "tsc -b"
 	},
 	"dependencies": {
 		"@hono/event-emitter": "^2.0.0",
@@ -25,6 +25,9 @@
 		"@logtape/pretty": "^2.0.2",
 		"@logtape/redaction": "^2.0.2",
 		"@nvisy/core": "*",
+		"@nvisy/plugin-ai": "*",
+		"@nvisy/plugin-sql": "*",
+		"@nvisy/plugin-vector": "*",
 		"@nvisy/runtime": "*",
 		"@scalar/hono-api-reference": "^0.9.40",
 		"hono": "^4.11.7",

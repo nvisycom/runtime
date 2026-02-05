@@ -2,9 +2,9 @@
 
 [![Build](https://img.shields.io/github/actions/workflow/status/nvisycom/runtime/build.yml?branch=main&label=build%20%26%20test&style=flat-square)](https://github.com/nvisycom/runtime/actions/workflows/build.yml)
 
-The monorepo contains seven packages. The entry points (`nvisy-cli`,
-`nvisy-server`) depend on all other packages. `nvisy-core` is the shared
-foundation with no internal dependencies.
+The monorepo is organized around a shared core, a runtime engine, a set of
+plugin packages, and an HTTP server. `nvisy-core` is the shared foundation
+with no internal dependencies.
 
 ## nvisy-core
 
@@ -17,23 +17,23 @@ on this one.
 
 Graph definition, JSON parser, DAG compiler, and execution engine. Parses JSON
 graph definitions into an immutable `ExecutionPlan`, then executes it —
-walking the DAG in topological order, managing concurrency via Effect
-semaphores, enforcing per-connector rate limits, retrying failed nodes with
+walking the DAG in topological order, managing concurrency via Effection
+structured concurrency, enforcing per-connector rate limits, retrying failed nodes with
 configurable backoff, and emitting runtime metrics and OpenTelemetry traces.
 
-## nvisy-sql
+## nvisy-plugin-sql
 
 Source and Sink implementations for relational databases. Targets PostgreSQL
 and MySQL. Handles connection pooling, query generation, type mapping, and
 batch insert/upsert operations.
 
-## nvisy-object
+## nvisy-plugin-object
 
 Source and Sink implementations for object stores and file formats. Targets S3,
 GCS, Parquet, JSONL, and CSV. Handles multipart uploads, streaming reads,
 prefix-based listing, schema inference, and chunked reading.
 
-## nvisy-vector
+## nvisy-plugin-vector
 
 Source and Sink implementations for vector databases. Targets Pinecone, Qdrant,
 Milvus, Weaviate, and pgvector. Handles collection/index management, upsert
@@ -41,12 +41,8 @@ with metadata, batch operations, and dimensionality validation.
 
 ## nvisy-server
 
-HTTP server built on Hono and Effect. Exposes a REST API for graph CRUD, run
+HTTP server built on Hono. Exposes a REST API for graph CRUD, run
 management, connector health checks, and lineage queries. Includes a cron
 scheduler, webhook-based event triggers, and server-level observability
 (request logging, health endpoints, metric export).
 
-## nvisy-cli
-
-Command-line interface. Provides `init`, `validate`, `run`, `dry-run`,
-`connectors list`, `connectors health`, and `serve` commands.

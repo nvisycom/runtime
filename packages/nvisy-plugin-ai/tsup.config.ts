@@ -7,7 +7,7 @@ export default defineConfig({
 
 	/* Output */
 	outDir: "dist",
-	dts: true,
+	dts: { compilerOptions: { composite: false } },
 	sourcemap: true,
 	clean: true,
 

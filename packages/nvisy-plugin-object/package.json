@@ -1,7 +1,7 @@
 {
-	"name": "@nvisy/core",
+	"name": "@nvisy/plugin-object",
 	"version": "0.1.0",
-	"description": "Core data types, errors, and utilities for the Nvisy runtime",
+	"description": "Object store integrations for the Nvisy platform",
 	"type": "module",
 	"exports": {
 		".": {
@@ -21,6 +21,7 @@
 	},
 	"dependencies": {
 		"@logtape/logtape": "^2.0.2",
+		"@nvisy/core": "*",
 		"zod": "^4.3.6"
 	},
 	"engines": {

@@ -1,5 +1,5 @@
 import type { Resumable } from "@nvisy/core";
-import { Action, Data, Module, Provider, Row, Stream } from "@nvisy/core";
+import { Action, Data, Plugin, Provider, Row, Stream } from "@nvisy/core";
 import { z } from "zod";
 import { Engine } from "../src/engine/engine.js";
 import type { Connections } from "../src/engine/types.js";
@@ -76,27 +76,27 @@ export const testTargetStream = Stream.createTarget("write", TestClient, {
 	},
 });
 
-// ── Module ────────────────────────────────────────────────────────
+// ── Plugin ────────────────────────────────────────────────────────
 
-export const testModule = Module.define("test")
+export const testPlugin = Plugin.define("test")
 	.withActions(noopAction)
 	.withProviders(testProvider)
 	.withStreams(testSourceStream, testTargetStream);
 
 /**
- * Create a Registry pre-loaded with the test module.
+ * Create a Registry pre-loaded with the test plugin.
  */
 export function makeTestRegistry(): Registry {
 	const registry = new Registry();
-	registry.load(testModule);
+	registry.load(testPlugin);
 	return registry;
 }
 
 /**
- * Create an Engine pre-loaded with the test module.
+ * Create an Engine pre-loaded with the test plugin.
  */
 export function makeTestEngine(): Engine {
-	return new Engine().register(testModule);
+	return new Engine().register(testPlugin);
 }
 
 /**

@@ -12,13 +12,13 @@ all flow through typed, validated primitives with full lineage tracking.
 
 | Package | Description |
 |---------|-------------|
-| [`nvisy-core`](packages/nvisy-core/) | Primitives, type system, errors, Source/Sink/Action interfaces |
+| [`nvisy-core`](packages/nvisy-core/) | Core data types, errors, and utilities |
 | [`nvisy-runtime`](packages/nvisy-runtime/) | Graph definition, DAG compiler, execution engine |
-| [`nvisy-server`](packages/nvisy-server/) | HTTP server (Hono), REST API, cron scheduler |
-| `nvisy-sql` | SQL connectors (PostgreSQL, MySQL) |
-| `nvisy-object` | Object store connectors (S3, GCS, Parquet, JSONL, CSV) |
-| `nvisy-vector` | Vector database connectors (Pinecone, Qdrant, Milvus, Weaviate, pgvector) |
-| `nvisy-cli` | Command-line interface |
+| [`nvisy-plugin-ai`](packages/nvisy-plugin-ai/) | AI provider integrations (OpenAI, Anthropic, Google) |
+| [`nvisy-plugin-sql`](packages/nvisy-plugin-sql/) | SQL provider integrations (Postgres, MySQL, MSSQL) |
+| [`nvisy-plugin-object`](packages/nvisy-plugin-object/) | Object store integrations (S3, GCS, Parquet, JSONL, CSV) |
+| [`nvisy-plugin-vector`](packages/nvisy-plugin-vector/) | Vector database integrations (Qdrant, Milvus, Weaviate, Pinecone) |
+| [`nvisy-server`](packages/nvisy-server/) | HTTP execution worker |
 
 See [packages/](packages/readme.md) for detailed descriptions.
 

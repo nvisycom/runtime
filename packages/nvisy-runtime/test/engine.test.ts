@@ -2,7 +2,7 @@ import {
 	Action,
 	CancellationError,
 	Document,
-	Module,
+	Plugin,
 	Provider,
 	RuntimeError,
 	ValidationError,
@@ -90,12 +90,12 @@ describe("validate", () => {
 			transform: (stream) => stream,
 		});
 
-		const mod = Module.define("cap")
+		const capPlugin = Plugin.define("cap")
 			.withProviders(incompatProvider)
 			.withActions(embeddingAction);
 
 		const engine = makeTestEngine();
-		engine.register(mod);
+		engine.register(capPlugin);
 
 		const credId = "00000000-0000-4000-8000-0000000000d0";
 		const graph = {
@@ -210,7 +210,7 @@ describe("execute", () => {
 	});
 
 	it("non-retryable error stops immediately", async () => {
-		const { Action, Data, Module, Provider, Row, Stream } = await import(
+		const { Action, Data, Plugin, Provider, Row, Stream } = await import(
 			"@nvisy/core"
 		);
 		const { z } = await import("zod");
@@ -239,7 +239,7 @@ describe("execute", () => {
 			writer: () => async () => {},
 		});
 
-		const failModule = Module.define("fail")
+		const failPlugin = Plugin.define("fail")
 			.withActions(
 				Action.withoutClient("noop", {
 					types: [Data],
@@ -251,7 +251,7 @@ describe("execute", () => {
 			.withStreams(failSource, failTarget);
 
 		const engine = makeTestEngine();
-		engine.register(failModule);
+		engine.register(failPlugin);
 
 		const failCredId = "00000000-0000-4000-8000-0000000000f1";
 		const graph = {
@@ -308,7 +308,7 @@ describe("execute", () => {
 	});
 
 	it("retryable error triggers retry", async () => {
-		const { Action, Data, Module, Provider, Stream, Row } = await import(
+		const { Action, Data, Plugin, Provider, Stream, Row } = await import(
 			"@nvisy/core"
 		);
 		const { z } = await import("zod");
@@ -343,7 +343,7 @@ describe("execute", () => {
 			writer: () => async () => {},
 		});
 
-		const retryModule = Module.define("retry")
+		const retryPlugin = Plugin.define("retry")
 			.withActions(
 				Action.withoutClient("noop", {
 					types: [Data],
@@ -355,7 +355,7 @@ describe("execute", () => {
 			.withStreams(retrySource, retryTarget);
 
 		const engine = makeTestEngine();
-		engine.register(retryModule);
+		engine.register(retryPlugin);
 
 		const retryCredId = "00000000-0000-4000-8000-0000000000f2";
 		const graph = {

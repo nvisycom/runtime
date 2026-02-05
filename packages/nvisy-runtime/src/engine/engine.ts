@@ -1,4 +1,4 @@
-import type { ModuleInstance } from "@nvisy/core";
+import type { PluginInstance } from "@nvisy/core";
 import { ValidationError } from "@nvisy/core";
 import { compile, type ExecutionPlan } from "../compiler/index.js";
 import { Registry, type RegistrySchema } from "../registry.js";
@@ -19,7 +19,7 @@ import { ConnectionsSchema } from "./types.js";
  *
  * ```ts
  * const engine = new Engine();
- * engine.register(sqlModule);
+ * engine.register(sqlPlugin);
  * const result = await engine.execute(graphDefinition, connections);
  * ```
  */
@@ -31,9 +31,9 @@ export class Engine {
 		return this.#registry.schema;
 	}
 
-	/** Register a module's providers, actions, and streams. */
-	register(mod: ModuleInstance): this {
-		this.#registry.load(mod);
+	/** Register a plugin's providers, actions, and streams. */
+	register(plugin: PluginInstance): this {
+		this.#registry.load(plugin);
 		return this;
 	}
 

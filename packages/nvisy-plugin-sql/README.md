@@ -1,8 +1,8 @@
-# @nvisy/sql
+# @nvisy/plugin-sql
 
 [![Build](https://img.shields.io/github/actions/workflow/status/nvisycom/runtime/build.yml?branch=main&label=build%20%26%20test&style=flat-square)](https://github.com/nvisycom/runtime/actions/workflows/build.yml)
 
-SQL provider module for the Nvisy runtime.
+SQL provider plugin for the Nvisy runtime.
 
 ## Features
 
@@ -13,7 +13,7 @@ SQL provider module for the Nvisy runtime.
 
 ## Overview
 
-Provides Postgres, MySQL, and MSSQL integrations through a unified Kysely-based client. The module exposes:
+Provides Postgres, MySQL, and MSSQL integrations through a unified Kysely-based client. The plugin exposes:
 
 - **Providers** (`sql/postgres`, `sql/mysql`, `sql/mssql`): connection lifecycle management with credential validation.
 - **Streams** (`sql/read`, `sql/write`): keyset-paginated source and per-item insert sink.
@@ -22,9 +22,9 @@ Provides Postgres, MySQL, and MSSQL integrations through a unified Kysely-based 
 ## Usage
 
 ```ts
-import { sqlModule } from "@nvisy/sql";
+import { sqlPlugin } from "@nvisy/plugin-sql";
 
-registry.load(sqlModule);
+registry.load(sqlPlugin);
 ```
 
 ## Changelog

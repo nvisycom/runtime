@@ -2,7 +2,7 @@
 
 [![Build](https://img.shields.io/github/actions/workflow/status/nvisycom/runtime/build.yml?branch=main&label=build%20%26%20test&style=flat-square)](https://github.com/nvisycom/runtime/actions/workflows/build.yml)
 
-HTTP server for the Nvisy Runtime platform, built on Hono and Effect.
+HTTP server for the Nvisy Runtime platform, built on Hono.
 
 ## Features
 

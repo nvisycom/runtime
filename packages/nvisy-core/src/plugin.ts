@@ -15,13 +15,13 @@ export type AnyStreamSource = StreamSource<any, any, any, any>;
 export type AnyStreamTarget = StreamTarget<any, any, any>;
 
 /**
- * A module bundles providers, streams, and actions under a namespace.
+ * A plugin bundles providers, streams, and actions under a namespace.
  *
- * Modules are the unit of registration with the engine. All entries
- * are namespaced as `"moduleId/name"` to avoid collisions.
+ * Plugins are the unit of registration with the engine. All entries
+ * are namespaced as `"pluginId/name"` to avoid collisions.
  */
-export interface ModuleInstance {
-	/** Unique identifier for the module (e.g. "sql", "openai"). */
+export interface PluginInstance {
+	/** Unique identifier for the plugin (e.g. "sql", "openai"). */
 	readonly id: string;
 	/** Provider factories keyed by their ID. */
 	readonly providers: Readonly<Record<string, AnyProviderFactory>>;
@@ -31,7 +31,7 @@ export interface ModuleInstance {
 	readonly actions: Readonly<Record<string, AnyActionInstance>>;
 }
 
-class ModuleBuilder implements ModuleInstance {
+class PluginBuilder implements PluginInstance {
 	readonly id: string;
 	readonly providers: Readonly<Record<string, AnyProviderFactory>> = {};
 	readonly streams: Readonly<
@@ -43,7 +43,7 @@ class ModuleBuilder implements ModuleInstance {
 		this.id = id;
 	}
 
-	/** Add providers to this module. */
+	/** Add providers to this plugin. */
 	withProviders(...providers: AnyProviderFactory[]): this {
 		const record = { ...this.providers };
 		for (const p of providers) record[p.id] = p;
@@ -51,7 +51,7 @@ class ModuleBuilder implements ModuleInstance {
 		return this;
 	}
 
-	/** Add streams to this module. */
+	/** Add streams to this plugin. */
 	withStreams(...streams: (AnyStreamSource | AnyStreamTarget)[]): this {
 		const record = { ...this.streams };
 		for (const s of streams) record[s.id] = s;
@@ -59,7 +59,7 @@ class ModuleBuilder implements ModuleInstance {
 		return this;
 	}
 
-	/** Add actions to this module. */
+	/** Add actions to this plugin. */
 	withActions(...actions: AnyActionInstance[]): this {
 		const record = { ...this.actions };
 		for (const a of actions) record[a.id] = a;
@@ -68,10 +68,10 @@ class ModuleBuilder implements ModuleInstance {
 	}
 }
 
-/** Factory for creating module definitions. */
-export const Module = {
-	/** Create a new module with the given ID. */
-	define(id: string): ModuleBuilder {
-		return new ModuleBuilder(id);
+/** Factory for creating plugin definitions. */
+export const Plugin = {
+	/** Create a new plugin with the given ID. */
+	define(id: string): PluginBuilder {
+		return new PluginBuilder(id);
 	},
 } as const;

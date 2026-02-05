@@ -1,8 +1,8 @@
-# @nvisy/ai
+# @nvisy/plugin-ai
 
 [![Build](https://img.shields.io/github/actions/workflow/status/nvisycom/runtime/build.yml?branch=main&label=build%20%26%20test&style=flat-square)](https://github.com/nvisycom/runtime/actions/workflows/build.yml)
 
-AI provider module for the Nvisy runtime, backed by the [Vercel AI SDK](https://sdk.vercel.ai).
+AI provider plugin for the Nvisy runtime, backed by the [Vercel AI SDK](https://sdk.vercel.ai).
 
 ## Features
 
@@ -13,7 +13,7 @@ AI provider module for the Nvisy runtime, backed by the [Vercel AI SDK](https://
 
 ## Overview
 
-Provides LLM and embedding model integrations for AI-powered data pipelines. The module exposes:
+Provides LLM and embedding model integrations for AI-powered data pipelines. The plugin exposes:
 
 - **Providers**:
   - `ai/openai-completion` — OpenAI completion (language model)
@@ -33,9 +33,9 @@ Provides LLM and embedding model integrations for AI-powered data pipelines. The
 ## Usage
 
 ```ts
-import { aiModule } from "@nvisy/ai";
+import { aiPlugin } from "@nvisy/plugin-ai";
 
-engine.register(aiModule);
+engine.register(aiPlugin);
 ```
 
 ## Changelog

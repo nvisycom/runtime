@@ -4,7 +4,7 @@ import type {
 	AnyProviderFactory,
 	AnyStreamSource,
 	AnyStreamTarget,
-	ModuleInstance,
+	PluginInstance,
 } from "@nvisy/core";
 import { ValidationError } from "@nvisy/core";
 
@@ -38,15 +38,15 @@ export interface RegistrySchema {
 
 /**
  * Unified registry that stores providers and actions contributed by
- * {@link ModuleInstance} objects.
+ * {@link PluginInstance} objects.
  *
- * All entries are keyed as `"moduleId/name"`.
+ * All entries are keyed as `"pluginId/name"`.
  */
 export class Registry {
 	readonly #actions = new Map<string, AnyActionInstance>();
 	readonly #providers = new Map<string, AnyProviderFactory>();
 	readonly #streams = new Map<string, AnyStreamSource | AnyStreamTarget>();
-	readonly #modules = new Set<string>();
+	readonly #plugins = new Set<string>();
 
 	/** Snapshot of all registered actions and providers with their schemas. */
 	get schema(): RegistrySchema {
@@ -63,54 +63,54 @@ export class Registry {
 		return { actions, providers };
 	}
 
-	/** Load all providers, actions, and streams declared by a module. */
-	load(mod: ModuleInstance): void {
-		this.#ensureNotLoaded(mod.id);
-		this.#checkCollisions(mod);
+	/** Load all providers, actions, and streams declared by a plugin. */
+	load(plugin: PluginInstance): void {
+		this.#ensureNotLoaded(plugin.id);
+		this.#checkCollisions(plugin);
 
-		this.#modules.add(mod.id);
+		this.#plugins.add(plugin.id);
 
-		const providerNames = this.#loadProviders(mod);
-		const actionNames = this.#loadActions(mod);
-		const streamNames = this.#loadStreams(mod);
+		const providerNames = this.#loadProviders(plugin);
+		const actionNames = this.#loadActions(plugin);
+		const streamNames = this.#loadStreams(plugin);
 
-		logger.info(`Module loaded: ${mod.id}`, {
-			moduleId: mod.id,
+		logger.info(`Plugin loaded: ${plugin.id}`, {
+			pluginId: plugin.id,
 			providers: providerNames.join(", "),
 			actions: actionNames.join(", "),
 			streams: streamNames.join(", "),
 		});
 	}
 
-	#ensureNotLoaded(moduleId: string): void {
-		if (this.#modules.has(moduleId)) {
-			throw new ValidationError(`Module already loaded: ${moduleId}`, {
+	#ensureNotLoaded(pluginId: string): void {
+		if (this.#plugins.has(pluginId)) {
+			throw new ValidationError(`Plugin already loaded: ${pluginId}`, {
 				source: "registry",
 				retryable: false,
-				details: { moduleId },
+				details: { pluginId },
 			});
 		}
 	}
 
-	#checkCollisions(mod: ModuleInstance): void {
+	#checkCollisions(plugin: PluginInstance): void {
 		const collisions: string[] = [];
 
-		for (const name of Object.keys(mod.providers)) {
-			const key = `${mod.id}/${name}`;
+		for (const name of Object.keys(plugin.providers)) {
+			const key = `${plugin.id}/${name}`;
 			if (this.#providers.has(key)) {
 				collisions.push(`provider "${key}"`);
 			}
 		}
 
-		for (const name of Object.keys(mod.actions)) {
-			const key = `${mod.id}/${name}`;
+		for (const name of Object.keys(plugin.actions)) {
+			const key = `${plugin.id}/${name}`;
 			if (this.#actions.has(key)) {
 				collisions.push(`action "${key}"`);
 			}
 		}
 
-		for (const name of Object.keys(mod.streams)) {
-			const key = `${mod.id}/${name}`;
+		for (const name of Object.keys(plugin.streams)) {
+			const key = `${plugin.id}/${name}`;
 			if (this.#streams.has(key)) {
 				collisions.push(`stream "${key}"`);
 			}
@@ -118,42 +118,42 @@ export class Registry {
 
 		if (collisions.length > 0) {
 			logger.error(
-				"Registry collision loading module {moduleId}: {collisions}",
-				{ moduleId: mod.id, collisions: collisions.join(", ") },
+				"Registry collision loading plugin {pluginId}: {collisions}",
+				{ pluginId: plugin.id, collisions: collisions.join(", ") },
 			);
 			throw new ValidationError(
 				`Registry collision: ${collisions.join(", ")}`,
 				{
 					source: "registry",
 					retryable: false,
-					details: { moduleId: mod.id, collisions },
+					details: { pluginId: plugin.id, collisions },
 				},
 			);
 		}
 	}
 
-	#loadProviders(mod: ModuleInstance): string[] {
+	#loadProviders(plugin: PluginInstance): string[] {
 		const names: string[] = [];
-		for (const [name, factory] of Object.entries(mod.providers)) {
-			this.#providers.set(`${mod.id}/${name}`, factory);
+		for (const [name, factory] of Object.entries(plugin.providers)) {
+			this.#providers.set(`${plugin.id}/${name}`, factory);
 			names.push(name);
 		}
 		return names;
 	}
 
-	#loadActions(mod: ModuleInstance): string[] {
+	#loadActions(plugin: PluginInstance): string[] {
 		const names: string[] = [];
-		for (const [name, action] of Object.entries(mod.actions)) {
-			this.#actions.set(`${mod.id}/${name}`, action);
+		for (const [name, action] of Object.entries(plugin.actions)) {
+			this.#actions.set(`${plugin.id}/${name}`, action);
 			names.push(name);
 		}
 		return names;
 	}
 
-	#loadStreams(mod: ModuleInstance): string[] {
+	#loadStreams(plugin: PluginInstance): string[] {
 		const names: string[] = [];
-		for (const [name, stream] of Object.entries(mod.streams)) {
-			this.#streams.set(`${mod.id}/${name}`, stream);
+		for (const [name, stream] of Object.entries(plugin.streams)) {
+			this.#streams.set(`${plugin.id}/${name}`, stream);
 			names.push(name);
 		}
 		return names;

@@ -22,13 +22,13 @@ Parses JSON graph definitions into an immutable execution plan, then runs it —
 
 ## Usage
 
-### Registering Modules
+### Registering Plugins
 
 ```ts
 import { Engine } from "@nvisy/runtime";
-import { sqlModule } from "@nvisy/sql";
+import { sqlPlugin } from "@nvisy/plugin-sql";
 
-const engine = new Engine().register(sqlModule);
+const engine = new Engine().register(sqlPlugin);
 ```
 
 ### Validating a Graph

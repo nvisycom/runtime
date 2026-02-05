@@ -1,8 +1,8 @@
-# @nvisy/vector
+# @nvisy/plugin-vector
 
 [![Build](https://img.shields.io/github/actions/workflow/status/nvisycom/runtime/build.yml?branch=main&label=build%20%26%20test&style=flat-square)](https://github.com/nvisycom/runtime/actions/workflows/build.yml)
 
-Vector database module for the Nvisy runtime.
+Vector database plugin for the Nvisy runtime.
 
 ## Features
 
@@ -13,7 +13,7 @@ Vector database module for the Nvisy runtime.
 
 ## Overview
 
-Provides vector database integrations for embedding storage and similarity search. The module exposes:
+Provides vector database integrations for embedding storage and similarity search. The plugin exposes:
 
 - **Providers** (`vector/pinecone`, `vector/qdrant`, `vector/milvus`, `vector/weaviate`, `vector/pgvector`): connection lifecycle management with credential validation.
 - **Streams** (`vector/upsert`, `vector/search`): vector write and similarity search streams.
@@ -22,9 +22,9 @@ Provides vector database integrations for embedding storage and similarity searc
 ## Usage
 
 ```ts
-import { vectorModule } from "@nvisy/vector";
+import { vectorPlugin } from "@nvisy/plugin-vector";
 
-registry.load(vectorModule);
+registry.load(vectorPlugin);
 ```
 
 ## Changelog

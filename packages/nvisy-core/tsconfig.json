@@ -3,7 +3,8 @@
 	"compilerOptions": {
 		/* Emit */
 		"outDir": "./dist",
-		"rootDir": "./src"
+		"rootDir": "./src",
+		"composite": true
 	},
 	/* Scope */
 	"include": ["src/**/*"],
