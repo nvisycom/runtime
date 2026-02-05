@@ -161,14 +161,7 @@ function toConnectionError(error: unknown, source: string): ConnectionError {
 		provider: source,
 		error: error instanceof Error ? error.message : String(error),
 	});
-	return new ConnectionError(
-		`Failed to connect: ${error instanceof Error ? error.message : String(error)}`,
-		{
-			source,
-			retryable: false,
-			cause: error instanceof Error ? error : undefined,
-		},
-	);
+	return ConnectionError.wrap(error, { source });
 }
 
 /** Configuration for {@link makeProvider}. */

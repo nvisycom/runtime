@@ -184,11 +184,7 @@ export class Registry {
 		const action = this.#actions.get(name);
 		if (!action) {
 			logger.warn(`Action not found: ${name}`, { action: name });
-			throw new ValidationError(`Unknown action: ${name}`, {
-				source: "registry",
-				retryable: false,
-				details: { action: name },
-			});
+			throw ValidationError.notFound(name, "action", "registry");
 		}
 		return action;
 	}
@@ -198,11 +194,7 @@ export class Registry {
 		const factory = this.#providers.get(name);
 		if (!factory) {
 			logger.warn(`Provider not found: ${name}`, { provider: name });
-			throw new ValidationError(`Unknown provider: ${name}`, {
-				source: "registry",
-				retryable: false,
-				details: { provider: name },
-			});
+			throw ValidationError.notFound(name, "provider", "registry");
 		}
 		return factory;
 	}
@@ -212,11 +204,7 @@ export class Registry {
 		const stream = this.#streams.get(name);
 		if (!stream) {
 			logger.warn(`Stream not found: ${name}`, { stream: name });
-			throw new ValidationError(`Unknown stream: ${name}`, {
-				source: "registry",
-				retryable: false,
-				details: { stream: name },
-			});
+			throw ValidationError.notFound(name, "stream", "registry");
 		}
 		return stream;
 	}
@@ -241,11 +229,7 @@ export class Registry {
 		const entry = this.#datatypes.get(name);
 		if (!entry) {
 			logger.warn(`Data type not found: ${name}`, { datatype: name });
-			throw new ValidationError(`Unknown data type: ${name}`, {
-				source: "registry",
-				retryable: false,
-				details: { datatype: name },
-			});
+			throw ValidationError.notFound(name, "datatype", "registry");
 		}
 		return entry;
 	}

@@ -146,11 +146,7 @@ class ProviderFactoryImpl<TCred, TClient>
 				provider: this.id,
 				error: error instanceof Error ? error.message : String(error),
 			});
-			if (error instanceof ConnectionError) throw error;
-			throw new ConnectionError(
-				error instanceof Error ? error.message : String(error),
-				{ source: this.id, cause: error instanceof Error ? error : undefined },
-			);
+			throw ConnectionError.wrap(error, { source: this.id });
 		}
 	}
 }
