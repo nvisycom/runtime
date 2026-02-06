@@ -20,14 +20,14 @@ export function createEngine(): Engine {
 			.register(sqlPlugin)
 			.register(vectorPlugin);
 
-		const { actions, providers } = engine.schema;
-		logger.info(
-			"Engine initialized (actions={actions}, providers={providers})",
-			{
-				actions: actions.length,
-				providers: providers.length,
-			},
-		);
+		const { actions, providers, streams, loaders, datatypes } = engine.schema;
+		logger.info("Engine initialized", {
+			providers: providers.length,
+			streams,
+			actions: actions.length,
+			loaders,
+			datatypes,
+		});
 
 		return engine;
 	} catch (error) {

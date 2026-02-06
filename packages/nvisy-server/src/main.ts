@@ -5,58 +5,15 @@
  * logging via LogTape, builds the Hono app, and starts the
  * HTTP server.
  *
- * ## Logging
- *
- * - **development** — human-readable, coloured console output
- *   via `@logtape/pretty`.
- * - **production** — JSON Lines (machine-parseable) via the
- *   built-in `jsonLinesFormatter`.
- *
- * Sensitive fields are automatically redacted by `@logtape/redaction`.
- * Per-request `requestId` is propagated to every log call via
- * `AsyncLocalStorage` — see `middleware/index.ts`.
- *
  * @module
  */
 
-import { AsyncLocalStorage } from "node:async_hooks";
-import {
-	configure,
-	getConsoleSink,
-	getLogger,
-	jsonLinesFormatter,
-} from "@logtape/logtape";
-import { prettyFormatter } from "@logtape/pretty";
-import { redactByField } from "@logtape/redaction";
+import { getLogger } from "@logtape/logtape";
 import { createApp, startServer } from "./app.js";
-import { loadConfig } from "./config.js";
+import { configureLogging, loadConfig } from "./config.js";
 
 const config = loadConfig();
-
-// Development  → coloured, human-readable lines (@logtape/pretty)
-// Production   → one JSON object per line (jsonLinesFormatter)
-const consoleSink = config.isDevelopment
-	? getConsoleSink({ formatter: prettyFormatter })
-	: getConsoleSink({ formatter: jsonLinesFormatter });
-
-await configure({
-	// Enables LogTape implicit contexts so that `withContext({ requestId })`
-	// in middleware automatically attaches the request ID to every log record.
-	contextLocalStorage: new AsyncLocalStorage(),
-	sinks: { console: redactByField(consoleSink) },
-	loggers: [
-		{
-			category: ["logtape", "meta"],
-			lowestLevel: "warning",
-			sinks: ["console"],
-		},
-		{
-			category: ["nvisy"],
-			lowestLevel: config.isDevelopment ? "debug" : "info",
-			sinks: ["console"],
-		},
-	],
-});
+await configureLogging(config);
 
 const { app, injectWebSocket } = createApp(config);
 

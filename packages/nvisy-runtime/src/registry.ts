@@ -26,13 +26,16 @@ export interface ProviderDescriptor {
 }
 
 /**
- * Complete snapshot of every action and provider currently registered,
+ * Complete snapshot of everything currently registered,
  * suitable for generating an OpenAPI spec alongside the static
  * graph/node/edge schemas.
  */
 export interface RegistrySchema {
 	readonly actions: ReadonlyArray<ActionDescriptor>;
 	readonly providers: ReadonlyArray<ProviderDescriptor>;
+	readonly streams: number;
+	readonly loaders: number;
+	readonly datatypes: number;
 }
 
 /**
@@ -61,7 +64,13 @@ export class Registry {
 			providers.push({ name, credentialSchema: factory.credentialSchema });
 		}
 
-		return { actions, providers };
+		return {
+			actions,
+			providers,
+			streams: this.#streams.size,
+			loaders: this.#loaders.size,
+			datatypes: this.#datatypes.size,
+		};
 	}
 
 	/** Load all providers, actions, loaders, and streams declared by a plugin. */
@@ -120,10 +129,13 @@ export class Registry {
 			loaded[kind] = names;
 		}
 
-		logger.debug(`Plugin loaded: ${plugin.id}`, {
-			pluginId: plugin.id,
-			...loaded,
-		});
+		const counts: Record<string, number> = {};
+		for (const [kind, names] of Object.entries(loaded)) {
+			if (names.length > 0) {
+				counts[`${kind}s`] = names.length;
+			}
+		}
+		logger.debug("Plugin loaded: {plugin}", { plugin: plugin.id, ...counts });
 	}
 
 	/** Look up an action by name. */

@@ -20,6 +20,14 @@ dev: ## Starts build watchers and dev server concurrently.
 	node $(WATCH_PATHS) packages/nvisy-server/dist/main.js & \
 	wait
 
+.PHONY: dev\:prod
+dev\:prod: ## Starts dev server with production log level (info).
+	@for pkg in packages/*/; do \
+		npm run build:watch --workspace=$$pkg & \
+	done; \
+	NODE_ENV=production node $(WATCH_PATHS) packages/nvisy-server/dist/main.js & \
+	wait
+
 .PHONY: ci
 ci: ## Runs all CI checks locally (lint, typecheck, test, build).
 	@$(call log,Running lint...)
