@@ -10,11 +10,15 @@ define log
 printf "[%s] [MAKE] [$(MAKECMDGOALS)] $(1)\n" "$$(date '+%Y-%m-%d %H:%M:%S')"
 endef
 
+WATCH_PATHS := $(foreach p,$(wildcard packages/*/dist),--watch-path=$(p))
+
 .PHONY: dev
-dev: ## Starts build watcher and dev server concurrently.
-	@npm run build:watch --workspace=packages/nvisy-server & \
-	 npm run dev --workspace=packages/nvisy-server & \
-	 wait
+dev: ## Starts build watchers and dev server concurrently.
+	@for pkg in packages/*/; do \
+		npm run build:watch --workspace=$$pkg & \
+	done; \
+	node $(WATCH_PATHS) packages/nvisy-server/dist/main.js & \
+	wait
 
 .PHONY: ci
 ci: ## Runs all CI checks locally (lint, typecheck, test, build).

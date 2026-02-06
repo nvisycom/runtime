@@ -120,7 +120,7 @@ export class Registry {
 			loaded[kind] = names;
 		}
 
-		logger.info(`Plugin loaded: ${plugin.id}`, {
+		logger.debug(`Plugin loaded: ${plugin.id}`, {
 			pluginId: plugin.id,
 			...loaded,
 		});
