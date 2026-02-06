@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildRuntimeGraph, parseGraph } from "../src/compiler/parse.js";
+import { parseGraph } from "../src/compiler/parse.js";
 import {
 	ACTION_ID,
 	CRED_ID,
@@ -148,26 +148,21 @@ describe("parseGraph", () => {
 
 describe("buildRuntimeGraph", () => {
 	it("builds a graph matching the definition", () => {
-		const def = {
+		const { graph } = parseGraph({
 			id: GRAPH_ID,
 			nodes: [
 				{
 					id: SOURCE_ID,
 					type: "source" as const,
 					provider: "x",
+					stream: "x/read",
 					connection: CRED_ID,
 					params: { k: "v" },
 				},
 				{ id: ACTION_ID, type: "action" as const, action: "y", params: {} },
 			],
 			edges: [{ from: SOURCE_ID, to: ACTION_ID }],
-			metadata: {},
-		};
-
-		// buildRuntimeGraph requires the full decoded type; we cast here
-		// because we're testing the graph construction, not schema validation
-		// biome-ignore lint/suspicious/noExplicitAny: test cast
-		const graph = buildRuntimeGraph(def as any);
+		});
 
 		expect(graph.order).toBe(2);
 		expect(graph.size).toBe(1);

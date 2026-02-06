@@ -9,7 +9,7 @@ import {
 } from "@nvisy/core";
 import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
-import type { Connections } from "../src/engine/types.js";
+import type { Connections } from "../src/engine/connections.js";
 import {
 	CRED_ID,
 	diamondGraph,

@@ -48,24 +48,27 @@ export type ResolvedNode =
 
 /** Compiled graph ready for execution. */
 export interface ExecutionPlan {
-	/** The graphology graph with node attributes. */
 	readonly graph: RuntimeGraph;
-	/** The original parsed graph definition. */
 	readonly definition: Graph;
-	/** Topologically sorted node IDs. */
 	readonly order: ReadonlyArray<string>;
-	/** Resolved registry entries keyed by node ID. */
 	readonly resolved: ReadonlyMap<string, ResolvedNode>;
 }
 
 /** Build an execution plan from a parsed graph. */
-export const buildPlan = (
+export function buildPlan(
 	parsed: ParsedGraph,
 	registry: Registry,
-): ExecutionPlan => {
+): ExecutionPlan {
 	const { definition, graph } = parsed;
 
-	checkForCycles(graph, definition.id);
+	if (hasCycle(graph)) {
+		logger.warn("Graph contains a cycle", { graphId: definition.id });
+		throw new ValidationError("Graph contains a cycle", {
+			source: "compiler",
+			retryable: false,
+		});
+	}
+
 	const resolved = resolveAllNodes(definition.nodes, registry, definition.id);
 	const order = topologicalSort(graph);
 
@@ -75,16 +78,6 @@ export const buildPlan = (
 	});
 
 	return { graph, definition, order, resolved };
-};
-
-function checkForCycles(graph: RuntimeGraph, graphId: string): void {
-	if (hasCycle(graph)) {
-		logger.warn("Graph contains a cycle", { graphId });
-		throw new ValidationError("Graph contains a cycle", {
-			source: "compiler",
-			retryable: false,
-		});
-	}
 }
 
 function resolveAllNodes(

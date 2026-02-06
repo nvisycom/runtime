@@ -16,7 +16,14 @@ export type {
 	JsonValue,
 	Metadata,
 } from "./datatypes/index.js";
-export { Data, Datatypes, Document } from "./datatypes/index.js";
+export {
+	Blob,
+	blobDatatype,
+	Data,
+	Datatypes,
+	Document,
+	documentDatatype,
+} from "./datatypes/index.js";
 export type { ErrorContext } from "./errors/index.js";
 export {
 	CancellationError,
@@ -25,7 +32,19 @@ export {
 	ValidationError,
 } from "./errors/index.js";
 export type {
+	LoaderConfig,
+	LoaderInstance,
+	LoadFn,
+	PlaintextParams,
+} from "./loaders/index.js";
+export {
+	Loader,
+	plaintextLoader,
+	plaintextParamsSchema,
+} from "./loaders/index.js";
+export type {
 	AnyActionInstance,
+	AnyLoaderInstance,
 	AnyProviderFactory,
 	AnyStreamSource,
 	AnyStreamTarget,
@@ -47,10 +66,11 @@ export type {
 export { Stream } from "./stream.js";
 export type { ClassRef } from "./types.js";
 
-import { Datatypes, Document } from "./datatypes/index.js";
+import { blobDatatype, documentDatatype } from "./datatypes/index.js";
+import { plaintextLoader } from "./loaders/index.js";
 import { Plugin } from "./plugin.js";
 
-/** Built-in core plugin that registers the Document datatype. */
-export const corePlugin = Plugin.define("core").withDatatypes(
-	Datatypes.define("document", Document),
-);
+/** Built-in core plugin that registers the Document and Blob datatypes, and plaintext loader. */
+export const corePlugin = Plugin.define("core")
+	.withDatatypes(documentDatatype, blobDatatype)
+	.withLoaders(plaintextLoader);

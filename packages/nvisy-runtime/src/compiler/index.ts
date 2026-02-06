@@ -15,7 +15,7 @@ export type {
 } from "./plan.js";
 
 /** Compile a graph definition into an execution plan. */
-export const compile = (input: unknown, registry: Registry): ExecutionPlan => {
+export function compile(input: unknown, registry: Registry): ExecutionPlan {
 	logger.info("Compiling graph");
 	const parsed = parseGraph(input);
 	const plan = buildPlan(parsed, registry);
@@ -23,4 +23,4 @@ export const compile = (input: unknown, registry: Registry): ExecutionPlan => {
 		graphId: plan.definition.id,
 	});
 	return plan;
-};
+}

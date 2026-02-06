@@ -1,21 +1,3 @@
-import type { PluginInstance } from "@nvisy/core";
-import { corePlugin, ValidationError } from "@nvisy/core";
-import { compile, type ExecutionPlan } from "../compiler/index.js";
-import { Registry, type RegistrySchema } from "../registry.js";
-import { validateConnections } from "./context.js";
-import { execute } from "./executor.js";
-import { RunManager } from "./runs.js";
-import type {
-	Connections,
-	ExecuteOptions,
-	RunResult,
-	RunState,
-	RunStatus,
-	RunSummary,
-	ValidationResult,
-} from "./types.js";
-import { ConnectionsSchema } from "./types.js";
-
 /**
  * Primary runtime entry point.
  *
@@ -23,6 +5,7 @@ import { ConnectionsSchema } from "./types.js";
  * Delegates actual graph execution to the executor module and run
  * tracking to the RunManager.
  *
+ * @example
  * ```ts
  * const engine = new Engine();
  * engine.register(sqlPlugin);
@@ -30,6 +13,30 @@ import { ConnectionsSchema } from "./types.js";
  * const state = engine.getRun(runId);
  * ```
  */
+
+import type { PluginInstance } from "@nvisy/core";
+import { corePlugin, ValidationError } from "@nvisy/core";
+import { compile, type ExecutionPlan } from "../compiler/index.js";
+import { Registry, type RegistrySchema } from "../registry.js";
+import {
+	type Connections,
+	ConnectionsSchema,
+	validateConnections,
+} from "./connections.js";
+import { type ExecuteOptions, execute, type RunResult } from "./executor.js";
+import {
+	RunManager,
+	type RunState,
+	type RunStatus,
+	type RunSummary,
+} from "./runs.js";
+
+/** Result of graph validation. */
+export interface ValidationResult {
+	readonly valid: boolean;
+	readonly errors: ReadonlyArray<string>;
+}
+
 export class Engine {
 	readonly #registry = new Registry();
 	readonly #runs = new RunManager();
@@ -58,13 +65,11 @@ export class Engine {
 	validate(graph: unknown, connections: Connections): ValidationResult {
 		const errors: string[] = [];
 
-		// Validate connections shape
 		const shapeResult = ConnectionsSchema.safeParse(connections);
 		if (!shapeResult.success) {
 			errors.push(...shapeResult.error.issues.map((i) => i.message));
 		}
 
-		// Compile graph (validates structure)
 		let plan: ExecutionPlan | null = null;
 		try {
 			plan = compile(graph, this.#registry);
@@ -72,14 +77,11 @@ export class Engine {
 			errors.push(e instanceof Error ? e.message : String(e));
 		}
 
-		// Validate connections against providers
 		if (plan) {
 			try {
 				validateConnections(plan, connections);
 			} catch (e) {
-				// biome-ignore lint/complexity/useLiteralKeys: index signature requires bracket notation
 				if (e instanceof ValidationError && e.details?.["errors"]) {
-					// biome-ignore lint/complexity/useLiteralKeys: index signature requires bracket notation
 					errors.push(...(e.details["errors"] as string[]));
 				} else {
 					errors.push(e instanceof Error ? e.message : String(e));
@@ -102,8 +104,14 @@ export class Engine {
 		options?: ExecuteOptions,
 	): string {
 		const plan = this.#compile(graph, connections);
-		const runId = crypto.randomUUID();
-		return this.#runs.submit(runId, plan, connections, execute, options);
+		return this.#runs.submit({
+			runId: crypto.randomUUID(),
+			plan,
+			connections,
+			registry: this.#registry,
+			executor: execute,
+			...(options && { options }),
+		});
 	}
 
 	/**
@@ -117,7 +125,7 @@ export class Engine {
 		options?: ExecuteOptions,
 	): Promise<RunResult> {
 		const plan = this.#compile(graph, connections);
-		return execute(plan, connections, options);
+		return execute(plan, connections, this.#registry, options);
 	}
 
 	/** Get the current state of a run by its ID. */
@@ -130,7 +138,7 @@ export class Engine {
 		return this.#runs.list(status);
 	}
 
-	/** Cancel a running execution. Returns true if cancelled, false if not found or already completed. */
+	/** Cancel a running execution. */
 	cancelRun(runId: string): boolean {
 		return this.#runs.cancel(runId);
 	}

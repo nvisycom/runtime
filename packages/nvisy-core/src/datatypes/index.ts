@@ -1,9 +1,10 @@
 /**
  * @module datatypes
  *
- * Base data model and built-in document type for the Nvisy pipeline.
+ * Base data model and built-in types for the Nvisy pipeline.
  */
 
+export { Blob } from "./blob.js";
 export type { JsonValue, Metadata } from "./data.js";
 export { Data } from "./data.js";
 export type {
@@ -38,3 +39,12 @@ export const Datatypes = {
 		return { id, dataClass };
 	},
 } as const;
+
+import { Blob } from "./blob.js";
+import { Document } from "./document.js";
+
+/** Pre-defined Document datatype entry. */
+export const documentDatatype = Datatypes.define("document", Document);
+
+/** Pre-defined Blob datatype entry. */
+export const blobDatatype = Datatypes.define("blob", Blob);

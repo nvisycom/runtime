@@ -1,4 +1,4 @@
-import { Data } from "@nvisy/core";
+import { Data } from "./data.js";
 
 /**
  * A file or binary blob retrieved from object storage (S3, GCS, Dropbox, etc.).
@@ -15,7 +15,7 @@ import { Data } from "@nvisy/core";
 export class Blob extends Data {
 	readonly #path: string;
 	readonly #data: Buffer;
-	readonly #contentType?: string | undefined;
+	readonly #contentType: string | undefined;
 
 	constructor(path: string, data: Buffer, contentType?: string) {
 		super();

@@ -10,22 +10,17 @@ export interface RuntimeNodeAttrs {
 	readonly schema: GraphNode;
 }
 
-/** Edge attributes stored in the runtime graph. */
-export interface RuntimeEdgeAttrs {}
-
 /** Graphology directed graph with typed node and edge attributes. */
-export type RuntimeGraph = DirectedGraph<RuntimeNodeAttrs, RuntimeEdgeAttrs>;
+export type RuntimeGraph = DirectedGraph<RuntimeNodeAttrs>;
 
 /** Result of parsing a graph definition. */
 export interface ParsedGraph {
-	/** The validated graph definition. */
 	readonly definition: Graph;
-	/** The graphology graph built from the definition. */
 	readonly graph: RuntimeGraph;
 }
 
 /** Convert a parsed Graph into a graphology DirectedGraph. */
-export const buildRuntimeGraph = (def: Graph): RuntimeGraph => {
+function buildRuntimeGraph(def: Graph): RuntimeGraph {
 	const graph: RuntimeGraph = new DirectedGraph();
 
 	for (const node of def.nodes) {
@@ -37,10 +32,10 @@ export const buildRuntimeGraph = (def: Graph): RuntimeGraph => {
 	}
 
 	return graph;
-};
+}
 
 /** Parse and validate a graph definition from unknown input. */
-export const parseGraph = (input: unknown): ParsedGraph => {
+export function parseGraph(input: unknown): ParsedGraph {
 	const result = Graph.safeParse(input);
 	if (!result.success) {
 		logger.warn("Graph parse failed: {error}", { error: result.error.message });
@@ -63,4 +58,4 @@ export const parseGraph = (input: unknown): ParsedGraph => {
 		definition,
 		graph: buildRuntimeGraph(definition),
 	};
-};
+}

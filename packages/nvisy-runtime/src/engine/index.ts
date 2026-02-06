@@ -3,17 +3,8 @@ export type {
 	ProviderDescriptor,
 	RegistrySchema,
 } from "../registry.js";
-export { Engine } from "./engine.js";
-export type {
-	Connection,
-	Connections,
-	EngineConfig,
-	ExecuteOptions,
-	NodeProgress,
-	NodeResult,
-	RunResult,
-	RunState,
-	RunStatus,
-	RunSummary,
-	ValidationResult,
-} from "./types.js";
+export type { Connection, Connections } from "./connections.js";
+export { Engine, type ValidationResult } from "./engine.js";
+export type { ExecuteOptions, RunResult } from "./executor.js";
+export type { NodeResult } from "./nodes.js";
+export type { NodeProgress, RunState, RunStatus, RunSummary } from "./runs.js";

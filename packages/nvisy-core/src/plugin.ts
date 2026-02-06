@@ -1,5 +1,6 @@
 import type { ActionInstance } from "./action.js";
 import type { Datatype } from "./datatypes/index.js";
+import type { LoaderInstance } from "./loaders/loader.js";
 import type { ProviderFactory } from "./provider.js";
 import type { StreamSource, StreamTarget } from "./stream.js";
 
@@ -10,13 +11,16 @@ export type AnyProviderFactory = ProviderFactory<any, any>;
 export type AnyActionInstance = ActionInstance<any, any, any, any>;
 
 // biome-ignore lint/suspicious/noExplicitAny: existential type alias
+export type AnyLoaderInstance = LoaderInstance<any>;
+
+// biome-ignore lint/suspicious/noExplicitAny: existential type alias
 export type AnyStreamSource = StreamSource<any, any, any, any>;
 
 // biome-ignore lint/suspicious/noExplicitAny: existential type alias
 export type AnyStreamTarget = StreamTarget<any, any, any>;
 
 /**
- * A plugin bundles providers, streams, and actions under a namespace.
+ * A plugin bundles providers, streams, actions, and loaders under a namespace.
  *
  * Plugins are the unit of registration with the engine. All entries
  * are namespaced as `"pluginId/name"` to avoid collisions.
@@ -30,6 +34,8 @@ export interface PluginInstance {
 	readonly streams: Readonly<Record<string, AnyStreamSource | AnyStreamTarget>>;
 	/** Actions keyed by their ID. */
 	readonly actions: Readonly<Record<string, AnyActionInstance>>;
+	/** Loaders keyed by their ID. */
+	readonly loaders: Readonly<Record<string, AnyLoaderInstance>>;
 	/** Custom data types keyed by their ID. */
 	readonly datatypes: Readonly<Record<string, Datatype>>;
 }
@@ -41,6 +47,7 @@ class PluginBuilder implements PluginInstance {
 		Record<string, AnyStreamSource | AnyStreamTarget>
 	> = {};
 	readonly actions: Readonly<Record<string, AnyActionInstance>> = {};
+	readonly loaders: Readonly<Record<string, AnyLoaderInstance>> = {};
 	readonly datatypes: Readonly<Record<string, Datatype>> = {};
 
 	constructor(id: string) {
@@ -68,6 +75,14 @@ class PluginBuilder implements PluginInstance {
 		const record = { ...this.actions };
 		for (const a of actions) record[a.id] = a;
 		(this as { actions: typeof record }).actions = record;
+		return this;
+	}
+
+	/** Add loaders to this plugin. */
+	withLoaders(...loaders: AnyLoaderInstance[]): this {
+		const record = { ...this.loaders };
+		for (const l of loaders) record[l.id] = l;
+		(this as { loaders: typeof record }).loaders = record;
 		return this;
 	}
 

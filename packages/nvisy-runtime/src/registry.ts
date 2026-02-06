@@ -1,6 +1,7 @@
 import { getLogger } from "@logtape/logtape";
 import type {
 	AnyActionInstance,
+	AnyLoaderInstance,
 	AnyProviderFactory,
 	AnyStreamSource,
 	AnyStreamTarget,
@@ -8,20 +9,17 @@ import type {
 	PluginInstance,
 } from "@nvisy/core";
 import { ValidationError } from "@nvisy/core";
+import { filetypeinfo } from "magic-bytes.js";
 
 const logger = getLogger(["nvisy", "registry"]);
 
-/**
- * Describes a single registered action for schema generation.
- */
+/** Describes a single registered action for schema generation. */
 export interface ActionDescriptor {
 	readonly name: string;
 	readonly configSchema: AnyActionInstance["schema"];
 }
 
-/**
- * Describes a single registered provider for schema generation.
- */
+/** Describes a single registered provider for schema generation. */
 export interface ProviderDescriptor {
 	readonly name: string;
 	readonly credentialSchema: AnyProviderFactory["credentialSchema"];
@@ -38,13 +36,14 @@ export interface RegistrySchema {
 }
 
 /**
- * Unified registry that stores providers and actions contributed by
+ * Unified registry that stores providers, actions, and loaders contributed by
  * {@link PluginInstance} objects.
  *
  * All entries are keyed as `"pluginId/name"`.
  */
 export class Registry {
 	readonly #actions = new Map<string, AnyActionInstance>();
+	readonly #loaders = new Map<string, AnyLoaderInstance>();
 	readonly #providers = new Map<string, AnyProviderFactory>();
 	readonly #streams = new Map<string, AnyStreamSource | AnyStreamTarget>();
 	readonly #datatypes = new Map<string, Datatype>();
@@ -65,65 +64,32 @@ export class Registry {
 		return { actions, providers };
 	}
 
-	/** Load all providers, actions, and streams declared by a plugin. */
+	/** Load all providers, actions, loaders, and streams declared by a plugin. */
 	load(plugin: PluginInstance): void {
-		this.#ensureNotLoaded(plugin.id);
-		this.#checkCollisions(plugin);
-
-		this.#plugins.add(plugin.id);
-
-		const providerNames = this.#loadProviders(plugin);
-		const actionNames = this.#loadActions(plugin);
-		const streamNames = this.#loadStreams(plugin);
-		const datatypeNames = this.#loadDatatypes(plugin);
-
-		logger.info(`Plugin loaded: ${plugin.id}`, {
-			pluginId: plugin.id,
-			providers: providerNames.join(", "),
-			actions: actionNames.join(", "),
-			streams: streamNames.join(", "),
-			datatypes: datatypeNames.join(", "),
-		});
-	}
-
-	#ensureNotLoaded(pluginId: string): void {
-		if (this.#plugins.has(pluginId)) {
-			throw new ValidationError(`Plugin already loaded: ${pluginId}`, {
+		if (this.#plugins.has(plugin.id)) {
+			throw new ValidationError(`Plugin already loaded: ${plugin.id}`, {
 				source: "registry",
 				retryable: false,
-				details: { pluginId },
+				details: { pluginId: plugin.id },
 			});
 		}
-	}
 
-	#checkCollisions(plugin: PluginInstance): void {
+		const maps = [
+			["provider", this.#providers, plugin.providers],
+			["action", this.#actions, plugin.actions],
+			["loader", this.#loaders, plugin.loaders],
+			["stream", this.#streams, plugin.streams],
+			["datatype", this.#datatypes, plugin.datatypes],
+		] as const;
+
+		// Check for collisions across all maps
 		const collisions: string[] = [];
-
-		for (const name of Object.keys(plugin.providers)) {
-			const key = `${plugin.id}/${name}`;
-			if (this.#providers.has(key)) {
-				collisions.push(`provider "${key}"`);
-			}
-		}
-
-		for (const name of Object.keys(plugin.actions)) {
-			const key = `${plugin.id}/${name}`;
-			if (this.#actions.has(key)) {
-				collisions.push(`action "${key}"`);
-			}
-		}
-
-		for (const name of Object.keys(plugin.streams)) {
-			const key = `${plugin.id}/${name}`;
-			if (this.#streams.has(key)) {
-				collisions.push(`stream "${key}"`);
-			}
-		}
-
-		for (const name of Object.keys(plugin.datatypes)) {
-			const key = `${plugin.id}/${name}`;
-			if (this.#datatypes.has(key)) {
-				collisions.push(`datatype "${key}"`);
+		for (const [kind, map, entries] of maps) {
+			for (const name of Object.keys(entries)) {
+				const key = `${plugin.id}/${name}`;
+				if (map.has(key)) {
+					collisions.push(`${kind} "${key}"`);
+				}
 			}
 		}
 
@@ -141,77 +107,58 @@ export class Registry {
 				},
 			);
 		}
-	}
 
-	#loadProviders(plugin: PluginInstance): string[] {
-		const names: string[] = [];
-		for (const [name, factory] of Object.entries(plugin.providers)) {
-			this.#providers.set(`${plugin.id}/${name}`, factory);
-			names.push(name);
+		// Register all entries
+		this.#plugins.add(plugin.id);
+		const loaded: Record<string, string[]> = {};
+		for (const [kind, map, entries] of maps) {
+			const names: string[] = [];
+			for (const [name, value] of Object.entries(entries)) {
+				(map as Map<string, unknown>).set(`${plugin.id}/${name}`, value);
+				names.push(name);
+			}
+			loaded[kind] = names;
 		}
-		return names;
-	}
 
-	#loadActions(plugin: PluginInstance): string[] {
-		const names: string[] = [];
-		for (const [name, action] of Object.entries(plugin.actions)) {
-			this.#actions.set(`${plugin.id}/${name}`, action);
-			names.push(name);
-		}
-		return names;
-	}
-
-	#loadStreams(plugin: PluginInstance): string[] {
-		const names: string[] = [];
-		for (const [name, stream] of Object.entries(plugin.streams)) {
-			this.#streams.set(`${plugin.id}/${name}`, stream);
-			names.push(name);
-		}
-		return names;
-	}
-
-	#loadDatatypes(plugin: PluginInstance): string[] {
-		const names: string[] = [];
-		for (const [name, entry] of Object.entries(plugin.datatypes)) {
-			this.#datatypes.set(`${plugin.id}/${name}`, entry);
-			names.push(name);
-		}
-		return names;
+		logger.info(`Plugin loaded: ${plugin.id}`, {
+			pluginId: plugin.id,
+			...loaded,
+		});
 	}
 
 	/** Look up an action by name. */
 	getAction(name: string): AnyActionInstance {
-		const action = this.#actions.get(name);
-		if (!action) {
-			logger.warn(`Action not found: ${name}`, { action: name });
-			throw ValidationError.notFound(name, "action", "registry");
-		}
-		return action;
+		return this.#getOrThrow(this.#actions, name, "action");
 	}
 
 	/** Look up a provider factory by name. */
 	getProvider(name: string): AnyProviderFactory {
-		const factory = this.#providers.get(name);
-		if (!factory) {
-			logger.warn(`Provider not found: ${name}`, { provider: name });
-			throw ValidationError.notFound(name, "provider", "registry");
-		}
-		return factory;
+		return this.#getOrThrow(this.#providers, name, "provider");
 	}
 
 	/** Look up a stream by name. */
 	getStream(name: string): AnyStreamSource | AnyStreamTarget {
-		const stream = this.#streams.get(name);
-		if (!stream) {
-			logger.warn(`Stream not found: ${name}`, { stream: name });
-			throw ValidationError.notFound(name, "stream", "registry");
-		}
-		return stream;
+		return this.#getOrThrow(this.#streams, name, "stream");
+	}
+
+	/** Look up a loader by name. */
+	getLoader(name: string): AnyLoaderInstance {
+		return this.#getOrThrow(this.#loaders, name, "loader");
+	}
+
+	/** Look up a data type by name. */
+	getDataType(name: string): Datatype {
+		return this.#getOrThrow(this.#datatypes, name, "datatype");
 	}
 
 	/** Look up an action by name, returning undefined if not found. */
 	findAction(name: string): AnyActionInstance | undefined {
 		return this.#actions.get(name);
+	}
+
+	/** Look up a loader by name, returning undefined if not found. */
+	findLoader(name: string): AnyLoaderInstance | undefined {
+		return this.#loaders.get(name);
 	}
 
 	/** Look up a provider factory by name, returning undefined if not found. */
@@ -224,18 +171,71 @@ export class Registry {
 		return this.#streams.get(name);
 	}
 
-	/** Look up a data type by name. */
-	getDataType(name: string): Datatype {
-		const entry = this.#datatypes.get(name);
+	/** Look up a data type by name, returning undefined if not found. */
+	findDataType(name: string): Datatype | undefined {
+		return this.#datatypes.get(name);
+	}
+
+	/**
+	 * Find a loader that matches the given blob by content type, magic bytes, or extension.
+	 *
+	 * Matching priority:
+	 * 1. If blob has contentType, match by contentType first
+	 * 2. Detect file type from magic bytes and match by extension
+	 * 3. Fall back to file extension from blob.path
+	 */
+	findLoaderForBlob(blob: {
+		path: string;
+		contentType?: string;
+		data?: Uint8Array;
+	}): AnyLoaderInstance | undefined {
+		if (blob.contentType) {
+			for (const loader of this.#loaders.values()) {
+				if (loader.contentTypes.includes(blob.contentType)) {
+					return loader;
+				}
+			}
+		}
+
+		if (blob.data) {
+			const detected = filetypeinfo(blob.data);
+			const first = detected[0];
+			if (first?.extension) {
+				const ext = `.${first.extension}`;
+				for (const loader of this.#loaders.values()) {
+					if (loader.extensions.includes(ext)) {
+						return loader;
+					}
+				}
+			}
+		}
+
+		const ext = this.#getExtension(blob.path);
+		if (ext) {
+			for (const loader of this.#loaders.values()) {
+				if (loader.extensions.includes(ext)) {
+					return loader;
+				}
+			}
+		}
+
+		return undefined;
+	}
+
+	#getOrThrow<T>(map: Map<string, T>, name: string, kind: string): T {
+		const entry = map.get(name);
 		if (!entry) {
-			logger.warn(`Data type not found: ${name}`, { datatype: name });
-			throw ValidationError.notFound(name, "datatype", "registry");
+			logger.warn(`${kind} not found: ${name}`, { [kind]: name });
+			throw ValidationError.notFound(name, kind, "registry");
 		}
 		return entry;
 	}
 
-	/** Look up a data type by name, returning undefined if not found. */
-	findDataType(name: string): Datatype | undefined {
-		return this.#datatypes.get(name);
+	#getExtension(path: string): string | undefined {
+		const lastDot = path.lastIndexOf(".");
+		if (lastDot === -1 || lastDot === path.length - 1) {
+			return undefined;
+		}
+		return path.slice(lastDot).toLowerCase();
 	}
 }
