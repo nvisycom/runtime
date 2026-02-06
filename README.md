@@ -15,8 +15,8 @@ all flow through typed, validated primitives with full lineage tracking.
 | [`nvisy-core`](packages/nvisy-core/) | Core data types, errors, and utilities |
 | [`nvisy-runtime`](packages/nvisy-runtime/) | Graph definition, DAG compiler, execution engine |
 | [`nvisy-plugin-ai`](packages/nvisy-plugin-ai/) | AI provider integrations (OpenAI, Anthropic, Google) |
-| [`nvisy-plugin-sql`](packages/nvisy-plugin-sql/) | SQL provider integrations (Postgres, MySQL, MSSQL) |
 | [`nvisy-plugin-object`](packages/nvisy-plugin-object/) | Object store integrations (S3, GCS, Parquet, JSONL, CSV) |
+| [`nvisy-plugin-sql`](packages/nvisy-plugin-sql/) | SQL provider integrations (Postgres, MySQL, MSSQL) |
 | [`nvisy-plugin-vector`](packages/nvisy-plugin-vector/) | Vector database integrations (Qdrant, Milvus, Weaviate, Pinecone) |
 | [`nvisy-server`](packages/nvisy-server/) | HTTP execution worker |
 

@@ -16,7 +16,14 @@
 import { getLogger } from "@logtape/logtape";
 import type { Context, ErrorHandler, NotFoundHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
-import type { ErrorResponse } from "../handler/response/error.js";
+
+/** Unified JSON error envelope returned by all error responses. */
+interface ErrorResponse {
+	status: number;
+	error: string;
+	requestId?: string;
+	stack?: string;
+}
 
 const logger = getLogger(["nvisy", "server"]);
 
@@ -41,7 +48,11 @@ export function createErrorHandler(opts: {
 				path: c.req.path,
 				message: error.message,
 			});
-			const body: ErrorResponse = { status, error: error.message, requestId };
+			const body: ErrorResponse = {
+				status,
+				error: error.message,
+				...(requestId && { requestId }),
+			};
 			return c.json(body, status);
 		}
 
@@ -55,8 +66,8 @@ export function createErrorHandler(opts: {
 		const body: ErrorResponse = {
 			status: 500,
 			error: opts.isDevelopment ? error.message : "Internal server error",
-			requestId,
-			...(opts.isDevelopment && error.stack ? { stack: error.stack } : {}),
+			...(requestId && { requestId }),
+			...(opts.isDevelopment && error.stack && { stack: error.stack }),
 		};
 		return c.json(body, 500);
 	};
@@ -73,13 +84,13 @@ export function createNotFoundHandler(opts: {
 }): NotFoundHandler {
 	return (c) => {
 		const requestId = c.get("requestId") as string | undefined;
-		const body: ErrorResponse = opts.isDevelopment
-			? {
-					status: 404,
-					error: `Not found: ${c.req.method} ${c.req.path}`,
-					requestId,
-				}
-			: { status: 404, error: "Not found", requestId };
+		const body: ErrorResponse = {
+			status: 404,
+			error: opts.isDevelopment
+				? `Not found: ${c.req.method} ${c.req.path}`
+				: "Not found",
+			...(requestId && { requestId }),
+		};
 		return c.json(body, 404);
 	};
 }

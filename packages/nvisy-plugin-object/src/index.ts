@@ -3,16 +3,26 @@
  *
  * Object store plugin for the Nvisy runtime.
  *
- * Exposes object store providers (S3, GCS), file format readers/writers
- * (Parquet, JSONL, CSV), and related actions for the pipeline.
+ * Exposes S3, GCS, and Azure Blob providers, plus read/write streams
+ * that list, get, and put objects as {@link Blob}s.
+ *
+ * @example
+ * ```ts
+ * import { objectPlugin } from "@nvisy/plugin-object";
+ *
+ * // Register with the runtime
+ * runtime.register(objectPlugin);
+ * ```
  */
 
-import { Datatypes, Plugin } from "@nvisy/core";
-import { Blob } from "./datatypes/index.js";
+import { Plugin } from "@nvisy/core";
+import { azure, gcs, s3 } from "./providers/index.js";
+import { read, write } from "./streams/index.js";
 
-/** The Object plugin: register this with the runtime to enable object store providers and actions. */
-export const objectPlugin = Plugin.define("object").withDatatypes(
-	Datatypes.define("blob", Blob),
-);
+/** The Object plugin: register this with the runtime to enable object store providers and streams. */
+export const objectPlugin = Plugin.define("object")
+	.withProviders(s3, gcs, azure)
+	.withStreams(read, write);
 
-export { Blob } from "./datatypes/index.js";
+export type { ListResult } from "./providers/index.js";
+export { ObjectStoreClient } from "./providers/index.js";

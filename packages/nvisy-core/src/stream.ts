@@ -94,6 +94,8 @@ export interface StreamSource<
 	TCtx,
 	TParam = void,
 > {
+	/** Discriminator for runtime type checking. */
+	readonly kind: "source";
 	/** Unique identifier for this stream source. */
 	readonly id: string;
 	/** Class reference for the required provider client. */
@@ -123,6 +125,8 @@ export interface StreamSource<
  * @template TParam - Configuration parameters for the target.
  */
 export interface StreamTarget<TClient, TData extends Data, TParam = void> {
+	/** Discriminator for runtime type checking. */
+	readonly kind: "target";
 	/** Unique identifier for this stream target. */
 	readonly id: string;
 	/** Class reference for the required provider client. */
@@ -138,6 +142,7 @@ export interface StreamTarget<TClient, TData extends Data, TParam = void> {
 class StreamSourceImpl<TClient, TData extends Data, TCtx, TParam>
 	implements StreamSource<TClient, TData, TCtx, TParam>
 {
+	readonly kind = "source" as const;
 	readonly id: string;
 	readonly clientClass: ClassRef<TClient>;
 	readonly dataClass: ClassRef<TData>;
@@ -173,6 +178,7 @@ class StreamSourceImpl<TClient, TData extends Data, TCtx, TParam>
 class StreamTargetImpl<TClient, TData extends Data, TParam>
 	implements StreamTarget<TClient, TData, TParam>
 {
+	readonly kind = "target" as const;
 	readonly id: string;
 	readonly clientClass: ClassRef<TClient>;
 	readonly dataClass: ClassRef<TData>;

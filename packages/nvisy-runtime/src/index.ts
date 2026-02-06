@@ -11,16 +11,19 @@ export type {
 	ActionDescriptor,
 	Connection,
 	Connections,
-	EngineConfig,
 	ExecuteOptions,
+	NodeProgress,
 	NodeResult,
 	ProviderDescriptor,
 	RegistrySchema,
 	RunResult,
+	RunState,
+	RunStatus,
+	RunSummary,
 	ValidationResult,
 } from "./engine/index.js";
 export { Engine } from "./engine/index.js";
-export {
+export type {
 	ActionNode,
 	BackoffStrategy,
 	ConcurrencyPolicy,

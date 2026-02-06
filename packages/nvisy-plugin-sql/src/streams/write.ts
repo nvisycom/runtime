@@ -27,14 +27,7 @@ export const write = Stream.createTarget("write", KyselyClient, {
 				table: params.table,
 				error: error instanceof Error ? error.message : String(error),
 			});
-			throw new RuntimeError(
-				`Write failed: ${error instanceof Error ? error.message : String(error)}`,
-				{
-					source: "sql/write",
-					retryable: false,
-					cause: error instanceof Error ? error : undefined,
-				},
-			);
+			throw RuntimeError.wrap(error, { source: "sql/write" });
 		}
 	},
 });

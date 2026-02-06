@@ -26,7 +26,7 @@ import {
 	partition,
 	partitionContextual,
 } from "./actions/index.js";
-import { Chunk, Embedding } from "./datatypes/index.js";
+import { Chunk } from "./datatypes/index.js";
 import {
 	anthropicCompletion,
 	geminiCompletion,
@@ -53,10 +53,8 @@ export const aiPlugin = Plugin.define("ai")
 		partitionContextual,
 		enrich,
 	)
-	.withDatatypes(
-		Datatypes.define("chunk", Chunk),
-		Datatypes.define("embedding", Embedding),
-	);
+	.withDatatypes(Datatypes.define("chunk", Chunk));
 
+export { Embedding } from "@nvisy/core";
 export type { ChunkOptions } from "./datatypes/index.js";
-export { Chunk, Embedding } from "./datatypes/index.js";
+export { Chunk } from "./datatypes/index.js";

@@ -9,7 +9,7 @@ import {
 } from "@nvisy/core";
 import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
-import type { Connections } from "../src/engine/types.js";
+import type { Connections } from "../src/engine/connections.js";
 import {
 	CRED_ID,
 	diamondGraph,
@@ -121,7 +121,7 @@ describe("validate", () => {
 			},
 		};
 
-		const result = await engine.execute(graph, connections);
+		const result = await engine.executeSync(graph, connections);
 		expect(result.status).toBe("failure");
 		expect(
 			result.nodes.some(
@@ -135,7 +135,7 @@ describe("validate", () => {
 describe("execute", () => {
 	it("linear pipeline: source -> action -> target", async () => {
 		const engine = makeTestEngine();
-		const result = await engine.execute(linearGraph(), testConnections());
+		const result = await engine.executeSync(linearGraph(), testConnections());
 
 		expect(result.status).toBe("success");
 		expect(result.nodes).toHaveLength(3);
@@ -147,7 +147,7 @@ describe("execute", () => {
 
 	it("diamond graph: source -> 2 actions -> target", async () => {
 		const engine = makeTestEngine();
-		const result = await engine.execute(diamondGraph(), testConnections());
+		const result = await engine.executeSync(diamondGraph(), testConnections());
 
 		expect(result.status).toBe("success");
 		expect(result.nodes).toHaveLength(4);
@@ -165,7 +165,7 @@ describe("execute", () => {
 		const original = [...sourceEntries];
 		sourceEntries.length = 0;
 		try {
-			const result = await engine.execute(linearGraph(), testConnections());
+			const result = await engine.executeSync(linearGraph(), testConnections());
 
 			expect(result.status).toBe("success");
 			for (const node of result.nodes) {
@@ -183,7 +183,7 @@ describe("execute", () => {
 		controller.abort();
 
 		await expect(
-			engine.execute(linearGraph(), testConnections(), {
+			engine.executeSync(linearGraph(), testConnections(), {
 				signal: controller.signal,
 			}),
 		).rejects.toThrow(CancellationError);
@@ -199,7 +199,7 @@ describe("execute", () => {
 		// The execution should either complete normally (if fast enough)
 		// or be halted. Either outcome is acceptable — we just verify
 		// it doesn't hang.
-		const result = await engine.execute(linearGraph(), testConnections(), {
+		const result = await engine.executeSync(linearGraph(), testConnections(), {
 			signal: controller.signal,
 		});
 		// If we get here, execution completed before abort — that's fine
@@ -298,7 +298,7 @@ describe("execute", () => {
 			},
 		};
 
-		const result = await engine.execute(graph, connections);
+		const result = await engine.executeSync(graph, connections);
 
 		// The source node should fail (non-retryable skips retries)
 		const sourceNode = result.nodes.find(
@@ -406,7 +406,7 @@ describe("execute", () => {
 			},
 		};
 
-		const result = await engine.execute(graph, connections);
+		const result = await engine.executeSync(graph, connections);
 
 		expect(result.status).toBe("success");
 		expect(attempts).toBe(3); // Failed twice, succeeded on third
@@ -420,7 +420,7 @@ describe("execute", () => {
 			context: unknown;
 		}> = [];
 
-		const result = await engine.execute(linearGraph(), testConnections(), {
+		const result = await engine.executeSync(linearGraph(), testConnections(), {
 			onContextUpdate: (nodeId, connectionId, context) => {
 				updates.push({ nodeId, connectionId, context });
 			},
@@ -447,16 +447,16 @@ describe("credential validation", () => {
 			},
 		};
 
-		await expect(engine.execute(linearGraph(), connections)).rejects.toThrow(
-			ValidationError,
-		);
+		await expect(
+			engine.executeSync(linearGraph(), connections),
+		).rejects.toThrow(ValidationError);
 	});
 
 	it("rejects missing connection entry at execution time", async () => {
 		const engine = makeTestEngine();
 
 		// Provide empty connections — the node references CRED_ID which won't be found
-		await expect(engine.execute(linearGraph(), {})).rejects.toThrow(
+		await expect(engine.executeSync(linearGraph(), {})).rejects.toThrow(
 			ValidationError,
 		);
 	});
@@ -471,9 +471,9 @@ describe("credential validation", () => {
 			},
 		};
 
-		await expect(engine.execute(linearGraph(), connections)).rejects.toThrow(
-			ValidationError,
-		);
+		await expect(
+			engine.executeSync(linearGraph(), connections),
+		).rejects.toThrow(ValidationError);
 	});
 
 	it("accepts valid connections map with extra entries", async () => {
@@ -488,7 +488,7 @@ describe("credential validation", () => {
 			},
 		};
 
-		const result = await engine.execute(linearGraph(), connections);
+		const result = await engine.executeSync(linearGraph(), connections);
 
 		expect(result.status).toBe("success");
 	});

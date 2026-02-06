@@ -71,14 +71,7 @@ async function* readStream(
 				table,
 				error: error instanceof Error ? error.message : String(error),
 			});
-			throw new RuntimeError(
-				`Read failed: ${error instanceof Error ? error.message : String(error)}`,
-				{
-					source: "sql/read",
-					retryable: false,
-					cause: error instanceof Error ? error : undefined,
-				},
-			);
+			throw RuntimeError.wrap(error, { source: "sql/read" });
 		}
 
 		for (const row of rows) {

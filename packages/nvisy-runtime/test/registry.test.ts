@@ -66,6 +66,9 @@ describe("Registry", () => {
 		expect(schema.actions[0]!.name).toBe("test/noop");
 		expect(schema.providers).toHaveLength(1);
 		expect(schema.providers[0]!.name).toBe("test/testdb");
+		expect(schema.streams).toBe(2);
+		expect(schema.loaders).toBe(0);
+		expect(schema.datatypes).toBe(0);
 	});
 
 	it("schema snapshot is empty for a fresh registry", () => {
@@ -74,5 +77,8 @@ describe("Registry", () => {
 
 		expect(schema.actions).toHaveLength(0);
 		expect(schema.providers).toHaveLength(0);
+		expect(schema.streams).toBe(0);
+		expect(schema.loaders).toBe(0);
+		expect(schema.datatypes).toBe(0);
 	});
 });

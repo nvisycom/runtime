@@ -43,7 +43,7 @@ npm run check:fix
 ## Project Structure
 
 The monorepo uses npm workspaces. All packages live under `packages/`. See
-[packages/readme.md](packages/readme.md) for a description of each package.
+[packages/readme.md](packages/README.md) for a description of each package.
 
 ## Security
 

@@ -1,3 +1,13 @@
+/**
+ * Execution policies for retry and timeout handling.
+ *
+ * These policies wrap Effection operations to provide:
+ * - Retry with configurable backoff strategies
+ * - Timeout with fallback values
+ *
+ * Policies are composable and respect Effection structured concurrency.
+ */
+
 import { getLogger } from "@logtape/logtape";
 import { RuntimeError } from "@nvisy/core";
 import { type Operation, race, sleep } from "effection";
@@ -6,11 +16,26 @@ import type { RetryPolicy } from "../schema.js";
 const logger = getLogger(["nvisy", "engine"]);
 
 /**
- * Wrap an operation with retry logic based on the provided policy.
+ * Wrap an operation with retry logic.
  *
- * - Non-retryable errors (RuntimeError with retryable=false) are thrown immediately
- * - Retryable errors trigger backoff delays between attempts
- * - After all retries exhausted, the last error is thrown
+ * Retries are only attempted for errors that are marked as retryable.
+ * Non-retryable errors (RuntimeError with `retryable: false`) are
+ * thrown immediately without retry.
+ *
+ * @param fn - Operation factory to retry.
+ * @param policy - Retry configuration (maxRetries, backoff strategy, delays).
+ * @param nodeId - Node ID for logging.
+ * @returns The operation result if successful.
+ * @throws The last error if all retries are exhausted.
+ *
+ * @example
+ * ```ts
+ * const result = yield* withRetry(
+ *   () => fetchData(),
+ *   { maxRetries: 3, backoff: "exponential", initialDelayMs: 100, maxDelayMs: 5000 },
+ *   "node-123"
+ * );
+ * ```
  */
 export function* withRetry<T>(
 	fn: () => Operation<T>,
@@ -28,6 +53,7 @@ export function* withRetry<T>(
 		} catch (error) {
 			lastError = error;
 
+			// Non-retryable errors fail immediately
 			if (error instanceof RuntimeError && error.retryable === false) {
 				throw error;
 			}
@@ -54,26 +80,53 @@ export function* withRetry<T>(
 	throw lastError;
 }
 
+/**
+ * Compute delay for a retry attempt based on backoff strategy.
+ *
+ * Strategies:
+ * - `fixed`: Always use initialDelayMs
+ * - `exponential`: Double the delay each attempt (capped at maxDelayMs)
+ * - `jitter`: Random delay between 0 and exponential delay (good for avoiding thundering herd)
+ */
 function computeDelay(
 	backoff: RetryPolicy["backoff"],
 	initialDelayMs: number,
 	maxDelayMs: number,
 	attempt: number,
 ): number {
+	const exponentialDelay = Math.min(initialDelayMs * 2 ** attempt, maxDelayMs);
 	switch (backoff) {
 		case "fixed":
 			return initialDelayMs;
 		case "exponential":
-			return Math.min(initialDelayMs * 2 ** attempt, maxDelayMs);
+			return exponentialDelay;
 		case "jitter":
-			return (
-				Math.min(initialDelayMs * 2 ** attempt, maxDelayMs) * Math.random()
-			);
+			// Full jitter: random value between 0 and the exponential delay
+			// This provides good collision avoidance while maintaining backoff growth
+			return Math.floor(Math.random() * exponentialDelay);
 	}
 }
 
 /**
- * Wrap an operation with a timeout. Returns the fallback value if timeout expires.
+ * Wrap an operation with a timeout.
+ *
+ * Uses Effection's `race` to run the operation against a timer.
+ * If the timeout expires first, returns the fallback value.
+ * The original operation is automatically cancelled by Effection.
+ *
+ * @param fn - Operation factory to execute.
+ * @param timeoutMs - Maximum time to wait (undefined = no timeout).
+ * @param fallback - Value to return if timeout expires.
+ * @returns The operation result or fallback.
+ *
+ * @example
+ * ```ts
+ * const result = yield* withTimeout(
+ *   () => slowOperation(),
+ *   5000,
+ *   { status: "timeout" }
+ * );
+ * ```
  */
 export function* withTimeout<T>(
 	fn: () => Operation<T>,
