@@ -9,9 +9,9 @@ import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
 import {
 	type ListResult,
+	makeObjectProvider,
 	ObjectStoreClient,
 	ObjectStoreProvider,
-	makeObjectProvider,
 } from "./client.js";
 
 const logger = getLogger(["nvisy", "object"]);

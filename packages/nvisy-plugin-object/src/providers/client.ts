@@ -1,5 +1,9 @@
 import { getLogger } from "@logtape/logtape";
-import { Provider, type ProviderFactory, type ProviderInstance } from "@nvisy/core";
+import {
+	Provider,
+	type ProviderFactory,
+	type ProviderInstance,
+} from "@nvisy/core";
 import type { z } from "zod";
 
 const logger = getLogger(["nvisy", "object"]);
@@ -26,16 +30,10 @@ export abstract class ObjectStoreClient {
 	abstract list(prefix: string, cursor?: string): Promise<ListResult>;
 
 	/** Retrieve a single object by key. */
-	abstract get(
-		key: string,
-	): Promise<{ data: Buffer; contentType?: string }>;
+	abstract get(key: string): Promise<{ data: Buffer; contentType?: string }>;
 
 	/** Write a single object by key. */
-	abstract put(
-		key: string,
-		data: Buffer,
-		contentType?: string,
-	): Promise<void>;
+	abstract put(key: string, data: Buffer, contentType?: string): Promise<void>;
 }
 
 /**
@@ -44,7 +42,9 @@ export abstract class ObjectStoreClient {
  * Holds an {@link ObjectStoreClient} and manages teardown on
  * {@link disconnect}.
  */
-export class ObjectStoreProvider implements ProviderInstance<ObjectStoreClient> {
+export class ObjectStoreProvider
+	implements ProviderInstance<ObjectStoreClient>
+{
 	readonly client: ObjectStoreClient;
 	readonly #id: string;
 	readonly #disconnect: (() => Promise<void>) | undefined;

@@ -9,9 +9,9 @@ import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
 import {
 	type ListResult,
+	makeObjectProvider,
 	ObjectStoreClient,
 	ObjectStoreProvider,
-	makeObjectProvider,
 } from "./client.js";
 
 const logger = getLogger(["nvisy", "object"]);
@@ -42,7 +42,9 @@ class AzureObjectStoreClient extends ObjectStoreClient {
 	async list(prefix: string, cursor?: string): Promise<ListResult> {
 		const keys: string[] = [];
 		const iter = cursor
-			? this.#container.listBlobsFlat({ prefix }).byPage({ continuationToken: cursor })
+			? this.#container
+					.listBlobsFlat({ prefix })
+					.byPage({ continuationToken: cursor })
 			: this.#container.listBlobsFlat({ prefix }).byPage();
 
 		const page = await iter.next();
@@ -86,12 +88,11 @@ class AzureObjectStoreClient extends ObjectStoreClient {
 	}
 }
 
-function createContainerClient(
-	creds: AzureCredentials,
-): ContainerClient {
+function createContainerClient(creds: AzureCredentials): ContainerClient {
 	if (creds.connectionString) {
-		return BlobServiceClient.fromConnectionString(creds.connectionString)
-			.getContainerClient(creds.containerName);
+		return BlobServiceClient.fromConnectionString(
+			creds.connectionString,
+		).getContainerClient(creds.containerName);
 	}
 	if (creds.accountKey) {
 		const sharedKey = new StorageSharedKeyCredential(

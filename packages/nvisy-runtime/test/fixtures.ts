@@ -1,8 +1,8 @@
 import type { JsonValue, Resumable } from "@nvisy/core";
 import { Action, Data, Plugin, Provider, Stream } from "@nvisy/core";
 import { z } from "zod";
-import { Engine } from "../src/engine/engine.js";
 import type { Connections } from "../src/engine/connections.js";
+import { Engine } from "../src/engine/engine.js";
 import { Registry } from "../src/registry.js";
 
 /** Minimal row-like data type for testing. */

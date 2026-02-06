@@ -7,7 +7,6 @@
  * and runs pipelines with retry, timeout, and cancellation support.
  */
 
-export { Engine } from "./engine/index.js";
 export type {
 	ActionDescriptor,
 	Connection,
@@ -23,6 +22,7 @@ export type {
 	RunSummary,
 	ValidationResult,
 } from "./engine/index.js";
+export { Engine } from "./engine/index.js";
 export type {
 	ActionNode,
 	BackoffStrategy,

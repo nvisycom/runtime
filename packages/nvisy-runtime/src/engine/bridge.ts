@@ -8,8 +8,7 @@
  */
 
 import { getLogger } from "@logtape/logtape";
-import { type Data, type Document, RuntimeError } from "@nvisy/core";
-import { Blob } from "@nvisy/core";
+import { Blob, type Data, type Document, RuntimeError } from "@nvisy/core";
 import type { Registry } from "../registry.js";
 
 const logger = getLogger(["nvisy", "bridge"]);

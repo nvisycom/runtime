@@ -3,9 +3,9 @@ import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
 import {
 	type ListResult,
+	makeObjectProvider,
 	ObjectStoreClient,
 	ObjectStoreProvider,
-	makeObjectProvider,
 } from "./client.js";
 
 const logger = getLogger(["nvisy", "object"]);
@@ -41,9 +41,7 @@ class GcsObjectStoreClient extends ObjectStoreClient {
 
 		const [files] = await this.#storage.bucket(this.#bucket).getFiles(options);
 		// When resuming, GCS startOffset is inclusive — skip the cursor key itself
-		const keys = files
-			.map((f) => f.name)
-			.filter((name) => name !== cursor);
+		const keys = files.map((f) => f.name).filter((name) => name !== cursor);
 		return { keys };
 	}
 

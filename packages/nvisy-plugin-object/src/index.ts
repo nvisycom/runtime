@@ -24,5 +24,5 @@ export const objectPlugin = Plugin.define("object")
 	.withProviders(s3, gcs, azure)
 	.withStreams(read, write);
 
-export { ObjectStoreClient } from "./providers/index.js";
 export type { ListResult } from "./providers/index.js";
+export { ObjectStoreClient } from "./providers/index.js";
