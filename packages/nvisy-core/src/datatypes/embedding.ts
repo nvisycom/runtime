@@ -1,4 +1,4 @@
-import { Data } from "@nvisy/core";
+import { Data } from "./data.js";
 
 /**
  * A dense vector embedding produced by an embedding model.

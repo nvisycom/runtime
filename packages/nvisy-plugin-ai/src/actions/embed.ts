@@ -1,6 +1,5 @@
-import { Action, Document } from "@nvisy/core";
+import { Action, Document, Embedding } from "@nvisy/core";
 import { z } from "zod";
-import { Embedding } from "../datatypes/index.js";
 import { EmbeddingClient } from "../providers/client.js";
 
 const EmbedParams = z.object({

@@ -15,6 +15,7 @@ export type {
 	ElementType,
 } from "./document.js";
 export { Document } from "./document.js";
+export { Embedding } from "./embedding.js";
 
 import type { ClassRef } from "../types.js";
 import type { Data } from "./data.js";
@@ -42,9 +43,13 @@ export const Datatypes = {
 
 import { Blob } from "./blob.js";
 import { Document } from "./document.js";
+import { Embedding } from "./embedding.js";
 
 /** Pre-defined Document datatype entry. */
 export const documentDatatype = Datatypes.define("document", Document);
 
 /** Pre-defined Blob datatype entry. */
 export const blobDatatype = Datatypes.define("blob", Blob);
+
+/** Pre-defined Embedding datatype entry. */
+export const embeddingDatatype = Datatypes.define("embedding", Embedding);

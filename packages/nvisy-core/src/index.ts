@@ -23,6 +23,8 @@ export {
 	Datatypes,
 	Document,
 	documentDatatype,
+	Embedding,
+	embeddingDatatype,
 } from "./datatypes/index.js";
 export type { ErrorContext } from "./errors/index.js";
 export {
@@ -66,11 +68,15 @@ export type {
 export { Stream } from "./stream.js";
 export type { ClassRef } from "./types.js";
 
-import { blobDatatype, documentDatatype } from "./datatypes/index.js";
+import {
+	blobDatatype,
+	documentDatatype,
+	embeddingDatatype,
+} from "./datatypes/index.js";
 import { plaintextLoader } from "./loaders/index.js";
 import { Plugin } from "./plugin.js";
 
-/** Built-in core plugin that registers the Document and Blob datatypes, and plaintext loader. */
+/** Built-in core plugin that registers the Document, Blob, and Embedding datatypes, and plaintext loader. */
 export const corePlugin = Plugin.define("core")
-	.withDatatypes(documentDatatype, blobDatatype)
+	.withDatatypes(documentDatatype, blobDatatype, embeddingDatatype)
 	.withLoaders(plaintextLoader);
