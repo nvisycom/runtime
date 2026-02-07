@@ -1,6 +1,17 @@
+/**
+ * Action factory and type definitions for stream transforms.
+ *
+ * Actions are the intermediate processing steps in a pipeline,
+ * transforming data between sources and targets. Use
+ * {@link Action.withoutClient} for rule-based transforms and
+ * {@link Action.withClient} for transforms that require a provider.
+ *
+ * @module
+ */
+
 import type { z } from "zod";
-import type { Data } from "./datatypes/data.js";
-import type { ClassRef } from "./types.js";
+import type { Data } from "../datatypes/data.js";
+import type { ClassRef } from "../types.js";
 
 /**
  * Stream transform that operates without a provider client.

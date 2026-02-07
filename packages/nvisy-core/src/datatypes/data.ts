@@ -1,3 +1,9 @@
+/**
+ * Abstract base data class for all pipeline data types.
+ *
+ * @module
+ */
+
 import type { Metadata } from "../types.js";
 
 /**

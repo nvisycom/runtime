@@ -1,3 +1,13 @@
+/**
+ * Loaders that transform {@link Blob | Blobs} into {@link Document | Documents}.
+ *
+ * Each loader declares the file extensions and MIME types it handles,
+ * so the engine can automatically select the right loader for a given
+ * blob. Use {@link Loader.define} to create new loaders.
+ *
+ * @module
+ */
+
 import type { z } from "zod";
 import type { Blob } from "./datatypes/blob.js";
 import type { Document } from "./datatypes/document.js";

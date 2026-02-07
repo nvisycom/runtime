@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Action } from "../src/action.js";
+import { Action } from "../src/actions/action.js";
 import type { JsonValue } from "../src/datatypes/data.js";
 import { Data } from "../src/datatypes/data.js";
 

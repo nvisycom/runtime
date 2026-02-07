@@ -1,17 +1,34 @@
-import type { Metadata } from "@nvisy/core";
-import { Action, Document } from "@nvisy/core";
-import { z } from "zod";
+/**
+ * Rule-based partition action that splits documents using auto
+ * pass-through or regex-based splitting.
+ *
+ * @module
+ */
 
-const AutoStrategy = z.object({
+import { z } from "zod";
+import type { Metadata } from "../datatypes/index.js";
+import { Document } from "../datatypes/index.js";
+import { Action } from "./action.js";
+import { partitionByAuto } from "./partition-by-auto.js";
+import { partitionByRule } from "./partition-by-rule.js";
+
+export type { AutoStrategyParams } from "./partition-by-auto.js";
+export type { RuleStrategyParams } from "./partition-by-rule.js";
+
+const BaseAuto = z.object({});
+
+const BaseRule = z.object({
+	pattern: z.string(),
+	includeDelimiter: z.boolean().default(false),
+	inferTableStructure: z.boolean().default(false),
+});
+
+const AutoStrategy = BaseAuto.extend({
 	strategy: z.literal("auto"),
 });
 
-const RuleStrategy = z.object({
+const RuleStrategy = BaseRule.extend({
 	strategy: z.literal("rule"),
-	/** Regex pattern to split content on. */
-	pattern: z.string(),
-	/** Whether to include the delimiter in chunks. Defaults to false. */
-	includeDelimiter: z.boolean().default(false),
 });
 
 const PartitionParams = z.discriminatedUnion("strategy", [
@@ -34,28 +51,24 @@ export const partition = Action.withoutClient("partition", {
 async function* transformPartition(
 	stream: AsyncIterable<Document>,
 	params: z.infer<typeof PartitionParams>,
-) {
+): AsyncGenerator<Document> {
 	for await (const item of stream) {
-		const text = item.content;
-		const sourceId = item.id;
-		const baseMeta = item.metadata;
-
 		let parts: string[];
-
 		switch (params.strategy) {
-			case "auto":
-				parts = [text];
+			case "auto": {
+				const { strategy: _, ...rest } = params;
+				parts = partitionByAuto(item, rest);
 				break;
+			}
 			case "rule": {
-				const regex = new RegExp(params.pattern, "g");
-				if (params.includeDelimiter) {
-					parts = text.split(regex).filter((p) => p.length > 0);
-				} else {
-					parts = text.split(regex).filter((p) => p.length > 0);
-				}
+				const { strategy: _, ...rest } = params;
+				parts = partitionByRule(item, rest);
 				break;
 			}
 		}
+
+		const sourceId = item.id;
+		const baseMeta = item.metadata;
 
 		for (let i = 0; i < parts.length; i++) {
 			const metadata: Metadata = {

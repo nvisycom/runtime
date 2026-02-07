@@ -1,3 +1,9 @@
+/**
+ * Binary blob data type for files from object storage.
+ *
+ * @module
+ */
+
 import { Data } from "./data.js";
 
 /**

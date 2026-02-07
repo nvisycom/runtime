@@ -1,6 +1,5 @@
-import { Action, Document } from "@nvisy/core";
+import { Action, Chunk, Document } from "@nvisy/core";
 import { z } from "zod";
-import { Chunk } from "../datatypes/index.js";
 import { EmbeddingClient } from "../providers/client.js";
 
 const ChunkSimilarityParams = z.object({

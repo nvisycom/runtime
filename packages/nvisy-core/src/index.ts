@@ -4,9 +4,10 @@
  * Public API surface for the nvisy core library.
  */
 
-export type { ActionInstance } from "./action.js";
-export { Action } from "./action.js";
+export type { ActionInstance } from "./actions/index.js";
+export { Action, chunkSimple, partition } from "./actions/index.js";
 export type {
+	ChunkOptions,
 	CompositeElementOptions,
 	Datatype,
 	DocumentOptions,
@@ -23,16 +24,14 @@ export type {
 } from "./datatypes/index.js";
 export {
 	Blob,
-	blobDatatype,
+	Chunk,
 	CompositeElement,
 	Data,
 	Datatypes,
 	Document,
-	documentDatatype,
 	Element,
 	EmailElement,
 	Embedding,
-	embeddingDatatype,
 	FormElement,
 	ImageElement,
 	TableElement,
@@ -92,16 +91,11 @@ export type {
 export { Stream } from "./stream.js";
 export type { ClassRef, JsonValue, Metadata } from "./types.js";
 
-import {
-	blobDatatype,
-	documentDatatype,
-	embeddingDatatype,
-} from "./datatypes/index.js";
+import { chunkSimple, partition } from "./actions/index.js";
+import { blob, chunk, document, embedding } from "./datatypes/index.js";
 import { Plugin } from "./plugin.js";
 
-/** Built-in core plugin that registers the Document, Blob, and Embedding datatypes. */
-export const corePlugin = Plugin.define("core").withDatatypes(
-	documentDatatype,
-	blobDatatype,
-	embeddingDatatype,
-);
+/** Built-in core plugin that registers the Document, Blob, Chunk, and Embedding datatypes. */
+export const corePlugin = Plugin.define("core")
+	.withDatatypes(document, blob, chunk, embedding)
+	.withActions(chunkSimple, partition);

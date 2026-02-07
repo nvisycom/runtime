@@ -6,6 +6,8 @@
 
 export type { JsonValue, Metadata } from "../types.js";
 export { Blob } from "./blob.js";
+export type { ChunkOptions } from "./chunk.js";
+export { Chunk } from "./chunk.js";
 export { Data } from "./data.js";
 export type {
 	CompositeElementOptions,
@@ -57,14 +59,15 @@ export const Datatypes = {
 } as const;
 
 import { Blob } from "./blob.js";
+import { Chunk } from "./chunk.js";
 import { Document } from "./document.js";
 import { Embedding } from "./embedding.js";
 
 /** Pre-defined Document datatype entry. */
-export const documentDatatype = Datatypes.define("document", Document);
-
+export const document = Datatypes.define("document", Document);
+/** Pre-defined Chunk datatype entry. */
+export const chunk = Datatypes.define("chunk", Chunk);
 /** Pre-defined Blob datatype entry. */
-export const blobDatatype = Datatypes.define("blob", Blob);
-
+export const blob = Datatypes.define("blob", Blob);
 /** Pre-defined Embedding datatype entry. */
-export const embeddingDatatype = Datatypes.define("embedding", Embedding);
+export const embedding = Datatypes.define("embedding", Embedding);

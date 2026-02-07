@@ -16,17 +16,14 @@
  * ```
  */
 
-import { Datatypes, Plugin } from "@nvisy/core";
+import { Plugin } from "@nvisy/core";
 import {
-	chunk,
 	chunkContextual,
 	chunkSimilarity,
 	embed,
 	enrich,
-	partition,
 	partitionContextual,
 } from "./actions/index.js";
-import { Chunk } from "./datatypes/index.js";
 import {
 	anthropicCompletion,
 	geminiCompletion,
@@ -46,15 +43,11 @@ export const aiPlugin = Plugin.define("ai")
 	)
 	.withActions(
 		embed,
-		chunk,
 		chunkSimilarity,
 		chunkContextual,
-		partition,
 		partitionContextual,
 		enrich,
-	)
-	.withDatatypes(Datatypes.define("chunk", Chunk));
+	);
 
-export { Embedding } from "@nvisy/core";
-export type { ChunkOptions } from "./datatypes/index.js";
-export { Chunk } from "./datatypes/index.js";
+export type { ChunkOptions } from "@nvisy/core";
+export { Chunk, Embedding } from "@nvisy/core";

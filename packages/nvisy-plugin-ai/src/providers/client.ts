@@ -1,5 +1,10 @@
 import { getLogger } from "@logtape/logtape";
-import { ConnectionError, Provider, type ProviderFactory } from "@nvisy/core";
+import {
+	ConnectionError,
+	type Metadata,
+	Provider,
+	type ProviderFactory,
+} from "@nvisy/core";
 import type { EmbeddingModel, LanguageModel } from "ai";
 import { embedMany, generateText } from "ai";
 import type { ProviderConnection } from "./schemas.js";
@@ -152,6 +157,26 @@ export class VercelCompletionClient extends AICompletionClient {
 			...(usage != null ? { usage } : {}),
 		};
 	}
+}
+
+/** Parse an AI response as JSON, falling back to a keyed wrapper. */
+export function parseJsonResponse(
+	content: string,
+	fallbackKey: string,
+): Metadata {
+	try {
+		const parsed = JSON.parse(content) as Record<string, unknown>;
+		if (
+			typeof parsed === "object" &&
+			parsed !== null &&
+			!Array.isArray(parsed)
+		) {
+			return parsed as Metadata;
+		}
+	} catch {
+		// If JSON parsing fails, store the raw response
+	}
+	return { [fallbackKey]: content };
 }
 
 /** Normalise an unknown throw into a {@link ConnectionError}. */

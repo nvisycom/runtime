@@ -1,3 +1,9 @@
+/**
+ * Connection error for unreachable external services.
+ *
+ * @module
+ */
+
 import { type ErrorContext, RuntimeError } from "./runtime.js";
 
 /**

@@ -145,6 +145,53 @@ describe("Document", () => {
 		});
 	});
 
+	describe("getElementsByPage", () => {
+		it("returns empty map when there are no elements", () => {
+			const doc = new Document("text");
+			expect(doc.getElementsByPage().size).toBe(0);
+		});
+
+		it("groups elements by pageNumber", () => {
+			const doc = new Document("text", {
+				elements: [
+					new Element({ type: "title", text: "Title", pageNumber: 1 }),
+					new Element({ type: "narrative-text", text: "p1", pageNumber: 1 }),
+					new Element({ type: "narrative-text", text: "p2", pageNumber: 2 }),
+				],
+			});
+			const pages = doc.getElementsByPage();
+			expect(pages.size).toBe(2);
+			expect(pages.get(1)).toHaveLength(2);
+			expect(pages.get(2)).toHaveLength(1);
+			expect(pages.get(2)![0].text).toBe("p2");
+		});
+
+		it("collects elements without pageNumber under key 0", () => {
+			const doc = new Document("text", {
+				elements: [
+					new Element({ type: "title", text: "Title" }),
+					new Element({ type: "narrative-text", text: "p1", pageNumber: 1 }),
+				],
+			});
+			const pages = doc.getElementsByPage();
+			expect(pages.get(0)).toHaveLength(1);
+			expect(pages.get(0)![0].text).toBe("Title");
+			expect(pages.get(1)).toHaveLength(1);
+		});
+
+		it("preserves element order within each page", () => {
+			const doc = new Document("text", {
+				elements: [
+					new Element({ type: "title", text: "A", pageNumber: 1 }),
+					new Element({ type: "narrative-text", text: "B", pageNumber: 2 }),
+					new Element({ type: "narrative-text", text: "C", pageNumber: 1 }),
+				],
+			});
+			const page1 = doc.getElementsByPage().get(1)!;
+			expect(page1.map((e) => e.text)).toEqual(["A", "C"]);
+		});
+	});
+
 	describe("Element", () => {
 		it("auto-generates a unique id", () => {
 			const a = new Element({

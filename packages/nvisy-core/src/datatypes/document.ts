@@ -1,3 +1,9 @@
+/**
+ * Document data type with optional structured elements.
+ *
+ * @module
+ */
+
 import type { Element } from "../documents/elements.js";
 import { Data } from "./data.js";
 
@@ -97,6 +103,28 @@ export class Document extends Data {
 	/** Flat ordered list of structural elements. */
 	get elements(): readonly Element[] | undefined {
 		return this.#elements;
+	}
+
+	/**
+	 * Group elements by their 1-based page number.
+	 *
+	 * Returns a `Map` keyed by page number with each value being the
+	 * ordered array of elements on that page. Elements without a
+	 * `pageNumber` are collected under key `0`.
+	 */
+	getElementsByPage(): Map<number, Element[]> {
+		const map = new Map<number, Element[]>();
+		if (this.#elements == null) return map;
+		for (const el of this.#elements) {
+			const page = el.pageNumber ?? 0;
+			let bucket = map.get(page);
+			if (bucket == null) {
+				bucket = [];
+				map.set(page, bucket);
+			}
+			bucket.push(el);
+		}
+		return map;
 	}
 
 	/**

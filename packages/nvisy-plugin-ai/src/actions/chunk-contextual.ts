@@ -1,6 +1,5 @@
-import { Action, Document } from "@nvisy/core";
+import { Action, Chunk, Document } from "@nvisy/core";
 import { z } from "zod";
-import { Chunk } from "../datatypes/index.js";
 import { AICompletionClient } from "../providers/client.js";
 
 const ChunkContextualParams = z.object({

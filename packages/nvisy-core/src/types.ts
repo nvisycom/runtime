@@ -1,4 +1,10 @@
 /**
+ * Shared type aliases used across the core library.
+ *
+ * @module
+ */
+
+/**
  * A JSON-compatible value.
  *
  * Mirrors the types that `JSON.parse` can return and `JSON.stringify`

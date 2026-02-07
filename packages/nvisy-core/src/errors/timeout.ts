@@ -1,3 +1,9 @@
+/**
+ * Timeout error for operations that exceed their time limit.
+ *
+ * @module
+ */
+
 import type { RuntimeErrorOptions } from "./runtime.js";
 import { RuntimeError } from "./runtime.js";
 
