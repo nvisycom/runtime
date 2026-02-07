@@ -7,43 +7,67 @@
 export type { ActionInstance } from "./action.js";
 export { Action } from "./action.js";
 export type {
+	CompositeElementOptions,
 	Datatype,
-	DocumentElement,
 	DocumentOptions,
-	DocumentPage,
-	DocumentSection,
-	ElementType,
-	JsonValue,
-	Metadata,
+	ElementOptions,
+	ElementProvenance,
+	EmailElementOptions,
+	EmphasizedText,
+	FormElementOptions,
+	FormKeyValuePair,
+	ImageElementOptions,
+	Link,
+	TableCellData,
+	TableElementOptions,
 } from "./datatypes/index.js";
 export {
 	Blob,
 	blobDatatype,
+	CompositeElement,
 	Data,
 	Datatypes,
 	Document,
 	documentDatatype,
+	Element,
+	EmailElement,
 	Embedding,
 	embeddingDatatype,
+	FormElement,
+	ImageElement,
+	TableElement,
 } from "./datatypes/index.js";
+export type {
+	ElementCategory,
+	ElementCoordinates,
+	Orientation,
+	Point,
+} from "./documents/index.js";
+export {
+	CodeType,
+	CoordinateSystem,
+	categoryOf,
+	ElementType,
+	EmailType,
+	FormType,
+	LayoutType,
+	MathType,
+	MediaType,
+	Orientations,
+	ontology,
+	TableType,
+	TextType,
+} from "./documents/index.js";
 export type { ErrorContext } from "./errors/index.js";
 export {
 	CancellationError,
 	ConnectionError,
 	RuntimeError,
+	TimeoutError,
 	ValidationError,
 } from "./errors/index.js";
-export type {
-	LoaderConfig,
-	LoaderInstance,
-	LoadFn,
-	PlaintextParams,
-} from "./loaders/index.js";
-export {
-	Loader,
-	plaintextLoader,
-	plaintextParamsSchema,
-} from "./loaders/index.js";
+export type { LoaderConfig, LoaderInstance, LoadFn } from "./loader.js";
+export { Loader } from "./loader.js";
 export type {
 	AnyActionInstance,
 	AnyLoaderInstance,
@@ -66,17 +90,18 @@ export type {
 	WriterFn,
 } from "./stream.js";
 export { Stream } from "./stream.js";
-export type { ClassRef } from "./types.js";
+export type { ClassRef, JsonValue, Metadata } from "./types.js";
 
 import {
 	blobDatatype,
 	documentDatatype,
 	embeddingDatatype,
 } from "./datatypes/index.js";
-import { plaintextLoader } from "./loaders/index.js";
 import { Plugin } from "./plugin.js";
 
-/** Built-in core plugin that registers the Document, Blob, and Embedding datatypes, and plaintext loader. */
-export const corePlugin = Plugin.define("core")
-	.withDatatypes(documentDatatype, blobDatatype, embeddingDatatype)
-	.withLoaders(plaintextLoader);
+/** Built-in core plugin that registers the Document, Blob, and Embedding datatypes. */
+export const corePlugin = Plugin.define("core").withDatatypes(
+	documentDatatype,
+	blobDatatype,
+	embeddingDatatype,
+);

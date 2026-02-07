@@ -64,8 +64,8 @@ async function* transformPartition(
 				partTotal: parts.length,
 			};
 			yield new Document(parts[i]!, {
-				...(params.strategy === "auto" && item.pages != null
-					? { pages: item.pages }
+				...(params.strategy === "auto" && item.elements != null
+					? { elements: item.elements }
 					: {}),
 			})
 				.withParent(sourceId)

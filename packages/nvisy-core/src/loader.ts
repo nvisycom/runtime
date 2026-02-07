@@ -1,6 +1,6 @@
 import type { z } from "zod";
-import type { Blob } from "../datatypes/blob.js";
-import type { Document } from "../datatypes/document.js";
+import type { Blob } from "./datatypes/blob.js";
+import type { Document } from "./datatypes/document.js";
 
 /**
  * Function that transforms a Blob into one or more Documents.

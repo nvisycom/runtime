@@ -1,6 +1,6 @@
 import type { ActionInstance } from "./action.js";
 import type { Datatype } from "./datatypes/index.js";
-import type { LoaderInstance } from "./loaders/loader.js";
+import type { LoaderInstance } from "./loader.js";
 import type { ProviderFactory } from "./provider.js";
 import type { StreamSource, StreamTarget } from "./stream.js";
 

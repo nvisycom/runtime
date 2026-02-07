@@ -1,4 +1,4 @@
-import type { DocumentPage, DocumentSection } from "@nvisy/core";
+import type { Element } from "@nvisy/core";
 import { Action, Document } from "@nvisy/core";
 import { z } from "zod";
 import { Chunk } from "../datatypes/index.js";
@@ -47,12 +47,14 @@ async function* transformChunk(
 	for await (const doc of stream) {
 		switch (params.strategy) {
 			case "page": {
-				if (doc.pages != null && doc.pages.length > 0) {
-					for (let i = 0; i < doc.pages.length; i++) {
-						const page = doc.pages[i]!;
-						yield new Chunk(Document.fromPages([page]).content, {
+				if (doc.elements != null && doc.elements.length > 0) {
+					const groups = groupByPage(doc.elements);
+					const pages = [...groups.entries()].sort(([a], [b]) => a - b);
+					for (let i = 0; i < pages.length; i++) {
+						const [, els] = pages[i]!;
+						yield new Chunk(Document.fromElements(els).content, {
 							chunkIndex: i,
-							chunkTotal: doc.pages.length,
+							chunkTotal: pages.length,
 						}).deriveFrom(doc);
 					}
 					continue;
@@ -60,14 +62,14 @@ async function* transformChunk(
 				break;
 			}
 			case "section": {
-				if (doc.pages != null && doc.pages.length > 0) {
-					const sections = chunkSectionsByLevel(doc.pages, params.level);
+				if (doc.elements != null && doc.elements.length > 0) {
+					const sections = splitByHeadingLevel(doc.elements, params.level);
 					for (let i = 0; i < sections.length; i++) {
-						const sec = sections[i]!;
-						yield new Chunk(
-							Document.fromPages([{ pageNumber: 1, sections: [sec] }]).content,
-							{ chunkIndex: i, chunkTotal: sections.length },
-						).deriveFrom(doc);
+						const els = sections[i]!;
+						yield new Chunk(Document.fromElements(els).content, {
+							chunkIndex: i,
+							chunkTotal: sections.length,
+						}).deriveFrom(doc);
 					}
 					continue;
 				}
@@ -96,6 +98,45 @@ async function* transformChunk(
 			}).deriveFrom(doc);
 		}
 	}
+}
+
+/** Group elements by their `pageNumber`, preserving document order. */
+function groupByPage(elements: readonly Element[]): Map<number, Element[]> {
+	const groups = new Map<number, Element[]>();
+	for (const el of elements) {
+		const page = el.pageNumber ?? 1;
+		let group = groups.get(page);
+		if (group == null) {
+			group = [];
+			groups.set(page, group);
+		}
+		group.push(el);
+	}
+	return groups;
+}
+
+/** Split elements into sections at headings of the given level. */
+function splitByHeadingLevel(
+	elements: readonly Element[],
+	level: number,
+): Element[][] {
+	const sections: Element[][] = [];
+	let current: Element[] = [];
+
+	for (const el of elements) {
+		if (el.type === "title" && el.level != null && el.level <= level) {
+			if (current.length > 0) {
+				sections.push(current);
+			}
+			current = [el];
+		} else {
+			current.push(el);
+		}
+	}
+	if (current.length > 0) {
+		sections.push(current);
+	}
+	return sections;
 }
 
 function chunkByCharacter(
@@ -139,36 +180,4 @@ function chunkByPage(text: string): string[] {
 		}
 	}
 	return chunks.length > 0 ? chunks : [text];
-}
-
-/** Walk the page->section tree, collecting sections at the target depth level. */
-function chunkSectionsByLevel(
-	pages: readonly DocumentPage[],
-	targetLevel: number,
-): DocumentSection[] {
-	const out: DocumentSection[] = [];
-	for (const page of pages) {
-		for (const section of page.sections) {
-			collectSectionsAtLevel(section, 1, targetLevel, out);
-		}
-	}
-	return out;
-}
-
-/** Recursively traverse the section tree, collecting sections at the target depth. */
-function collectSectionsAtLevel(
-	section: DocumentSection,
-	currentLevel: number,
-	targetLevel: number,
-	out: DocumentSection[],
-): void {
-	if (currentLevel === targetLevel) {
-		out.push(section);
-		return;
-	}
-	if (section.children) {
-		for (const child of section.children) {
-			collectSectionsAtLevel(child, currentLevel + 1, targetLevel, out);
-		}
-	}
 }

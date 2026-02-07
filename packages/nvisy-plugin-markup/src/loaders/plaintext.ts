@@ -1,6 +1,5 @@
+import { Document, Loader } from "@nvisy/core";
 import { z } from "zod";
-import { Document } from "../datatypes/document.js";
-import { Loader } from "./loader.js";
 
 /** Schema for plaintext loader parameters. */
 export const plaintextParamsSchema = z

@@ -1,195 +1,207 @@
 import { describe, expect, it } from "vitest";
-import type { DocumentPage, DocumentSection } from "./document.js";
+import { Element } from "../documents/elements.js";
 import { Document } from "./document.js";
 
 describe("Document", () => {
-	it("stores content and has no pages by default", () => {
+	it("stores content and has no elements by default", () => {
 		const doc = new Document("hello world");
 		expect(doc.content).toBe("hello world");
-		expect(doc.pages).toBeUndefined();
-		expect(doc.flatElements).toEqual([]);
+		expect(doc.elements).toBeUndefined();
 	});
 
-	it("constructor accepts pages in options", () => {
-		const pages: DocumentPage[] = [
-			{
-				pageNumber: 1,
-				sections: [
-					{
-						title: "Intro",
-						elements: [{ type: "paragraph", text: "Hello" }],
-					},
-				],
-			},
-		];
-		const doc = new Document("Hello", { pages });
+	it("constructor accepts elements in options", () => {
+		const el = new Element({
+			type: "narrative-text",
+			text: "Hello",
+		});
+		const doc = new Document("Hello", { elements: [el] });
 		expect(doc.content).toBe("Hello");
-		expect(doc.pages).toEqual(pages);
+		expect(doc.elements).toHaveLength(1);
+		expect(doc.elements![0]!.text).toBe("Hello");
 	});
 
-	describe("fromPages", () => {
-		it("derives content from element texts joined with \\n\\n", () => {
-			const pages: DocumentPage[] = [
-				{
-					pageNumber: 1,
-					sections: [
-						{
-							elements: [
-								{ type: "heading", text: "Title", level: 1 },
-								{ type: "paragraph", text: "First paragraph." },
-							],
-						},
-					],
-				},
-				{
-					pageNumber: 2,
-					sections: [
-						{
-							elements: [{ type: "paragraph", text: "Second page content." }],
-						},
-					],
-				},
-			];
-
-			const doc = Document.fromPages(pages);
-			expect(doc.content).toBe(
-				"Title\n\nFirst paragraph.\n\nSecond page content.",
-			);
-			expect(doc.pages).toEqual(pages);
+	describe("title", () => {
+		it("is undefined by default", () => {
+			const doc = new Document("text");
+			expect(doc.title).toBeUndefined();
 		});
 
-		it("produces empty content from empty pages array", () => {
-			const doc = Document.fromPages([]);
+		it("is set via constructor options", () => {
+			const doc = new Document("text", { title: "Quarterly Report" });
+			expect(doc.title).toBe("Quarterly Report");
+		});
+
+		it("is preserved by fromElements", () => {
+			const el = new Element({
+				type: "narrative-text",
+				text: "hi",
+			});
+			const doc = Document.fromElements([el], {
+				sourceType: "html",
+				title: "My Page",
+			});
+			expect(doc.title).toBe("My Page");
+			expect(doc.sourceType).toBe("html");
+		});
+	});
+
+	describe("languages", () => {
+		it("is empty when there are no elements", () => {
+			const doc = new Document("text");
+			expect(doc.languages).toEqual([]);
+		});
+
+		it("is empty when no elements have languages", () => {
+			const doc = new Document("text", {
+				elements: [
+					new Element({
+						type: "narrative-text",
+						text: "hello",
+					}),
+				],
+			});
+			expect(doc.languages).toEqual([]);
+		});
+
+		it("collects unique languages from all elements", () => {
+			const doc = new Document("text", {
+				elements: [
+					new Element({
+						type: "narrative-text",
+						text: "hello",
+						languages: ["en"],
+					}),
+					new Element({
+						type: "narrative-text",
+						text: "hallo",
+						languages: ["de", "en"],
+					}),
+					new Element({
+						type: "narrative-text",
+						text: "bonjour",
+						languages: ["fr"],
+					}),
+				],
+			});
+			expect(doc.languages).toEqual(["en", "de", "fr"]);
+		});
+
+		it("skips elements without languages", () => {
+			const doc = new Document("text", {
+				elements: [
+					new Element({
+						type: "narrative-text",
+						text: "no lang",
+					}),
+					new Element({
+						type: "narrative-text",
+						text: "has lang",
+						languages: ["es"],
+					}),
+				],
+			});
+			expect(doc.languages).toEqual(["es"]);
+		});
+	});
+
+	describe("fromElements", () => {
+		it("derives content from element texts joined with \\n\\n", () => {
+			const elements = [
+				new Element({
+					type: "title",
+					text: "Title",
+					level: 1,
+				}),
+				new Element({
+					type: "narrative-text",
+					text: "First paragraph.",
+				}),
+				new Element({
+					type: "narrative-text",
+					text: "Second paragraph.",
+				}),
+			];
+			const doc = Document.fromElements(elements);
+			expect(doc.content).toBe(
+				"Title\n\nFirst paragraph.\n\nSecond paragraph.",
+			);
+			expect(doc.elements).toHaveLength(3);
+		});
+
+		it("produces empty content from empty elements array", () => {
+			const doc = Document.fromElements([]);
 			expect(doc.content).toBe("");
-			expect(doc.pages).toEqual([]);
+			expect(doc.elements).toEqual([]);
 		});
 
 		it("preserves sourceType", () => {
-			const pages: DocumentPage[] = [
-				{
-					pageNumber: 1,
-					sections: [
-						{
-							elements: [{ type: "paragraph", text: "text" }],
-						},
-					],
-				},
-			];
-			const doc = Document.fromPages(pages, { sourceType: "pdf" });
+			const el = new Element({
+				type: "narrative-text",
+				text: "text",
+			});
+			const doc = Document.fromElements([el], { sourceType: "pdf" });
 			expect(doc.sourceType).toBe("pdf");
-			expect(doc.pages).toHaveLength(1);
+			expect(doc.elements).toHaveLength(1);
 		});
 	});
 
-	describe("flatElements", () => {
-		it("traverses pages -> sections recursively in document order", () => {
-			const pages: DocumentPage[] = [
-				{
-					pageNumber: 1,
-					sections: [
-						{
-							title: "S1",
-							elements: [
-								{ type: "heading", text: "H1", level: 1 },
-								{ type: "paragraph", text: "P1" },
-							],
-							children: [
-								{
-									title: "S1.1",
-									elements: [{ type: "paragraph", text: "P1.1" }],
-								},
-							],
-						},
-					],
-				},
-				{
-					pageNumber: 2,
-					sections: [
-						{
-							elements: [{ type: "table", text: "T1" }],
-						},
-					],
-				},
-			];
+	describe("Element", () => {
+		it("auto-generates a unique id", () => {
+			const a = new Element({
+				type: "narrative-text",
+				text: "a",
+			});
+			const b = new Element({
+				type: "narrative-text",
+				text: "b",
+			});
+			expect(a.id).toBeTruthy();
+			expect(b.id).toBeTruthy();
+			expect(a.id).not.toBe(b.id);
+		});
 
-			const doc = new Document("ignored", { pages });
-			expect(doc.flatElements.map((e) => e.text)).toEqual([
-				"H1",
-				"P1",
-				"P1.1",
-				"T1",
+		it("carries parentId for hierarchy", () => {
+			const table = new Element({ type: "table", text: "" });
+			const child = new Element({
+				type: "narrative-text",
+				text: "Revenue",
+				parentId: table.id,
+			});
+			expect(child.parentId).toBe(table.id);
+		});
+
+		it("carries pageNumber", () => {
+			const el = new Element({
+				type: "title",
+				text: "Intro",
+				pageNumber: 2,
+			});
+			expect(el.pageNumber).toBe(2);
+		});
+
+		it("carries optional enrichment fields", () => {
+			const el = new Element({
+				type: "table",
+				text: "A | B",
+				languages: ["en"],
+				provenance: { confidence: 0.95, isContinuation: false },
+			});
+			expect(el.provenance?.confidence).toBe(0.95);
+			expect(el.languages).toEqual(["en"]);
+			expect(el.provenance?.isContinuation).toBe(false);
+		});
+
+		it("accepts various element types", () => {
+			const elements = [
+				new Element({ type: "formula", text: "E = mc²" }),
+				new Element({ type: "list-item", text: "First item" }),
+				new Element({ type: "page-break", text: "" }),
+			];
+			expect(elements.map((e) => e.type)).toEqual([
+				"formula",
+				"list-item",
+				"page-break",
 			]);
-		});
-
-		it("handles deeply nested sections (3+ levels)", () => {
-			const deepSection: DocumentSection = {
-				title: "L1",
-				elements: [{ type: "paragraph", text: "Level 1" }],
-				children: [
-					{
-						title: "L2",
-						elements: [{ type: "paragraph", text: "Level 2" }],
-						children: [
-							{
-								title: "L3",
-								elements: [{ type: "paragraph", text: "Level 3" }],
-								children: [
-									{
-										title: "L4",
-										elements: [{ type: "code", text: "Level 4" }],
-									},
-								],
-							},
-						],
-					},
-				],
-			};
-			const pages: DocumentPage[] = [
-				{ pageNumber: 1, sections: [deepSection] },
-			];
-			const doc = new Document("x", { pages });
-			expect(doc.flatElements.map((e) => e.text)).toEqual([
-				"Level 1",
-				"Level 2",
-				"Level 3",
-				"Level 4",
-			]);
-		});
-
-		it("handles sections without titles", () => {
-			const pages: DocumentPage[] = [
-				{
-					pageNumber: 1,
-					sections: [
-						{
-							elements: [{ type: "paragraph", text: "No title section" }],
-						},
-					],
-				},
-			];
-			const doc = new Document("x", { pages });
-			expect(doc.flatElements).toHaveLength(1);
-			expect(doc.flatElements[0]!.text).toBe("No title section");
-		});
-
-		it("includes elements with empty text strings", () => {
-			const pages: DocumentPage[] = [
-				{
-					pageNumber: 1,
-					sections: [
-						{
-							elements: [
-								{ type: "image", text: "" },
-								{ type: "paragraph", text: "after" },
-							],
-						},
-					],
-				},
-			];
-			const doc = new Document("x", { pages });
-			expect(doc.flatElements).toHaveLength(2);
-			expect(doc.flatElements[0]!.text).toBe("");
-			expect(doc.flatElements[0]!.type).toBe("image");
 		});
 	});
 });

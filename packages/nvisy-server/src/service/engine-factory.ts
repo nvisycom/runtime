@@ -3,10 +3,10 @@ import { aiPlugin } from "@nvisy/plugin-ai";
 import { markupPlugin } from "@nvisy/plugin-markup";
 import { nosqlPlugin } from "@nvisy/plugin-nosql";
 import { objectPlugin } from "@nvisy/plugin-object";
-import { tesseractPlugin } from "@nvisy/plugin-tesseract";
 import { pandocPlugin } from "@nvisy/plugin-pandoc";
 import { queuePlugin } from "@nvisy/plugin-queue";
 import { sqlPlugin } from "@nvisy/plugin-sql";
+import { tesseractPlugin } from "@nvisy/plugin-tesseract";
 import { vectorPlugin } from "@nvisy/plugin-vector";
 import { Engine } from "@nvisy/runtime";
 

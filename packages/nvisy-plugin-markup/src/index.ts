@@ -8,6 +8,11 @@
  */
 
 import { Plugin } from "@nvisy/core";
+import { plaintextLoader } from "./loaders/index.js";
+
+export type { PlaintextParams } from "./loaders/index.js";
+export { plaintextLoader, plaintextParamsSchema } from "./loaders/index.js";
 
 /** Markup parsing plugin instance. */
-export const markupPlugin = Plugin.define("markup");
+export const markupPlugin =
+	Plugin.define("markup").withLoaders(plaintextLoader);
