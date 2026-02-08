@@ -9,5 +9,8 @@
 	/* Scope */
 	"include": ["src/**/*"],
 	"exclude": ["node_modules", "dist"],
-	"references": [{ "path": "../nvisy-core" }]
+	"references": [
+		{ "path": "../nvisy-core" },
+		{ "path": "../nvisy-plugin-core" }
+	]
 }

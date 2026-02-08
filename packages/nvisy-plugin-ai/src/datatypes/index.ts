@@ -1,2 +1,2 @@
-export type { ChunkOptions } from "./chunk.js";
-export { Chunk } from "./chunk.js";
+export type { ChunkOptions } from "@nvisy/core";
+export { Chunk } from "@nvisy/core";

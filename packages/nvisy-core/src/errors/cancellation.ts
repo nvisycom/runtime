@@ -1,3 +1,9 @@
+/**
+ * Cancellation error for intentionally aborted operations.
+ *
+ * @module
+ */
+
 import { RuntimeError, type RuntimeErrorOptions } from "./runtime.js";
 
 /**

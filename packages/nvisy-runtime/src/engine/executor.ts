@@ -30,9 +30,14 @@ import { executeNode, type NodeResult } from "./nodes.js";
 
 const logger = getLogger(["nvisy", "executor"]);
 
-/** Options for graph execution. */
+/** Options for controlling graph execution behaviour. */
 export interface ExecuteOptions {
+	/** External abort signal; when fired, Effection halts all spawned tasks. */
 	readonly signal?: AbortSignal;
+	/**
+	 * Callback invoked after each source item is read, providing the
+	 * resumption context for crash-recovery persistence.
+	 */
 	readonly onContextUpdate?: (
 		nodeId: string,
 		connectionId: string,
@@ -40,7 +45,14 @@ export interface ExecuteOptions {
 	) => void;
 }
 
-/** Result of executing a complete graph. */
+/**
+ * Result of executing a complete graph.
+ *
+ * `status` is derived from per-node outcomes:
+ * - `"success"` — every node succeeded.
+ * - `"partial_failure"` — at least one node failed but others succeeded.
+ * - `"failure"` — every node failed.
+ */
 export interface RunResult {
 	readonly runId: string;
 	readonly status: "success" | "partial_failure" | "failure";

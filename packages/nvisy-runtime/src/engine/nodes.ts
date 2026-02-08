@@ -1,15 +1,27 @@
 /**
  * Node execution logic for source, action, and target nodes.
  *
- * Each node type has a dedicated executor that handles:
- * - Provider connection management
- * - Parameter validation
- * - Data streaming through edges
+ * Each of the three node types has a dedicated executor:
+ *
+ * - **Source** — connects to a provider, reads items via a stream
+ *   source, and pushes each item to all outgoing edges. Emits
+ *   resumption-context callbacks after every item for crash recovery.
+ * - **Action** — drains incoming edge queues (with automatic
+ *   Blob → Document bridging), pipes them through the action's
+ *   transform, and writes results to outgoing edges. Optionally
+ *   connects to a provider when the action requires a client.
+ * - **Target** — connects to a provider and writes each incoming
+ *   item via the stream's writer function.
+ *
+ * All executors are wrapped by {@link withRetry} and
+ * {@link withTimeout} policies before being spawned by the executor.
+ *
+ * @module
  */
 
 import { getLogger } from "@logtape/logtape";
 import type { Data } from "@nvisy/core";
-import { RuntimeError, ValidationError } from "@nvisy/core";
+import { TimeoutError, ValidationError } from "@nvisy/core";
 import { call, type Operation, spawn } from "effection";
 import type {
 	ResolvedActionNode,
@@ -24,11 +36,18 @@ import { withRetry, withTimeout } from "./policies.js";
 
 const logger = getLogger(["nvisy", "nodes"]);
 
-/** Result of executing a single node. */
+/**
+ * Result of executing a single node.
+ *
+ * Collected by the executor after each node completes (or fails)
+ * and aggregated into the overall {@link RunResult}.
+ */
 export interface NodeResult {
 	readonly nodeId: string;
 	readonly status: "success" | "failure" | "skipped";
+	/** Present only when `status` is `"failure"`. */
 	readonly error?: Error;
+	/** Number of data items that flowed through this node. */
 	readonly itemsProcessed: number;
 }
 
@@ -292,9 +311,8 @@ export function* executeNode(
 	const timeoutFallback: NodeResult = {
 		nodeId,
 		status: "failure",
-		error: new RuntimeError(`Node ${nodeId} timed out after ${timeoutMs}ms`, {
+		error: new TimeoutError(`Node ${nodeId} timed out after ${timeoutMs}ms`, {
 			source: "engine",
-			retryable: true,
 		}),
 		itemsProcessed: 0,
 	};

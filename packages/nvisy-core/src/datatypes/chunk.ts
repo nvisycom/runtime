@@ -1,4 +1,10 @@
-import { Data } from "@nvisy/core";
+/**
+ * Text chunk data type produced by chunking steps.
+ *
+ * @module
+ */
+
+import { Data } from "./data.js";
 
 /** Options for constructing a {@link Chunk}. */
 export interface ChunkOptions {

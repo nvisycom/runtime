@@ -1,3 +1,14 @@
+/**
+ * Stream sources and targets for reading from and writing to external systems.
+ *
+ * Sources are pipeline entry points that emit {@link Resumable} items
+ * for crash recovery. Targets are pipeline exit points that persist
+ * processed data. Use {@link Stream.createSource} and
+ * {@link Stream.createTarget} to define new endpoints.
+ *
+ * @module
+ */
+
 import type { z } from "zod";
 import type { Data } from "./datatypes/index.js";
 import type { ClassRef } from "./types.js";

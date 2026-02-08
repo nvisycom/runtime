@@ -1,10 +1,8 @@
+import { Blob, type Document } from "@nvisy/core";
 import { describe, expect, it } from "vitest";
-import { Blob } from "../datatypes/blob.js";
 import { plaintextLoader } from "./plaintext.js";
 
-async function collectDocs(
-	iter: AsyncIterable<import("../datatypes/document.js").Document>,
-) {
+async function collectDocs(iter: AsyncIterable<Document>) {
 	const docs = [];
 	for await (const doc of iter) {
 		docs.push(doc);

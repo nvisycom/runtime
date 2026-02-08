@@ -1,11 +1,14 @@
 /**
  * Run management for background graph executions.
  *
- * Provides:
- * - Tracking of in-flight and completed runs
- * - Progress monitoring at the node level
- * - Cancellation support via AbortController
- * - Automatic cleanup of completed runs after TTL
+ * A "run" is a single execution of a compiled graph. The
+ * {@link RunManager} tracks every run through its lifecycle
+ * (`pending → running → completed | failed | cancelled`),
+ * exposes per-node progress for monitoring, supports mid-flight
+ * cancellation via {@link AbortController}, and automatically
+ * evicts finished runs after a configurable TTL.
+ *
+ * @module
  */
 
 import { getLogger } from "@logtape/logtape";
@@ -29,11 +32,18 @@ export type RunStatus =
 	| "failed"
 	| "cancelled";
 
-/** Progress of a single node within a run. */
+/**
+ * Progress of a single node within a run.
+ *
+ * Updated as items flow through the node; `itemsProcessed` is
+ * incremented each time a context-update callback fires.
+ */
 export interface NodeProgress {
 	readonly nodeId: string;
 	readonly status: "pending" | "running" | "completed" | "failed";
+	/** Number of data items the node has processed so far. */
 	readonly itemsProcessed: number;
+	/** Present only when `status` is `"failed"`. */
 	readonly error?: Error;
 }
 
@@ -60,7 +70,7 @@ export interface RunSummary {
 	readonly completedAt?: Date;
 }
 
-/** Function signature for executing a plan. */
+/** Function signature for executing a compiled plan (injected into {@link SubmitConfig}). */
 export type PlanExecutor = (
 	plan: ExecutionPlan,
 	connections: Connections,
@@ -68,7 +78,7 @@ export type PlanExecutor = (
 	options?: ExecuteOptions,
 ) => Promise<RunResult>;
 
-/** Configuration for submitting a graph execution. */
+/** Configuration for submitting a graph execution to the {@link RunManager}. */
 export interface SubmitConfig {
 	readonly runId: string;
 	readonly plan: ExecutionPlan;

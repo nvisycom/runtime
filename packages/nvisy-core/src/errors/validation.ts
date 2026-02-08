@@ -1,3 +1,9 @@
+/**
+ * Validation error for input that fails schema or business rules.
+ *
+ * @module
+ */
+
 import { RuntimeError, type RuntimeErrorOptions } from "./runtime.js";
 
 /**

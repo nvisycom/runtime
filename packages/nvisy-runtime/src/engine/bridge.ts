@@ -1,10 +1,15 @@
 /**
  * Loader bridge for automatic Blob → Document conversion.
  *
- * When a source node produces Blobs but downstream nodes expect Documents,
- * this bridge automatically detects and applies the appropriate loader.
- * Converted documents are cached by blob ID to avoid duplicate conversions
- * when a source has multiple downstream consumers.
+ * When a source node produces {@link Blob}s but downstream action or
+ * target nodes expect {@link Document}s, the bridge transparently
+ * selects a matching loader from the registry (by file extension and
+ * magic-byte content type), converts each blob, and yields the
+ * resulting documents. Converted documents are cached by blob ID in a
+ * per-run {@link LoaderCache} so the same blob is never loaded twice
+ * even when consumed by multiple downstream branches.
+ *
+ * @module
  */
 
 import { getLogger } from "@logtape/logtape";
@@ -21,22 +26,26 @@ export function createLoaderCache(): LoaderCache {
 	return new Map();
 }
 
-/**
- * Wraps an async iterable to automatically convert Blobs to Documents.
- *
- * The bridge inspects each data item:
- * - If it's a Blob, looks up the appropriate loader and converts it
- * - If it's already a Document (or other type), passes it through unchanged
- *
- * Converted documents are cached by blob.id using the shared cache
- * to avoid redundant conversions when the same blob is consumed
- * by multiple downstream nodes.
- */
+/** Options for the loader bridge. */
 export interface BridgeOptions {
 	/** When true, skip blobs with no matching loader instead of throwing. */
 	readonly ignoreUnsupported?: boolean;
 }
 
+/**
+ * Wrap an async iterable to automatically convert Blobs to Documents.
+ *
+ * Non-Blob items pass through unchanged. For each Blob the registry
+ * is queried for a loader that matches the file's extension / content
+ * type. If no loader is found, behaviour depends on
+ * {@link BridgeOptions.ignoreUnsupported}: when true the blob is
+ * silently dropped; otherwise a {@link RuntimeError} is thrown.
+ *
+ * @param stream - Upstream data items (may contain a mix of Blobs and other types).
+ * @param registry - Used to look up loaders by extension / magic bytes.
+ * @param cache - Per-run cache; blobs already converted are yielded from cache.
+ * @param options - Optional bridge configuration.
+ */
 export async function* applyLoaderBridge(
 	stream: AsyncIterable<Data>,
 	registry: Registry,

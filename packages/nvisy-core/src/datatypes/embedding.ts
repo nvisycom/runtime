@@ -1,3 +1,9 @@
+/**
+ * Dense vector embedding data type for similarity search.
+ *
+ * @module
+ */
+
 import { Data } from "./data.js";
 
 /**

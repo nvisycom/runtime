@@ -1,6 +1,17 @@
+/**
+ * Plugin system for bundling providers, streams, actions, loaders,
+ * and custom datatypes under a single namespace.
+ *
+ * Plugins are the unit of registration with the engine. Use
+ * {@link Plugin.define} to create a new plugin, then chain
+ * `.withProviders()`, `.withActions()`, etc. to populate it.
+ *
+ * @module
+ */
+
 import type { ActionInstance } from "./action.js";
 import type { Datatype } from "./datatypes/index.js";
-import type { LoaderInstance } from "./loaders/loader.js";
+import type { LoaderInstance } from "./loader.js";
 import type { ProviderFactory } from "./provider.js";
 import type { StreamSource, StreamTarget } from "./stream.js";
 

@@ -1,3 +1,9 @@
+/**
+ * Base error class and shared error interfaces for the Nvisy runtime.
+ *
+ * @module
+ */
+
 /** Structured context attached to runtime errors. */
 export interface ErrorContext {
 	/** Which component or subsystem produced the error. */

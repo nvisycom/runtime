@@ -1,3 +1,14 @@
+/**
+ * Provider lifecycle management for external service connections.
+ *
+ * Providers abstract credentials, connection setup, and teardown
+ * for databases, APIs, and other external systems. Use
+ * {@link Provider.withAuthentication} or
+ * {@link Provider.withoutAuthentication} to define new providers.
+ *
+ * @module
+ */
+
 import { getLogger } from "@logtape/logtape";
 import { z } from "zod";
 import { ConnectionError } from "./errors/index.js";

@@ -1,43 +1,41 @@
-import type { Metadata } from "./data.js";
+/**
+ * Document data type with optional structured elements.
+ *
+ * @module
+ */
+
+import type { Element } from "../documents/elements.js";
 import { Data } from "./data.js";
 
-/** The kind of structural element within a document. */
-export type ElementType =
-	| "paragraph"
-	| "heading"
-	| "table"
-	| "list"
-	| "image"
-	| "code";
-
-/** A single structural element within a {@link DocumentSection}. */
-export interface DocumentElement {
-	readonly type: ElementType;
-	readonly text: string;
-	/** Heading level (1-6). Only meaningful when `type` is `"heading"`. */
-	readonly level?: number;
-	/** Element-scoped metadata (e.g. table caption, alt text). */
-	readonly metadata?: Metadata;
-}
-
-/** A titled section containing elements and optional nested sub-sections. */
-export interface DocumentSection {
-	readonly title?: string;
-	readonly elements: readonly DocumentElement[];
-	readonly children?: readonly DocumentSection[];
-}
-
-/** A single page of a document. */
-export interface DocumentPage {
-	/** 1-based page number. */
-	readonly pageNumber: number;
-	readonly sections: readonly DocumentSection[];
-}
+export type {
+	CompositeElementOptions,
+	ElementOptions,
+	ElementProvenance,
+	EmailElementOptions,
+	EmphasizedText,
+	FormElementOptions,
+	FormKeyValuePair,
+	ImageElementOptions,
+	Link,
+	TableCellData,
+	TableElementOptions,
+} from "../documents/elements.js";
+export {
+	CompositeElement,
+	Element,
+	EmailElement,
+	FormElement,
+	ImageElement,
+	TableElement,
+} from "../documents/elements.js";
 
 /** Options for constructing a {@link Document}. */
 export interface DocumentOptions {
 	readonly sourceType?: string;
-	readonly pages?: readonly DocumentPage[];
+	/** Document title (e.g. HTML `<title>`, PDF metadata). */
+	readonly title?: string;
+	/** Pre-extracted structural elements. */
+	readonly elements?: readonly Element[];
 }
 
 /**
@@ -47,23 +45,30 @@ export interface DocumentOptions {
  * already been converted into plain text that can be chunked, enriched,
  * or embedded.
  *
+ * Structural detail is carried as a flat array of {@link Element}
+ * instances. Hierarchy is expressed via `parentId` references and page
+ * membership via `pageNumber` on each element.
+ *
  * @example
  * ```ts
- * const doc = new Document("Quarterly Report\n\nRevenue increased…", {
- *   sourceType: "pdf",
- * });
+ * const doc = Document.fromElements([
+ *   new Element({ type: "title", text: "Quarterly Report", pageNumber: 1 }),
+ *   new Element({ type: "narrative-text", text: "Revenue increased…", pageNumber: 1 }),
+ * ], { sourceType: "pdf" });
  * ```
  */
 export class Document extends Data {
 	readonly #content: string;
 	readonly #sourceType?: string | undefined;
-	readonly #pages?: readonly DocumentPage[] | undefined;
+	readonly #title?: string | undefined;
+	readonly #elements?: readonly Element[] | undefined;
 
 	constructor(content: string, options?: DocumentOptions) {
 		super();
 		this.#content = content;
 		this.#sourceType = options?.sourceType;
-		this.#pages = options?.pages;
+		this.#title = options?.title;
+		this.#elements = options?.elements;
 	}
 
 	/** Text content of the document. */
@@ -76,59 +81,62 @@ export class Document extends Data {
 		return this.#sourceType;
 	}
 
-	/** Optional hierarchical page structure. */
-	get pages(): readonly DocumentPage[] | undefined {
-		return this.#pages;
+	/** Document title (e.g. HTML `<title>`, PDF metadata). */
+	get title(): string | undefined {
+		return this.#title;
 	}
 
-	/** All elements across all pages and sections, flattened in document order. */
-	get flatElements(): DocumentElement[] {
-		if (this.#pages == null) return [];
-		return collectElements(this.#pages);
+	/** Unique BCP-47 language tags collected from all elements. */
+	get languages(): readonly string[] {
+		if (this.#elements == null) return [];
+		const set = new Set<string>();
+		for (const el of this.#elements) {
+			if (el.languages != null) {
+				for (const lang of el.languages) {
+					set.add(lang);
+				}
+			}
+		}
+		return [...set];
+	}
+
+	/** Flat ordered list of structural elements. */
+	get elements(): readonly Element[] | undefined {
+		return this.#elements;
 	}
 
 	/**
-	 * Create a Document by deriving `content` from the element texts in the given pages.
+	 * Group elements by their 1-based page number.
+	 *
+	 * Returns a `Map` keyed by page number with each value being the
+	 * ordered array of elements on that page. Elements without a
+	 * `pageNumber` are collected under key `0`.
+	 */
+	getElementsByPage(): Map<number, Element[]> {
+		const map = new Map<number, Element[]>();
+		if (this.#elements == null) return map;
+		for (const el of this.#elements) {
+			const page = el.pageNumber ?? 0;
+			let bucket = map.get(page);
+			if (bucket == null) {
+				bucket = [];
+				map.set(page, bucket);
+			}
+			bucket.push(el);
+		}
+		return map;
+	}
+
+	/**
+	 * Create a Document by deriving `content` from the element texts.
 	 *
 	 * Element texts are joined with `\n\n` separators.
 	 */
-	static fromPages(
-		pages: readonly DocumentPage[],
-		options?: Omit<DocumentOptions, "pages">,
+	static fromElements(
+		elements: readonly Element[],
+		options?: Omit<DocumentOptions, "elements">,
 	): Document {
-		const content = flattenPagesToText(pages);
-		return new Document(content, { ...options, pages });
+		const content = elements.map((el) => el.text).join("\n\n");
+		return new Document(content, { ...options, elements });
 	}
-}
-
-/** Collect all elements from a page tree in document order. */
-function collectElements(pages: readonly DocumentPage[]): DocumentElement[] {
-	const out: DocumentElement[] = [];
-	for (const page of pages) {
-		for (const section of page.sections) {
-			flattenSection(section, out);
-		}
-	}
-	return out;
-}
-
-/** Recursively collect elements from a section and its children. */
-function flattenSection(
-	section: DocumentSection,
-	out: DocumentElement[],
-): void {
-	for (const el of section.elements) {
-		out.push(el);
-	}
-	if (section.children) {
-		for (const child of section.children) {
-			flattenSection(child, out);
-		}
-	}
-}
-
-/** Derive plain text content from a page tree. */
-function flattenPagesToText(pages: readonly DocumentPage[]): string {
-	const elements = collectElements(pages);
-	return elements.map((el) => el.text).join("\n\n");
 }
