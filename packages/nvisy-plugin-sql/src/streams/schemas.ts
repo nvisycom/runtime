@@ -16,6 +16,8 @@ export const SqlParams = z.object({
 	tiebreaker: z.string(),
 	/** Maximum rows per page during keyset pagination. */
 	batchSize: z.number(),
+	/** Maximum total rows to yield. When omitted, all rows are read. */
+	limit: z.number().int().positive().optional(),
 });
 export type SqlParams = z.infer<typeof SqlParams>;
 

@@ -1,11 +1,16 @@
 /**
  * Execution policies for retry and timeout handling.
  *
- * These policies wrap Effection operations to provide:
- * - Retry with configurable backoff strategies
- * - Timeout with fallback values
+ * Both policies wrap Effection {@link Operation}s and compose freely:
  *
- * Policies are composable and respect Effection structured concurrency.
+ * - {@link withRetry} — retries an operation up to `maxRetries` times
+ *   using fixed, exponential, or jittered backoff. Non-retryable
+ *   {@link RuntimeError}s bypass retry and propagate immediately.
+ * - {@link withTimeout} — races an operation against an Effection
+ *   `sleep` timer; if the timer wins, the operation is cancelled and
+ *   a caller-supplied fallback value is returned.
+ *
+ * @module
  */
 
 import { getLogger } from "@logtape/logtape";

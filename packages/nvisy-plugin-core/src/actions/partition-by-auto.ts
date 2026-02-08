@@ -7,7 +7,7 @@
  * @module
  */
 
-import type { Document } from "../datatypes/index.js";
+import type { Document } from "@nvisy/core";
 
 /** Auto-strategy parameters (no additional options). */
 export type AutoStrategyParams = Record<string, never>;

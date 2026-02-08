@@ -1,5 +1,5 @@
+import { Document } from "@nvisy/core";
 import { describe, expect, it } from "vitest";
-import { Document } from "../datatypes/index.js";
 import { chunkByPage } from "./chunk-by-page.js";
 
 describe("chunkByPage", () => {

@@ -9,7 +9,7 @@
  * @module
  */
 
-import { Chunk, Document } from "../datatypes/index.js";
+import { Chunk, Document } from "@nvisy/core";
 
 /** Page-strategy parameters. */
 export interface PageStrategyParams {

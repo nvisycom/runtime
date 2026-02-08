@@ -1,5 +1,5 @@
+import { Document, TableElement } from "@nvisy/core";
 import { describe, expect, it } from "vitest";
-import { Document, TableElement } from "../datatypes/index.js";
 import { partitionByRule } from "./partition-by-rule.js";
 
 describe("partitionByRule", () => {

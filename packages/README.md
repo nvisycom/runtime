@@ -54,6 +54,6 @@ must match the adjacent nodes in the DAG.
 
 | Package | Description |
 |---------|-------------|
-| [`nvisy-plugin-markup`](nvisy-plugin-markup/) | HTML, XML, JSON, CSV, TSV, and plain text parsing |
+| [`nvisy-plugin-core`](nvisy-plugin-core/) | Built-in chunk/partition actions, plaintext/CSV/JSON loaders, core datatype registration |
 | [`nvisy-plugin-tesseract`](nvisy-plugin-tesseract/) | Optical character recognition (Tesseract) |
 | [`nvisy-plugin-pandoc`](nvisy-plugin-pandoc/) | Document format conversion (Pandoc) |

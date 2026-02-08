@@ -1,8 +1,16 @@
 /**
  * Execution context and edge graph construction.
  *
- * Provides the runtime context that carries validated state through
- * execution, and builds edge queues for data flow between nodes.
+ * The {@link ExecutionContext} is the single object threaded through
+ * every node executor during a run. It carries the compiled plan,
+ * validated connections, Effection edge queues, and convenience
+ * accessors for looking up nodes and connections by ID.
+ *
+ * {@link buildEdges} converts the plan's DAG edges into pairs of
+ * Effection {@link Queue}s (one per edge direction) that enable
+ * backpressure-aware streaming between producer and consumer nodes.
+ *
+ * @module
  */
 
 import type { Data } from "@nvisy/core";
@@ -44,8 +52,11 @@ export interface ExecutionContext {
 	readonly registry: Registry;
 	readonly loaderCache: LoaderCache;
 
+	/** Look up a node's raw graph schema. Throws {@link ValidationError} if missing. */
 	getNode(nodeId: string): GraphNode;
+	/** Look up a node's compiler-resolved metadata. Throws {@link ValidationError} if missing. */
 	getResolved(nodeId: string): ResolvedNode;
+	/** Look up the validated connection for a provider-backed node. Throws {@link ValidationError} if the node has no connection or the connection is missing. */
 	getConnection(nodeId: string): ValidatedConnection;
 }
 

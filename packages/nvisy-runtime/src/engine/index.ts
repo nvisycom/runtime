@@ -1,3 +1,13 @@
+/**
+ * Engine module public API.
+ *
+ * Re-exports the {@link Engine} class and all supporting types that
+ * consumers need for graph registration, validation, execution,
+ * and run monitoring.
+ *
+ * @module
+ */
+
 export type {
 	ActionDescriptor,
 	ProviderDescriptor,

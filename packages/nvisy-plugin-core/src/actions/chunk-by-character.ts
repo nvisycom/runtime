@@ -7,8 +7,7 @@
  * @module
  */
 
-import type { Document } from "../datatypes/index.js";
-import { Chunk } from "../datatypes/index.js";
+import { Chunk, type Document } from "@nvisy/core";
 
 /** Character-strategy parameters. */
 export interface CharacterStrategyParams {

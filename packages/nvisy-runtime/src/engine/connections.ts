@@ -1,8 +1,14 @@
 /**
  * Connection validation and types.
  *
- * Validates connection credentials against provider schemas before
- * execution begins, ensuring all connections are valid upfront.
+ * A "connection" pairs a provider type with its credentials (and an
+ * optional resumption context). Before graph execution, every
+ * connection referenced by the plan is validated upfront against its
+ * provider's Zod credential schema via {@link validateConnections},
+ * ensuring misconfigured credentials surface early rather than
+ * mid-pipeline.
+ *
+ * @module
  */
 
 import type { AnyProviderFactory } from "@nvisy/core";
@@ -42,14 +48,18 @@ export type Connection = z.infer<typeof ConnectionSchema>;
 export type Connections = z.infer<typeof ConnectionsSchema>;
 
 /**
- * A connection with validated credentials.
+ * A connection whose credentials have passed provider-schema validation.
  *
- * Created during upfront validation, credentials have been parsed
- * against the provider's schema and are ready for use.
+ * Created by {@link validateConnections} before execution starts.
+ * `credentials` is the Zod-parsed output (defaults applied, types
+ * narrowed), ready to be passed directly to `provider.connect()`.
  */
 export interface ValidatedConnection {
+	/** The provider factory that owns this connection's credential schema. */
 	readonly provider: AnyProviderFactory;
+	/** Parsed credentials (output of `provider.credentialSchema.parse`). */
 	readonly credentials: unknown;
+	/** Optional resumption context carried from a previous run. */
 	readonly context: unknown;
 }
 
@@ -66,11 +76,16 @@ function hasConnection(
 }
 
 /**
- * Validate all connections referenced by the execution plan.
+ * Validate every connection referenced by the execution plan.
  *
- * Performs upfront validation of credentials against provider schemas.
- * This ensures all connections are valid before execution begins,
- * avoiding partial execution failures due to credential issues.
+ * Iterates through each plan node that has an associated connection,
+ * resolves the connection entry from the `connections` map, and parses
+ * its credentials against the provider's Zod schema. Missing or
+ * invalid entries are collected and thrown as a single
+ * {@link ValidationError} so callers see all problems at once.
+ *
+ * @returns Map of connection ID → validated connection, ready for execution.
+ * @throws {ValidationError} If any connection is missing or has invalid credentials.
  */
 export function validateConnections(
 	plan: ExecutionPlan,

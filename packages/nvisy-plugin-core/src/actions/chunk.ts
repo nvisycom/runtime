@@ -5,9 +5,8 @@
  * @module
  */
 
+import { Action, Chunk, Document } from "@nvisy/core";
 import { z } from "zod";
-import { Chunk, Document } from "../datatypes/index.js";
-import { Action } from "./action.js";
 import { chunkByCharacter } from "./chunk-by-character.js";
 import { chunkByPage } from "./chunk-by-page.js";
 import { chunkBySection } from "./chunk-by-section.js";

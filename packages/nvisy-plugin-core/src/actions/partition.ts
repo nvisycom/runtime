@@ -5,10 +5,9 @@
  * @module
  */
 
+import type { Metadata } from "@nvisy/core";
+import { Action, Document } from "@nvisy/core";
 import { z } from "zod";
-import type { Metadata } from "../datatypes/index.js";
-import { Document } from "../datatypes/index.js";
-import { Action } from "./action.js";
 import { partitionByAuto } from "./partition-by-auto.js";
 import { partitionByRule } from "./partition-by-rule.js";
 

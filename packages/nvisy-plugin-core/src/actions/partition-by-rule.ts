@@ -8,8 +8,8 @@
  * @module
  */
 
-import type { Document } from "../datatypes/index.js";
-import { TableElement } from "../datatypes/index.js";
+import type { Document } from "@nvisy/core";
+import { type Element, type TableCellData, TableElement } from "@nvisy/core";
 
 /** Rule-strategy parameters. */
 export interface RuleStrategyParams {
@@ -39,7 +39,7 @@ export function partitionByRule(
 /** Replace plain-text table representations with HTML tables built from cell data. */
 function applyTableStructure(
 	content: string,
-	elements: readonly import("../datatypes/index.js").Element[],
+	elements: readonly Element[],
 ): string {
 	for (const el of elements) {
 		if (
@@ -57,9 +57,7 @@ function applyTableStructure(
 }
 
 /** Build an HTML `<table>` string from structured cell data. */
-function cellsToHtml(
-	cells: readonly import("../datatypes/index.js").TableCellData[],
-): string {
+function cellsToHtml(cells: readonly TableCellData[]): string {
 	const rows = new Map<number, (typeof cells)[number][]>();
 	for (const cell of cells) {
 		let row = rows.get(cell.row);

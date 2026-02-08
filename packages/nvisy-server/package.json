@@ -25,7 +25,6 @@
 		"@logtape/redaction": "^2.0.2",
 		"@nvisy/core": "*",
 		"@nvisy/plugin-ai": "*",
-		"@nvisy/plugin-markup": "*",
 		"@nvisy/plugin-nosql": "*",
 		"@nvisy/plugin-object": "*",
 		"@nvisy/plugin-tesseract": "*",

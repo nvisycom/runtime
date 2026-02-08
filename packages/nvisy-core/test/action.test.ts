@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ActionInstance } from "../src/actions/action.js";
+import type { ActionInstance } from "../src/action.js";
 import type { Data } from "../src/datatypes/data.js";
 import { ExampleFilter, ExampleMap, TestRow } from "./action.fixtures.js";
 

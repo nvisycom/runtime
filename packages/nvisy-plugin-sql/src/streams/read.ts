@@ -13,7 +13,8 @@ const logger = getLogger(["nvisy", "sql"]);
  *
  * Pages are fetched using a composite `(idColumn, tiebreaker)` cursor
  * for stable ordering across batches. The stream terminates when a
- * batch returns fewer rows than `batchSize`.
+ * batch returns fewer rows than `batchSize`, or when `limit` rows
+ * have been yielded.
  */
 export const read = Stream.createSource("read", KyselyClient, {
 	types: [Row, SqlCursor, SqlParams],
@@ -25,7 +26,7 @@ async function* readStream(
 	cursor: SqlCursor,
 	params: SqlParams,
 ): AsyncIterable<Resumable<Row, SqlCursor>> {
-	const { table, columns, idColumn, tiebreaker, batchSize } = params;
+	const { table, columns, idColumn, tiebreaker, batchSize, limit } = params;
 	const { ref } = client.db.dynamic;
 
 	logger.debug("Read stream opened on {table}", {
@@ -33,6 +34,7 @@ async function* readStream(
 		idColumn,
 		tiebreaker,
 		batchSize,
+		...(limit != null ? { limit } : {}),
 	});
 
 	let lastId = cursor.lastId;
@@ -82,8 +84,10 @@ async function* readStream(
 				data: new Row(row as Record<string, JsonValue>),
 				context: { lastId, lastTiebreaker } as SqlCursor,
 			};
+			if (limit != null && totalRows >= limit) break;
 		}
 
+		if (limit != null && totalRows >= limit) break;
 		if (rows.length < batchSize) break;
 	}
 

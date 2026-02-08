@@ -1,7 +1,7 @@
 {
-	"name": "@nvisy/plugin-markup",
+	"name": "@nvisy/plugin-core",
 	"version": "0.1.0",
-	"description": "Markup, tabular, and text format parsing for the Nvisy platform",
+	"description": "Core plugin with built-in chunk and partition actions for the Nvisy platform",
 	"type": "module",
 	"exports": {
 		".": {

@@ -10,8 +10,8 @@
  */
 
 import type { z } from "zod";
-import type { Data } from "../datatypes/data.js";
-import type { ClassRef } from "../types.js";
+import type { Data } from "./datatypes/data.js";
+import type { ClassRef } from "./types.js";
 
 /**
  * Stream transform that operates without a provider client.

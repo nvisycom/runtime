@@ -1,5 +1,5 @@
+import { Document } from "@nvisy/core";
 import { describe, expect, it } from "vitest";
-import { Document } from "../datatypes/index.js";
 import { chunkByCharacter } from "./chunk-by-character.js";
 
 describe("chunkByCharacter", () => {

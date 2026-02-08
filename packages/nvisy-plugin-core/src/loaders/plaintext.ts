@@ -1,3 +1,12 @@
+/**
+ * Plaintext loader.
+ *
+ * Converts `.txt` blobs into Documents by decoding the raw bytes
+ * with a configurable character encoding.
+ *
+ * @module
+ */
+
 import { Document, Loader } from "@nvisy/core";
 import { z } from "zod";
 

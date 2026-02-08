@@ -1,6 +1,5 @@
 import { getLogger } from "@logtape/logtape";
 import { aiPlugin } from "@nvisy/plugin-ai";
-import { markupPlugin } from "@nvisy/plugin-markup";
 import { nosqlPlugin } from "@nvisy/plugin-nosql";
 import { objectPlugin } from "@nvisy/plugin-object";
 import { pandocPlugin } from "@nvisy/plugin-pandoc";
@@ -19,7 +18,6 @@ export function createEngine(): Engine {
 	try {
 		const engine = new Engine()
 			.register(aiPlugin)
-			.register(markupPlugin)
 			.register(nosqlPlugin)
 			.register(objectPlugin)
 			.register(tesseractPlugin)

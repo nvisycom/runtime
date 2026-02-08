@@ -9,7 +9,7 @@
  * @module
  */
 
-import type { ActionInstance } from "./actions/action.js";
+import type { ActionInstance } from "./action.js";
 import type { Datatype } from "./datatypes/index.js";
 import type { LoaderInstance } from "./loader.js";
 import type { ProviderFactory } from "./provider.js";

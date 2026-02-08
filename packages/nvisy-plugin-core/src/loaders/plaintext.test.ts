@@ -1,5 +1,4 @@
-import type { Document } from "@nvisy/core";
-import { Blob } from "@nvisy/core";
+import { Blob, type Document } from "@nvisy/core";
 import { describe, expect, it } from "vitest";
 import { plaintextLoader } from "./plaintext.js";
 

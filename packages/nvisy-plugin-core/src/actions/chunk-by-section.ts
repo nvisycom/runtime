@@ -8,8 +8,7 @@
  * @module
  */
 
-import type { Element } from "../datatypes/index.js";
-import { Chunk, Document } from "../datatypes/index.js";
+import { Chunk, Document, type Element } from "@nvisy/core";
 
 /** Section-strategy parameters. */
 export interface SectionStrategyParams {
