@@ -20,12 +20,12 @@
 		"typecheck": "tsc -b"
 	},
 	"dependencies": {
-		"@ai-sdk/anthropic": "^3.0.36",
-		"@ai-sdk/google": "^3.0.20",
-		"@ai-sdk/openai": "^3.0.25",
+		"@ai-sdk/anthropic": "^3.0.39",
+		"@ai-sdk/google": "^3.0.22",
+		"@ai-sdk/openai": "^3.0.26",
 		"@logtape/logtape": "^2.0.2",
 		"@nvisy/core": "*",
-		"ai": "^6.0.69",
+		"ai": "^6.0.77",
 		"zod": "^4.3.6"
 	},
 	"engines": {
