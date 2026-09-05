@@ -85,7 +85,19 @@ fn compile(c: &mut Criterion) {
         });
     }
 
+    // Both halves of the stacked set, so the combined posture is
+    // measured the same way each template is: analyze merges four
+    // catalogs, anonymize additionally compiles every rule.
     let all = stacked();
+    group.bench_function("analyze/stacked", |b| {
+        b.iter(|| {
+            black_box(
+                provider
+                    .analyze_orchestrator(&context, &all, correlation_id)
+                    .expect("analyze orchestrator"),
+            )
+        });
+    });
     group.bench_function("anonymize/stacked", |b| {
         b.iter(|| {
             black_box(

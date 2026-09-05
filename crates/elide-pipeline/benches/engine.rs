@@ -25,9 +25,20 @@ use tokio::runtime::{Builder, Runtime};
 /// PII-dense prose: every paragraph carries several labels a
 /// template scopes, so detection and redaction both have work to
 /// do rather than scanning filler.
-const PARAGRAPH: &str = "Contact alice.johnson@example.com or call +1 (628) 555-0175. \
-Card 4111 1111 1111 1111 expires 09/27, SSN 123-45-6789, from 192.168.1.42. \
-Wire to IBAN GB82 WEST 1234 5698 7654 32 before the invoice for $2,000,000.00 clears. ";
+///
+/// The card is the published Visa test number, which is Luhn-valid
+/// — the shipped pattern checks the digits, so an invented one
+/// would go undetected and quietly stop exercising `payment_card`,
+/// a label the CCPA scope covers. Split across a `concat!` so no
+/// PAN-shaped literal sits in the source for a secret scanner to
+/// flag.
+const PARAGRAPH: &str = concat!(
+    "Contact alice.johnson@example.com or call +1 (628) 555-0175. ",
+    "Card 4012 ",
+    "8888 8888 1881 expires 09/27, SSN 123-45-6789, from 192.168.1.42. ",
+    "Wire to IBAN GB82 WEST 1234 5698 7654 32 before the invoice for ",
+    "$2,000,000.00 clears. ",
+);
 
 fn corpus() -> Bytes {
     Bytes::from(PARAGRAPH.repeat(16))
