@@ -40,7 +40,7 @@ pub(crate) fn compile_text(
     let mut analyzer = Analyzer::<Text>::new();
 
     analyzer = attach_language(analyzer);
-    analyzer = attach_pattern(analyzer)?;
+    analyzer = attach_pattern(analyzer);
     analyzer = attach_ner_lineup(analyzer, ner)?;
     analyzer = attach_llm_lineup(analyzer, llm, AttachTo::Text)?;
 
@@ -59,7 +59,7 @@ pub(crate) fn compile_tabular(ner: &[Component<NerBackend>]) -> Result<Analyzer<
     let mut analyzer = Analyzer::<Tabular>::new();
 
     analyzer = attach_language(analyzer);
-    analyzer = attach_pattern(analyzer)?;
+    analyzer = attach_pattern(analyzer);
     analyzer = attach_ner_lineup(analyzer, ner)?;
 
     Ok(attach_dedup(analyzer))
@@ -90,7 +90,7 @@ pub(crate) fn compile_image(
     // enricher stamps, so detection reads an empty string until it
     // has run.
     analyzer = attach_language(analyzer);
-    analyzer = attach_pattern(analyzer)?;
+    analyzer = attach_pattern(analyzer);
     analyzer = attach_ner_lineup(analyzer, ner)?;
     analyzer = attach_llm_lineup(analyzer, llm, AttachTo::Image)?;
 
@@ -119,7 +119,7 @@ pub(crate) fn compile_audio(
     // After STT, for the same reason as image: the transcript is an
     // artifact, so language detection reads nothing before it lands.
     analyzer = attach_language(analyzer);
-    analyzer = attach_pattern(analyzer)?;
+    analyzer = attach_pattern(analyzer);
     analyzer = attach_ner_lineup(analyzer, ner)?;
 
     Ok(attach_dedup(analyzer))

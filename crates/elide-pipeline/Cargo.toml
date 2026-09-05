@@ -141,3 +141,11 @@ zip = { workspace = true }
 
 # Async runtime and parallelism
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+
+# Benchmarking
+criterion = { workspace = true }
+elide-template = { workspace = true }
+
+[[bench]]
+name = "engine"
+harness = false

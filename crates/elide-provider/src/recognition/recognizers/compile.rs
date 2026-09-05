@@ -15,6 +15,8 @@
 //! [`NerConfig`]: crate::recognition::NerConfig
 //! [`LlmConfig`]: crate::recognition::LlmConfig
 
+use std::sync::{Arc, LazyLock};
+
 use elide::detection::Analyzer;
 use elide::modality::TextRecognizable;
 use elide::recognition::Recognizer;
@@ -40,18 +42,44 @@ const MAX_DICTIONARY_TERM_COUNT: usize = 100_000;
 /// Aggregate byte budget across every shipped dictionary's terms.
 const MAX_DICTIONARY_TERM_BYTES: usize = 8 * 1024 * 1024;
 
+/// The built-in pattern recognizer, compiled once for the process.
+///
+/// Building one compiles the whole shipped regex set — around 50 ms
+/// — and the result depends on nothing per-request: the same
+/// patterns, dictionaries and limits every time. It used to be
+/// rebuilt inside [`attach_pattern`], which runs once per modality
+/// per request, so a four-modality deployment paid ~200 ms of regex
+/// compilation before reading a byte of the document.
+///
+/// Shared rather than cloned: `PatternRecognizer` owns compiled
+/// automata and is not `Clone`, but an `Arc` is itself a
+/// `Recognizer`, so every analyzer attaches the same instance.
+///
+/// The build takes no caller input — the patterns, dictionaries
+/// and limits are all compiled-in constants — so a failure means
+/// the shipped set is broken, which no deployment can act on and
+/// every request would hit. It panics rather than threading an
+/// error no caller can handle.
+static BUILTIN_PATTERNS: LazyLock<Arc<Enhanced<PatternRecognizer>>> = LazyLock::new(|| {
+    let builder = pattern_with_limits(PatternRecognizer::builder())
+        .with_builtin_patterns()
+        .with_builtin_dictionaries();
+    Arc::new(
+        builder
+            .build_context_enhanced()
+            .expect("the shipped builtin patterns compile"),
+    )
+});
+
 /// Attach the built-in [`PatternRecognizer`] wrapped in the
 /// `Enhanced` context layer.
-pub(in crate::recognition) fn attach_pattern<M>(analyzer: Analyzer<M>) -> Result<Analyzer<M>>
+pub(in crate::recognition) fn attach_pattern<M>(analyzer: Analyzer<M>) -> Analyzer<M>
 where
     M: TextRecognizable,
     PatternRecognizer: Recognizer<M> + 'static,
     Enhanced<PatternRecognizer>: Recognizer<M> + 'static,
 {
-    let builder = pattern_with_limits(PatternRecognizer::builder())
-        .with_builtin_patterns()
-        .with_builtin_dictionaries();
-    Ok(analyzer.with_recognizer(builder.build_context_enhanced()?))
+    analyzer.with_recognizer(Arc::clone(&BUILTIN_PATTERNS))
 }
 
 fn pattern_with_limits(builder: PatternRecognizerBuilder) -> PatternRecognizerBuilder {
