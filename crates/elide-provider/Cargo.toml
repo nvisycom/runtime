@@ -56,8 +56,16 @@ uuid = { workspace = true, features = [] }
 hipstr = { workspace = true, features = ["serde"] }
 
 [dev-dependencies]
+# Benchmarking
+criterion = { workspace = true }
+elide-template = { workspace = true }
+
 # Self, with the mock backends on
 elide-provider = { path = ".", features = ["test-utils"] }
 
 # Serialization
 serde_json = { workspace = true, features = [] }
+
+[[bench]]
+name = "compile"
+harness = false
