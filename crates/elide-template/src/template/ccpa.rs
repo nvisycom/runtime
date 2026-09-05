@@ -177,11 +177,10 @@ fn policy() -> PolicyDefinition {
         ),
         template: Some(origin("ccpa", Version::new(1, 0, 0))),
         scopes: vec![scope()],
-        custom: Vec::new(),
         // No rules: every label in scope gets the same treatment,
         // which is exactly what the fallback expresses.
-        rules: Vec::new(),
         fallback: Some(ModalityRedactions::textual(TextRedaction::Erase)),
+        ..PolicyDefinition::default()
     }
 }
 

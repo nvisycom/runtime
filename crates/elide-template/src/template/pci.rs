@@ -211,12 +211,11 @@ fn pan_template(render: PciPanRender) -> Template {
             description: Some(spec.policy_description.into()),
             template: Some(origin(spec.id, Version::new(1, 0, 0))),
             scopes: vec![spec.scope],
-            custom: Vec::new(),
             // No rules: the scope is one label and the whole point
             // of the variant is what happens to it, so the fallback
             // carries the action and inherits the scope's citation.
-            rules: Vec::new(),
             fallback: Some(ModalityRedactions::textual(spec.action)),
+            ..PolicyDefinition::default()
         },
     }
 }
@@ -366,13 +365,12 @@ fn sav_template() -> Template {
                          authorization completes",
                     )),
             ],
-            custom: Vec::new(),
             // No rules: §3.3.1 admits one posture for every SAV
             // category, so the fallback expresses it and inherits
             // the scope's citation. Unlike §3.5.1, there is no
             // render choice to cite per-variant.
-            rules: Vec::new(),
             fallback: Some(ModalityRedactions::textual(TextRedaction::Erase)),
+            ..PolicyDefinition::default()
         },
     }
 }

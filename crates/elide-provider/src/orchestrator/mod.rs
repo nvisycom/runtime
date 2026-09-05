@@ -132,7 +132,7 @@ impl Provider {
         let catalog = compile_catalog(policies)?;
         let live_scope = build_scope(context, catalog, correlation_id);
 
-        let orchestrator = analyzers(&self.inner.recognizers, &self.inner.enrichers)?;
+        let orchestrator = analyzers(&self.inner.recognizers, &self.inner.enrichers, policies)?;
         Ok(orchestrator
             .with_registry(self.inner.formats.clone())
             .with_scope(live_scope))

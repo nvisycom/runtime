@@ -18,6 +18,7 @@
 use std::sync::{Arc, LazyLock};
 
 use elide::detection::Analyzer;
+use elide::entity::LabelCatalog;
 use elide::modality::TextRecognizable;
 use elide::recognition::Recognizer;
 use elide::recognition::context::Enhanced;
@@ -28,9 +29,12 @@ use elide::recognition::llm::prompt::{DefaultPrompt, Prompt};
 use elide::recognition::llm::provider::Provider;
 use elide::recognition::llm::{LlmRecognizer, LlmRecognizerBuilder};
 use elide::recognition::ner::NerRecognizer;
-use elide::recognition::pattern::{PatternRecognizer, PatternRecognizerBuilder};
+use elide::recognition::pattern::{
+    Dictionary, PatternRecognizer, PatternRecognizerBuilder, Regex, Scoring, Term, Variant,
+};
 use elide::{Error, ErrorKind, Result};
 use elide_bentoml::ner::BentoNer;
+use elide_governance::{CustomMatcher, MatchOn, PolicyDefinition};
 
 use super::super::{Component, LlmBackend as LlmBackendConfig, NerBackend as NerBackendConfig};
 use crate::recognition::{AttachTo, LlmSource, NerBackend};
@@ -41,6 +45,23 @@ const MAX_DICTIONARY_TERM_COUNT: usize = 100_000;
 
 /// Aggregate byte budget across every shipped dictionary's terms.
 const MAX_DICTIONARY_TERM_BYTES: usize = 8 * 1024 * 1024;
+
+/// Cap on matchers one request may declare, across every policy.
+///
+/// Each compiles a regex or a term list on the request path, so
+/// this bounds what a caller can make the engine do before
+/// detection starts.
+const MAX_CUSTOM_MATCHERS: usize = 64;
+
+/// Cap on terms in one matcher's list.
+const MAX_CUSTOM_TERMS: usize = 4096;
+
+/// Compiled-size budget for one caller-supplied regex.
+///
+/// The `regex` crate does not backtrack, so a pathological pattern
+/// costs compile time and memory rather than match time. This
+/// bounds both.
+const MAX_CUSTOM_REGEX_BYTES: usize = 256 * 1024;
 
 /// The built-in pattern recognizer, compiled once for the process.
 ///
@@ -80,6 +101,142 @@ where
     Enhanced<PatternRecognizer>: Recognizer<M> + 'static,
 {
     analyzer.with_recognizer(Arc::clone(&BUILTIN_PATTERNS))
+}
+
+/// Attach the caller's own matchers, compiled fresh for this
+/// request.
+///
+/// The built-in recognizer is shared and never varies; these do,
+/// so they are their own recognizer built per call. A request
+/// declaring no matchers builds nothing and pays nothing.
+///
+/// # Errors
+///
+/// Returns [`Configuration`](ErrorKind::Configuration) when a
+/// matcher names a label its policy does not declare, names a
+/// shipped built-in, exceeds a limit, or carries a regex that does
+/// not compile.
+pub(in crate::recognition) fn attach_custom<M>(
+    analyzer: Analyzer<M>,
+    policies: &[PolicyDefinition],
+) -> Result<Analyzer<M>>
+where
+    M: TextRecognizable,
+    PatternRecognizer: Recognizer<M> + 'static,
+{
+    let total: usize = policies.iter().map(|p| p.matchers.len()).sum();
+    if total == 0 {
+        return Ok(analyzer);
+    }
+    if total > MAX_CUSTOM_MATCHERS {
+        return Err(Error::new(
+            ErrorKind::Configuration,
+            format!(
+                "this request declares {total} custom matchers, over the \
+                 limit of {MAX_CUSTOM_MATCHERS}: each compiles on the request \
+                 path before detection starts.",
+            ),
+        ));
+    }
+
+    let mut builder = pattern_with_limits(PatternRecognizer::builder())
+        .with_size_limit(MAX_CUSTOM_REGEX_BYTES)
+        .with_dfa_size_limit(MAX_CUSTOM_REGEX_BYTES);
+    for policy in policies {
+        for matcher in &policy.matchers {
+            builder = extend(builder, policy, matcher)?;
+        }
+    }
+    // Not context-enhanced: boosting reads keyword lists a matcher
+    // does not carry, so there is nothing for it to work from.
+    Ok(analyzer.with_recognizer(builder.build()?))
+}
+
+/// Validate one matcher against its policy and fold it into
+/// `builder`.
+fn extend(
+    builder: PatternRecognizerBuilder,
+    policy: &PolicyDefinition,
+    matcher: &CustomMatcher,
+) -> Result<PatternRecognizerBuilder> {
+    check_label(policy, matcher)?;
+    match &matcher.match_on {
+        MatchOn::Pattern { pattern } => {
+            let variant = Variant::new(pattern.clone())
+                .map_err(|err| invalid(matcher, format!("its regex is invalid: {err}")))?
+                .with_score(matcher.confidence);
+            let regex = Regex::builder()
+                .with_name(matcher.name.clone())
+                .with_labels(vec![matcher.label.clone()])
+                .with_variants(vec![variant])
+                .build()
+                .map_err(|err| invalid(matcher, format!("it does not build: {err}")))?;
+            Ok(builder.with_pattern(regex))
+        }
+        MatchOn::Terms { terms } => {
+            if terms.is_empty() {
+                return Err(invalid(matcher, "its term list is empty".to_owned()));
+            }
+            if terms.len() > MAX_CUSTOM_TERMS {
+                return Err(invalid(
+                    matcher,
+                    format!(
+                        "it lists {} terms, over the limit of {MAX_CUSTOM_TERMS}",
+                        terms.len(),
+                    ),
+                ));
+            }
+            let dictionary = Dictionary::builder()
+                .with_name(matcher.name.clone())
+                .with_labels(vec![matcher.label.clone()])
+                .with_terms(terms.iter().map(Term::new).collect::<Vec<_>>())
+                .with_scoring(Scoring::Uniform(matcher.confidence))
+                .build()
+                .map_err(|err| invalid(matcher, format!("it does not build: {err}")))?;
+            Ok(builder.with_dictionary(dictionary))
+        }
+    }
+}
+
+/// A matcher may only detect a label its own policy introduces.
+///
+/// Naming a label the policy does not declare would detect into a
+/// vocabulary the policy never claimed; naming a shipped built-in
+/// would race elide's own definition, and reconciliation would
+/// pick a winner by confidence rather than by intent.
+fn check_label(policy: &PolicyDefinition, matcher: &CustomMatcher) -> Result<()> {
+    if BUILTIN_LABELS.contains(&matcher.label) {
+        return Err(invalid(
+            matcher,
+            format!(
+                "`{}` is a label elide already detects: a matcher for it would \
+                 race the shipped definition. Introduce a label of your own.",
+                matcher.label.as_str(),
+            ),
+        ));
+    }
+    if policy.custom.iter().any(|l| l.to_ref() == matcher.label) {
+        return Ok(());
+    }
+    Err(invalid(
+        matcher,
+        format!(
+            "`{}` is not among the policy's own `custom` labels: a matcher \
+             detects a label the policy introduces, so declare it there first.",
+            matcher.label.as_str(),
+        ),
+    ))
+}
+
+/// Every label elide ships, resolved once.
+static BUILTIN_LABELS: LazyLock<LabelCatalog> = LazyLock::new(LabelCatalog::with_builtins);
+
+/// A rejection naming the matcher, so a caller knows which one.
+fn invalid(matcher: &CustomMatcher, why: String) -> Error {
+    Error::new(
+        ErrorKind::Configuration,
+        format!("custom matcher `{}` is rejected: {why}", matcher.name),
+    )
 }
 
 fn pattern_with_limits(builder: PatternRecognizerBuilder) -> PatternRecognizerBuilder {

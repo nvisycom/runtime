@@ -6,12 +6,14 @@
 //! per-entity provenance chain directly.
 
 use bytes::Bytes;
-use elide::entity::LabelRef;
 use elide::entity::audit::{Attribution, AuditKind};
+use elide::entity::{Label, LabelRef};
 use elide::modality::text::Text;
+use elide::primitive::Confidence;
 use elide_governance::redaction::{ModalityRedactions, TextRedaction};
 use elide_governance::{
-    LabelEntry, LabelScope, PolicyDefinition, PolicyRule, Predicate, RuleDispatch,
+    CustomMatcher, LabelEntry, LabelScope, MatchOn, PolicyDefinition, PolicyRule, Predicate,
+    RuleDispatch,
 };
 use elide_pipeline::file::Document;
 use elide_pipeline::{Audit, Engine, ErrorKind, ProviderConfig, RequestContext};
@@ -81,8 +83,6 @@ async fn table_rule_dispatches_per_label_under_one_identity() {
     let policy = PolicyDefinition {
         id: uuid::Uuid::now_v7(),
         name: "contact-info".into(),
-        description: None,
-        template: None,
         // The table targets both; the scope must detect both.
         scopes: vec![LabelScope::new(
             "scope",
@@ -91,9 +91,8 @@ async fn table_rule_dispatches_per_label_under_one_identity() {
                 LabelRef::new("phone_number"),
             ],
         )],
-        custom: Vec::new(),
         rules: vec![table],
-        fallback: None,
+        ..PolicyDefinition::default()
     };
 
     let mut analyzed = engine
@@ -191,10 +190,7 @@ async fn label_in_group_predicate_fires_on_grouped_labels() {
     let policy = PolicyDefinition {
         id: uuid::Uuid::now_v7(),
         name: "sweep".into(),
-        description: None,
-        template: None,
         scopes: vec![group],
-        custom: Vec::new(),
         rules: vec![PolicyRule {
             id: uuid::Uuid::now_v7(),
             name: "erase-contacts".into(),
@@ -210,7 +206,7 @@ async fn label_in_group_predicate_fires_on_grouped_labels() {
                 }),
             },
         }],
-        fallback: None,
+        ..PolicyDefinition::default()
     };
 
     let mut analyzed = engine
@@ -256,15 +252,12 @@ async fn per_policy_label_scoping_blocks_cross_policy_tag_bleed() {
     let policy_a = PolicyDefinition {
         id: uuid::Uuid::now_v7(),
         name: "email-only".into(),
-        description: None,
-        template: None,
         // A TagOneOf rule names no label, so the scope is what
         // bounds which entities it can reach.
         scopes: vec![LabelScope::new(
             "scope",
             vec![LabelRef::new("email_address")],
         )],
-        custom: Vec::new(),
         rules: vec![PolicyRule {
             id: uuid::Uuid::now_v7(),
             name: "erase-pii".into(),
@@ -280,13 +273,11 @@ async fn per_policy_label_scoping_blocks_cross_policy_tag_bleed() {
                 }),
             },
         }],
-        fallback: None,
+        ..PolicyDefinition::default()
     };
     let policy_b = PolicyDefinition {
         id: uuid::Uuid::now_v7(),
         name: "phone-only-no-rules".into(),
-        description: None,
-        template: None,
         // Policy B contributes `phone_number` to the request's
         // recognition vocabulary. Without it the entity is never
         // detected and the zero-hit assertion below would pass for
@@ -295,10 +286,8 @@ async fn per_policy_label_scoping_blocks_cross_policy_tag_bleed() {
             "scope",
             vec![LabelRef::new("phone_number")],
         )],
-        custom: Vec::new(),
         // No rules: policy B only contributes vocabulary.
-        rules: Vec::new(),
-        fallback: None,
+        ..PolicyDefinition::default()
     };
 
     let policies = vec![policy_a, policy_b];
@@ -338,8 +327,6 @@ async fn coarse_fallback_does_not_shadow_specific_later_rule() {
     let coarse = PolicyDefinition {
         id: uuid::Uuid::now_v7(),
         name: "coarse-baseline".into(),
-        description: None,
-        template: None,
         // The fallback sweeps whatever this scope detects.
         scopes: vec![LabelScope::new(
             "scope",
@@ -348,25 +335,21 @@ async fn coarse_fallback_does_not_shadow_specific_later_rule() {
                 LabelRef::new("phone_number"),
             ],
         )],
-        custom: Vec::new(),
-        rules: Vec::new(),
         fallback: Some(ModalityRedactions {
             // Coarse baseline says "erase" as a catch-all.
             text: Some(TextRedaction::Erase),
             ..Default::default()
         }),
+        ..PolicyDefinition::default()
     };
     let specific = PolicyDefinition {
         id: uuid::Uuid::now_v7(),
         name: "specific-refinement".into(),
-        description: None,
-        template: None,
         // Refines just email; the coarse policy keeps the rest.
         scopes: vec![LabelScope::new(
             "scope",
             vec![LabelRef::new("email_address")],
         )],
-        custom: Vec::new(),
         rules: vec![PolicyRule {
             id: uuid::Uuid::now_v7(),
             name: "replace-email".into(),
@@ -384,7 +367,7 @@ async fn coarse_fallback_does_not_shadow_specific_later_rule() {
                 }),
             },
         }],
-        fallback: None,
+        ..PolicyDefinition::default()
     };
 
     let policies = vec![coarse, specific];
@@ -421,15 +404,12 @@ async fn cross_policy_group_reference_fails_the_request() {
     let policy_a = PolicyDefinition {
         id: uuid::Uuid::now_v7(),
         name: "borrower".into(),
-        description: None,
-        template: None,
         // Scope carries what this policy detects.
         scopes: vec![LabelScope::new(
             "scope",
             vec![LabelRef::new("email_address")],
         )],
         // No groups declared here.
-        custom: Vec::new(),
         rules: vec![PolicyRule {
             id: uuid::Uuid::now_v7(),
             name: "borrow-from-b".into(),
@@ -445,20 +425,16 @@ async fn cross_policy_group_reference_fails_the_request() {
                 }),
             },
         }],
-        fallback: None,
+        ..PolicyDefinition::default()
     };
     let policy_b = PolicyDefinition {
         id: uuid::Uuid::now_v7(),
         name: "declares-group".into(),
-        description: None,
-        template: None,
         scopes: vec![LabelScope::new(
             "contact_info",
             vec![LabelRef::new("email_address")],
         )],
-        custom: Vec::new(),
-        rules: Vec::new(),
-        fallback: None,
+        ..PolicyDefinition::default()
     };
 
     // `Audit` is not `Debug` (it holds an elide `Report`), so the
@@ -486,13 +462,10 @@ async fn duplicate_scope_names_fail_the_request() {
     let policy = PolicyDefinition {
         id: uuid::Uuid::now_v7(),
         name: "ambiguous".into(),
-        description: None,
-        template: None,
         scopes: vec![
             LabelScope::new("contact", vec![LabelRef::new("email_address")]),
             LabelScope::new("contact", vec![LabelRef::new("phone_number")]),
         ],
-        custom: Vec::new(),
         rules: vec![PolicyRule {
             id: uuid::Uuid::now_v7(),
             name: "erase-contact".into(),
@@ -508,7 +481,7 @@ async fn duplicate_scope_names_fail_the_request() {
                 }),
             },
         }],
-        fallback: None,
+        ..PolicyDefinition::default()
     };
 
     let Err(err) = engine
@@ -539,18 +512,15 @@ async fn fallback_carries_the_scope_attribution() {
     let policy = PolicyDefinition {
         id: uuid::Uuid::now_v7(),
         name: "sweep-everything".into(),
-        description: None,
-        template: None,
         scopes: vec![
             LabelScope::new("pi", vec![LabelRef::new("email_address")])
                 .with_attribution(cited.clone()),
         ],
-        custom: Vec::new(),
-        rules: Vec::new(),
         fallback: Some(ModalityRedactions {
             text: Some(TextRedaction::Erase),
             ..Default::default()
         }),
+        ..PolicyDefinition::default()
     };
 
     let mut analyzed = engine
@@ -601,8 +571,6 @@ async fn mixed_scope_attribution_does_not_borrow_a_citation() {
     let policy = PolicyDefinition {
         id: uuid::Uuid::now_v7(),
         name: "half-cited".into(),
-        description: None,
-        template: None,
         scopes: vec![
             LabelScope::new("cited", vec![LabelRef::new("email_address")]).with_attribution(
                 Attribution::from(
@@ -614,12 +582,11 @@ async fn mixed_scope_attribution_does_not_borrow_a_citation() {
             // policy declared.
             LabelScope::new("uncited", vec![LabelRef::new("phone_number")]),
         ],
-        custom: Vec::new(),
-        rules: Vec::new(),
         fallback: Some(ModalityRedactions {
             text: Some(TextRedaction::Erase),
             ..Default::default()
         }),
+        ..PolicyDefinition::default()
     };
 
     let mut analyzed = engine
@@ -677,26 +644,19 @@ async fn a_policy_scoping_no_labels_is_rejected() {
     let detects = PolicyDefinition {
         id: uuid::Uuid::now_v7(),
         name: "detects".into(),
-        description: None,
-        template: None,
         scopes: vec![LabelScope::new(
             "contact",
             vec![LabelRef::new("email_address")],
         )],
-        custom: Vec::new(),
-        rules: Vec::new(),
-        fallback: None,
+        ..PolicyDefinition::default()
     };
     let empty_scope_id = uuid::Uuid::now_v7();
     let policy = PolicyDefinition {
         id: empty_scope_id,
         name: "empty-scope".into(),
-        description: None,
-        template: None,
         scopes: vec![LabelScope::new("everything", Vec::new())],
-        custom: Vec::new(),
-        rules: Vec::new(),
         fallback: Some(ModalityRedactions::textual(TextRedaction::Erase)),
+        ..PolicyDefinition::default()
     };
 
     let Err(err) = engine
@@ -726,26 +686,18 @@ async fn a_policy_with_no_scopes_or_no_operators_is_fine() {
     let detects = PolicyDefinition {
         id: uuid::Uuid::now_v7(),
         name: "detects".into(),
-        description: None,
-        template: None,
         scopes: vec![LabelScope::new(
             "contact",
             vec![LabelRef::new("email_address")],
         )],
-        custom: Vec::new(),
-        rules: Vec::new(),
-        fallback: None,
+        ..PolicyDefinition::default()
     };
 
     let no_scopes = PolicyDefinition {
         id: uuid::Uuid::now_v7(),
         name: "no-scopes".into(),
-        description: None,
-        template: None,
-        scopes: Vec::new(),
-        custom: Vec::new(),
-        rules: Vec::new(),
         fallback: Some(ModalityRedactions::textual(TextRedaction::Erase)),
+        ..PolicyDefinition::default()
     };
     engine
         .analyze(raw_txt(), &[detects.clone(), no_scopes], &default_spec())
@@ -755,12 +707,8 @@ async fn a_policy_with_no_scopes_or_no_operators_is_fine() {
     let no_operators = PolicyDefinition {
         id: uuid::Uuid::now_v7(),
         name: "no-operators".into(),
-        description: None,
-        template: None,
         scopes: vec![LabelScope::new("everything", Vec::new())],
-        custom: Vec::new(),
-        rules: Vec::new(),
-        fallback: None,
+        ..PolicyDefinition::default()
     };
     engine
         .analyze(raw_txt(), &[detects, no_operators], &default_spec())
@@ -785,4 +733,107 @@ async fn a_request_naming_no_labels_is_rejected() {
         err.to_string().contains("no labels to detect"),
         "the error says what is missing: {err}",
     );
+}
+
+/// A custom label is only vocabulary; a matcher is what finds it.
+/// Both arms reach the document: a regex over the text, and a
+/// literal term list.
+#[tokio::test]
+async fn a_custom_matcher_detects_and_redacts_its_label() {
+    async fn redact(on: MatchOn, text: &'static str) -> String {
+        let engine = engine();
+        let policy = PolicyDefinition {
+            name: "custom".into(),
+            scopes: vec![LabelScope::new(
+                "internal",
+                vec![LabelRef::new("employee_id")],
+            )],
+            custom: vec![Label::new("employee_id", "Employee ID")],
+            matchers: vec![CustomMatcher {
+                label: LabelRef::new("employee_id"),
+                name: "employee-id".into(),
+                confidence: Confidence::clamped(0.6),
+                match_on: on,
+            }],
+            fallback: Some(ModalityRedactions::textual(TextRedaction::Erase)),
+            ..PolicyDefinition::default()
+        };
+        let document = || Document::new("sample.txt", Bytes::from_static(text.as_bytes()));
+        let mut audit = engine
+            .analyze(document(), std::slice::from_ref(&policy), &default_spec())
+            .await
+            .expect("analyze")
+            .audit;
+        let outcome = engine
+            .anonymize(document(), std::slice::from_ref(&policy), &mut audit, None)
+            .await
+            .expect("anonymize");
+        String::from_utf8_lossy(&outcome.bytes).into_owned()
+    }
+
+    let by_pattern = redact(
+        MatchOn::Pattern {
+            pattern: r"EMP-\d{4}".to_owned(),
+        },
+        "Employee EMP-4471 filed it.",
+    )
+    .await;
+    assert!(
+        !by_pattern.contains("EMP-4471"),
+        "a regex matcher redacts its label: {by_pattern}",
+    );
+
+    let by_terms = redact(
+        MatchOn::Terms {
+            terms: vec!["Initech".to_owned(), "Acme".to_owned()],
+        },
+        "Contract with Initech signed.",
+    )
+    .await;
+    assert!(
+        !by_terms.contains("Initech"),
+        "a term matcher redacts its label: {by_terms}",
+    );
+}
+
+/// A matcher the engine cannot honour is refused, not ignored: a
+/// silently-dropped matcher would leave the caller believing their
+/// label is detected while nothing looks for it.
+#[tokio::test]
+async fn a_matcher_the_engine_cannot_honour_is_refused() {
+    async fn refuse(matchers: Vec<CustomMatcher>) -> ErrorKind {
+        let policy = PolicyDefinition {
+            name: "custom".into(),
+            scopes: vec![LabelScope::new(
+                "internal",
+                vec![LabelRef::new("employee_id")],
+            )],
+            custom: vec![Label::new("employee_id", "Employee ID")],
+            matchers,
+            ..PolicyDefinition::default()
+        };
+        let Err(err) = engine()
+            .analyze(raw_txt(), std::slice::from_ref(&policy), &default_spec())
+            .await
+        else {
+            panic!("a matcher the engine cannot honour must be refused");
+        };
+        err.kind()
+    }
+
+    let named = |on| CustomMatcher {
+        label: LabelRef::new("employee_id"),
+        name: "employee-id".into(),
+        confidence: Confidence::clamped(0.6),
+        match_on: on,
+    };
+
+    for broken in [
+        MatchOn::Pattern {
+            pattern: "([unclosed".to_owned(),
+        },
+        MatchOn::Terms { terms: Vec::new() },
+    ] {
+        assert_eq!(refuse(vec![named(broken)]).await, ErrorKind::Configuration);
+    }
 }

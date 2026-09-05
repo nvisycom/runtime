@@ -57,11 +57,11 @@ fn expert_determination_policy(accounts: HipaaAccountNumbers) -> PolicyDefinitio
             Version::new(1, 0, 0),
         )),
         scopes: vec![ed_scope(accounts)],
-        custom: Vec::new(),
         // Same split as Safe Harbor: the table claims age and the
         // dates, the fallback pseudonymizes the rest of the scope.
         rules: vec![ed_table_rule(accounts)],
         fallback: Some(ModalityRedactions::textual(TextRedaction::Pseudonymize)),
+        ..PolicyDefinition::default()
     }
 }
 

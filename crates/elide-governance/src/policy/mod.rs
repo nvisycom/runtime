@@ -2,6 +2,7 @@
 //! rules inside them, the predicates that gate those rules, and
 //! the operator specs the rules dispatch to.
 
+mod matcher;
 mod origin;
 mod predicate;
 mod rule;
@@ -14,6 +15,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+pub use self::matcher::{CustomMatcher, MatchOn};
 pub use self::origin::TemplateOrigin;
 pub use self::rule::{LabelEntry, PolicyRule, RuleDispatch};
 pub use self::scope::LabelScope;
@@ -77,6 +79,20 @@ pub struct PolicyDefinition {
     /// [`scopes`]: Self::scopes
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub custom: Vec<Label>,
+    /// How to detect the labels [`custom`] introduces.
+    ///
+    /// A custom label declares vocabulary and nothing more, so
+    /// without a matcher it is scoped, targeted by rules, and never
+    /// found. Each matcher names a label this policy declares;
+    /// naming a shipped built-in is rejected, since elide already
+    /// detects those.
+    ///
+    /// Compiled per request, so a policy declaring none costs
+    /// nothing.
+    ///
+    /// [`custom`]: Self::custom
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub matchers: Vec<CustomMatcher>,
     /// Ordered rules. First match wins within this policy.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub rules: Vec<PolicyRule>,
@@ -87,6 +103,42 @@ pub struct PolicyDefinition {
     /// fallback per policy" at the type level.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fallback: Option<ModalityRedactions>,
+}
+
+/// A policy with a fresh identity and nothing else set: no scopes,
+/// no custom labels or matchers, no rules, no fallback.
+///
+/// Hand-written rather than derived so `id` is a fresh UUIDv7
+/// rather than nil — identity is the UUID, and a derived default
+/// would hand every policy the same one, which two policies in a
+/// request would silently collide on.
+///
+/// For construction where most fields are absent, chiefly tests
+/// and callers building a policy up field by field:
+///
+/// ```
+/// # use elide_governance::PolicyDefinition;
+/// # use elide_governance::redaction::{ModalityRedactions, TextRedaction};
+/// let sweep = PolicyDefinition {
+///     name: "sweep".into(),
+///     fallback: Some(ModalityRedactions::textual(TextRedaction::Erase)),
+///     ..PolicyDefinition::default()
+/// };
+/// ```
+impl Default for PolicyDefinition {
+    fn default() -> Self {
+        Self {
+            id: Uuid::now_v7(),
+            name: HipStr::default(),
+            description: None,
+            template: None,
+            scopes: Vec::new(),
+            custom: Vec::new(),
+            matchers: Vec::new(),
+            rules: Vec::new(),
+            fallback: None,
+        }
+    }
 }
 
 impl PolicyDefinition {
