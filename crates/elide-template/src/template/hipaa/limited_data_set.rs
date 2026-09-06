@@ -102,11 +102,10 @@ fn limited_data_set_policy(accounts: HipaaAccountNumbers) -> PolicyDefinition {
         ),
         template: Some(origin("hipaa_deid_limited_data_set", Version::new(1, 0, 0))),
         scopes: vec![lds_scope(accounts)],
-        custom: Vec::new(),
         // No rules: every §164.514(e)(2) identifier gets the same
         // treatment, which is what the fallback expresses.
-        rules: Vec::new(),
         fallback: Some(ModalityRedactions::textual(TextRedaction::Erase)),
+        ..PolicyDefinition::default()
     }
 }
 

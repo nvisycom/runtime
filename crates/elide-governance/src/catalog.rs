@@ -162,12 +162,9 @@ mod tests {
         PolicyDefinition {
             id,
             name: HipStr::from("test"),
-            description: None,
-            template: None,
             scopes,
             custom,
-            rules: Vec::new(),
-            fallback: None,
+            ..PolicyDefinition::default()
         }
     }
 

@@ -60,8 +60,6 @@ fn detect_only() -> PolicyDefinition {
     PolicyDefinition {
         id: uuid::Uuid::now_v7(),
         name: "detect-contacts".into(),
-        description: None,
-        template: None,
         scopes: vec![LabelScope::new(
             "contact",
             vec![
@@ -69,9 +67,7 @@ fn detect_only() -> PolicyDefinition {
                 LabelRef::new("phone_number"),
             ],
         )],
-        custom: Vec::new(),
-        rules: Vec::new(),
-        fallback: None,
+        ..PolicyDefinition::default()
     }
 }
 
@@ -134,18 +130,15 @@ async fn anonymize_redacts_targeted_entity_and_preserves_other_parts() {
     let review_policy = PolicyDefinition {
         id: uuid::Uuid::now_v7(),
         name: "erase-everything".into(),
-        description: None,
-        template: None,
         scopes: vec![LabelScope::new(
             "contact",
             vec![LabelRef::new("email_address")],
         )],
-        custom: Vec::new(),
-        rules: Vec::new(),
         fallback: Some(ModalityRedactions {
             text: Some(elide_governance::redaction::TextRedaction::Erase),
             ..Default::default()
         }),
+        ..PolicyDefinition::default()
     };
 
     let outcome = engine
@@ -292,12 +285,8 @@ async fn analyze_rejects_policy_that_references_unknown_group() {
     let policy = PolicyDefinition {
         id: uuid::Uuid::now_v7(),
         name: "unknown-group".into(),
-        description: None,
-        template: None,
-        scopes: Vec::new(),
-        custom: Vec::new(),
         rules: vec![rule],
-        fallback: None,
+        ..PolicyDefinition::default()
     };
 
     // `Audit` is not `Debug` (it holds an elide `Report`), so the

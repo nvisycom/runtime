@@ -64,5 +64,6 @@ pub mod redaction;
 
 pub use self::catalog::compile_catalog;
 pub use self::policy::{
-    LabelEntry, LabelScope, PolicyDefinition, PolicyRule, Predicate, RuleDispatch, TemplateOrigin,
+    CustomMatcher, LabelEntry, LabelScope, MatchOn, PolicyDefinition, PolicyRule, Predicate,
+    RuleDispatch, TemplateOrigin,
 };

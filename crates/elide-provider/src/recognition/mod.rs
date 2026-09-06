@@ -64,6 +64,7 @@ use elide::modality::image::Image;
 use elide::modality::tabular::Tabular;
 use elide::modality::text::Text;
 use elide::{Error, ErrorKind, Orchestrator, Result};
+use elide_governance::PolicyDefinition;
 
 pub use self::config::*;
 use self::modality::{compile_audio, compile_image, compile_tabular, compile_text};
@@ -93,17 +94,21 @@ use self::modality::{compile_audio, compile_image, compile_tabular, compile_text
 /// Returns [`Configuration`](ErrorKind::Configuration) if a backend
 /// cannot be built from its config, or if an enricher lineup names
 /// more than one entry — elide attaches at most one per analyzer.
-pub fn analyzers(recognizers: &Recognizers, enrichers: &Enrichers) -> Result<Orchestrator> {
+pub fn analyzers(
+    recognizers: &Recognizers,
+    enrichers: &Enrichers,
+    policies: &[PolicyDefinition],
+) -> Result<Orchestrator> {
     let ner = &recognizers.ner;
     let llm = &recognizers.llm;
     let ocr = pick_one(&enrichers.ocr, "OCR")?;
     let stt = pick_one(&enrichers.stt, "STT")?;
 
     Ok(Orchestrator::new()
-        .with_analyzer::<Text>(compile_text(ner, llm)?)
-        .with_analyzer::<Tabular>(compile_tabular(ner)?)
-        .with_analyzer::<Image>(compile_image(ner, llm, ocr)?)
-        .with_analyzer::<Audio>(compile_audio(ner, stt)?))
+        .with_analyzer::<Text>(compile_text(ner, llm, policies)?)
+        .with_analyzer::<Tabular>(compile_tabular(ner, policies)?)
+        .with_analyzer::<Image>(compile_image(ner, llm, ocr, policies)?)
+        .with_analyzer::<Audio>(compile_audio(ner, stt, policies)?))
 }
 
 /// The single enricher a lineup may wire, or `None` for an empty

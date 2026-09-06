@@ -43,18 +43,15 @@ fn policy() -> PolicyDefinition {
     PolicyDefinition {
         id: POLICY_ID,
         name: "sweep".into(),
-        description: None,
-        template: None,
         scopes: vec![LabelScope::new(
             "contact",
             vec![LabelRef::new("email_address")],
         )],
-        custom: Vec::new(),
-        rules: Vec::new(),
         fallback: Some(ModalityRedactions {
             text: Some(TextRedaction::Erase),
             ..Default::default()
         }),
+        ..PolicyDefinition::default()
     }
 }
 
@@ -552,6 +549,7 @@ async fn unhandled_names_a_detection_no_policy_acted_on() {
     // modality — the detection survives into the output with no
     // record of why.
     let detect_only = PolicyDefinition {
+        // No operator: the label is scoped and nothing acts on it.
         fallback: None,
         ..policy()
     };

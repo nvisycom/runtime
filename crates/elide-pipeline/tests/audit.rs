@@ -43,8 +43,6 @@ fn detect_only() -> PolicyDefinition {
     PolicyDefinition {
         id: uuid::Uuid::now_v7(),
         name: "detect-contacts".into(),
-        description: None,
-        template: None,
         scopes: vec![LabelScope::new(
             "contact",
             vec![
@@ -52,9 +50,7 @@ fn detect_only() -> PolicyDefinition {
                 LabelRef::new("phone_number"),
             ],
         )],
-        custom: Vec::new(),
-        rules: Vec::new(),
-        fallback: None,
+        ..PolicyDefinition::default()
     }
 }
 

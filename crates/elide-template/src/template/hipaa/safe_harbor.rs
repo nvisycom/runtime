@@ -122,7 +122,6 @@ fn safe_harbor_policy(accounts: HipaaAccountNumbers) -> PolicyDefinition {
         ),
         template: Some(origin("hipaa_deid_safe_harbor", Version::new(1, 0, 0))),
         scopes: vec![safe_harbor_scope(accounts)],
-        custom: Vec::new(),
         // The table claims `age` and the two date labels; the
         // fallback erases the rest of the scope. Splitting it this
         // way makes the §(C) carve-out structural: the fallback
@@ -130,6 +129,7 @@ fn safe_harbor_policy(accounts: HipaaAccountNumbers) -> PolicyDefinition {
         // ordering can turn a Clamp into an Erase.
         rules: vec![safe_harbor_table_rule(accounts)],
         fallback: Some(ModalityRedactions::textual(TextRedaction::Erase)),
+        ..PolicyDefinition::default()
     }
 }
 

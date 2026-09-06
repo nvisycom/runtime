@@ -21,10 +21,13 @@ use elide::modality::audio::Audio;
 use elide::modality::image::Image;
 use elide::modality::tabular::Tabular;
 use elide::modality::text::Text;
+use elide_governance::PolicyDefinition;
 
 use super::enrichers::compile::{attach_language, attach_ocr, attach_stt};
 use super::layer::attach_dedup;
-use super::recognizers::compile::{attach_llm_lineup, attach_ner_lineup, attach_pattern};
+use super::recognizers::compile::{
+    attach_custom, attach_llm_lineup, attach_ner_lineup, attach_pattern,
+};
 use super::{Component, OcrBackend, SttBackend};
 use crate::recognition::{AttachTo, LlmBackend, NerBackend};
 
@@ -36,11 +39,13 @@ use crate::recognition::{AttachTo, LlmBackend, NerBackend};
 pub(crate) fn compile_text(
     ner: &[Component<NerBackend>],
     llm: &[Component<LlmBackend>],
+    policies: &[PolicyDefinition],
 ) -> Result<Analyzer<Text>> {
     let mut analyzer = Analyzer::<Text>::new();
 
     analyzer = attach_language(analyzer);
     analyzer = attach_pattern(analyzer);
+    analyzer = attach_custom(analyzer, policies)?;
     analyzer = attach_ner_lineup(analyzer, ner)?;
     analyzer = attach_llm_lineup(analyzer, llm, AttachTo::Text)?;
 
@@ -55,11 +60,15 @@ pub(crate) fn compile_text(
 /// language-scoped, so a cell would otherwise be analyzed with no
 /// language while the same value in a `.txt` had one. LLM has no
 /// `LlmModality` impl for Tabular in elide today.
-pub(crate) fn compile_tabular(ner: &[Component<NerBackend>]) -> Result<Analyzer<Tabular>> {
+pub(crate) fn compile_tabular(
+    ner: &[Component<NerBackend>],
+    policies: &[PolicyDefinition],
+) -> Result<Analyzer<Tabular>> {
     let mut analyzer = Analyzer::<Tabular>::new();
 
     analyzer = attach_language(analyzer);
     analyzer = attach_pattern(analyzer);
+    analyzer = attach_custom(analyzer, policies)?;
     analyzer = attach_ner_lineup(analyzer, ner)?;
 
     Ok(attach_dedup(analyzer))
@@ -79,6 +88,7 @@ pub(crate) fn compile_image(
     ner: &[Component<NerBackend>],
     llm: &[Component<LlmBackend>],
     ocr: Option<&Component<OcrBackend>>,
+    policies: &[PolicyDefinition],
 ) -> Result<Analyzer<Image>> {
     let mut analyzer = Analyzer::<Image>::new();
 
@@ -91,6 +101,7 @@ pub(crate) fn compile_image(
     // has run.
     analyzer = attach_language(analyzer);
     analyzer = attach_pattern(analyzer);
+    analyzer = attach_custom(analyzer, policies)?;
     analyzer = attach_ner_lineup(analyzer, ner)?;
     analyzer = attach_llm_lineup(analyzer, llm, AttachTo::Image)?;
 
@@ -109,6 +120,7 @@ pub(crate) fn compile_image(
 pub(crate) fn compile_audio(
     ner: &[Component<NerBackend>],
     stt: Option<&Component<SttBackend>>,
+    policies: &[PolicyDefinition],
 ) -> Result<Analyzer<Audio>> {
     let mut analyzer = Analyzer::<Audio>::new();
 
@@ -120,6 +132,7 @@ pub(crate) fn compile_audio(
     // artifact, so language detection reads nothing before it lands.
     analyzer = attach_language(analyzer);
     analyzer = attach_pattern(analyzer);
+    analyzer = attach_custom(analyzer, policies)?;
     analyzer = attach_ner_lineup(analyzer, ner)?;
 
     Ok(attach_dedup(analyzer))
